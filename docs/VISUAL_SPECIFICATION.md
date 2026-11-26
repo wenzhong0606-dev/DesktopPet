@@ -30,8 +30,8 @@ Preserve these identity anchors:
 - Source SHA-256: 1e18305fe2245ff2e2a0a011dd11153ec0c2c52bb61ce51565294098cd26b643.
 - Source original remains preserved in the user's Library; do not overwrite it.
 - Runtime derivative target: assets/characters/bichon/base/bichon-idle.png.
-- Runtime derivative: 320 × 410 indexed PNG, 128-color palette with transparency, 29,548 bytes.
-- Runtime derivative SHA-256: 8f75b0f2de66c3d6193403327401aa688c3f679effff7b653730a2308deb011a.
+- Runtime derivative: 420 × 540 indexed PNG, 128-color palette with transparency, 45,559 bytes.
+- Runtime derivative SHA-256: 049ab8ebe317a4934d60546da4646076053a59af689d3bca6313a6cf3dbf3b3c.
 - The derivative was resized with Lanczos and palette-optimized for the 280 × 360 DIP window. It does not replace the high-resolution source.
 
 See assets/characters/bichon/base/asset-manifest.json and docs/M1_ASSET_UPLOAD.md for exact asset status and upload instructions.

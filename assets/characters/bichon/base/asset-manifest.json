@@ -14,14 +14,14 @@
   "runtime": {
     "repositoryPath": "assets/characters/bichon/base/bichon-idle.png",
     "applicationOutputPath": "Assets/characters/bichon/base/bichon-idle.png",
-    "width": 320,
-    "height": 410,
+    "width": 420,
+    "height": 540,
     "format": "PNG",
     "mode": "indexed",
     "paletteColors": 128,
     "hasTransparency": true,
-    "sizeBytes": 29548,
-    "sha256": "8f75b0f2de66c3d6193403327401aa688c3f679effff7b653730a2308deb011a",
+    "sizeBytes": 45559,
+    "sha256": "049ab8ebe317a4934d60546da4646076053a59af689d3bca6313a6cf3dbf3b3c",
     "resampling": "Lanczos",
     "optimization": "128-color indexed PNG with transparency"
   }

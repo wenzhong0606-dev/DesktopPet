@@ -15,7 +15,7 @@ A lightweight Windows desktop companion featuring a cute 3D-style Bichon Frise m
 
 The runtime view loads Assets/characters/bichon/base/bichon-idle.png from the application output directory. When the file is absent, the application keeps the temporary vector fallback and reports that the 3D asset is pending.
 
-The optimized 320 × 410 transparent PNG was prepared from the user's source image. See docs/M1_ASSET_UPLOAD.md and assets/characters/bichon/base/asset-manifest.json for the exact file and integrity hashes.
+The optimized 420 × 540 transparent PNG was prepared from the user's source image. See docs/M1_ASSET_UPLOAD.md and assets/characters/bichon/base/asset-manifest.json for the exact file and integrity hashes.
 
 ## Build (Windows)
 

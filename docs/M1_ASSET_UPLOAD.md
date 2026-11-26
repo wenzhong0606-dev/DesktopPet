@@ -8,16 +8,16 @@ A runtime derivative has been prepared:
 
 - Filename to use in the repository: bichon-idle.png
 - Target folder: assets/characters/bichon/base/
-- Dimensions: 320 × 410
+- Dimensions: 420 × 540
 - Format: indexed PNG, 128-color palette, transparency retained
-- File size: 29,548 bytes
-- SHA-256: 8f75b0f2de66c3d6193403327401aa688c3f679effff7b653730a2308deb011a
+- File size: 45,559 bytes
+- SHA-256: 049ab8ebe317a4934d60546da4646076053a59af689d3bca6313a6cf3dbf3b3c
 
 ## Upload
 
-The GitHub connector available in this session can create and update UTF-8 text files, but it does not expose a binary-file upload action. The WPF image-loading code and manifest are already committed. To finish the binary asset step:
+The WPF image-loading code and asset manifest are already committed. The prepared binary image has not yet been added to the Git repository.
 
-1. Download the prepared bichon-320-128.png file supplied with this conversation.
+1. Download the prepared image attachment named bichon-420-128.png.
 2. Open the repository folder assets/characters/bichon/base/ on GitHub.
 3. Upload the file and name it exactly bichon-idle.png.
 4. Confirm its SHA-256 matches the value above.
