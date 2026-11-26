@@ -1,0 +1,28 @@
+{
+  "assetStatus": "prepared-awaiting-repository-upload",
+  "source": {
+    "fileName": "圣诞草莓裙比熊萌宠.png",
+    "storage": "user-library",
+    "width": 1106,
+    "height": 1422,
+    "format": "PNG",
+    "mode": "RGBA",
+    "hasAlpha": true,
+    "sizeBytes": 1956419,
+    "sha256": "1e18305fe2245ff2e2a0a011dd11153ec0c2c52bb61ce51565294098cd26b643"
+  },
+  "runtime": {
+    "repositoryPath": "assets/characters/bichon/base/bichon-idle.png",
+    "applicationOutputPath": "Assets/characters/bichon/base/bichon-idle.png",
+    "width": 320,
+    "height": 410,
+    "format": "PNG",
+    "mode": "indexed",
+    "paletteColors": 128,
+    "hasTransparency": true,
+    "sizeBytes": 29548,
+    "sha256": "8f75b0f2de66c3d6193403327401aa688c3f679effff7b653730a2308deb011a",
+    "resampling": "Lanczos",
+    "optimization": "128-color indexed PNG with transparency"
+  }
+}

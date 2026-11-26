@@ -1,7 +1,9 @@
 using System.ComponentModel;
+using System.IO;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Animation;
+using System.Windows.Media.Imaging;
 using BichonDesktopPet.App.Services;
 using BichonDesktopPet.Core.Models;
 using WpfMouseEventArgs = System.Windows.Input.MouseEventArgs;
@@ -28,6 +30,8 @@ public partial class MainWindow : Window
 
     private void Window_Loaded(object sender, RoutedEventArgs e)
     {
+        LoadPetImage();
+
         _settings = _settingsService.Load();
         Topmost = _settings.AlwaysOnTop;
 
@@ -41,6 +45,48 @@ public partial class MainWindow : Window
         if (_settings.MusicEnabled && !_audioService.SetEnabled(true))
         {
             _settings.MusicEnabled = false;
+        }
+    }
+
+    private void LoadPetImage()
+    {
+        var imagePath = Path.Combine(
+            AppContext.BaseDirectory,
+            "Assets",
+            "characters",
+            "bichon",
+            "base",
+            "bichon-idle.png");
+
+        if (!File.Exists(imagePath))
+        {
+            FallbackPetCanvas.Visibility = Visibility.Visible;
+            PetImage.Visibility = Visibility.Collapsed;
+            StatusText.Text = "3D比熊素材待上传";
+            return;
+        }
+
+        try
+        {
+            var bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.CreateOptions = BitmapCreateOptions.PreservePixelFormat;
+            bitmap.UriSource = new Uri(imagePath, UriKind.Absolute);
+            bitmap.EndInit();
+            bitmap.Freeze();
+
+            PetImage.Source = bitmap;
+            PetImage.Visibility = Visibility.Visible;
+            FallbackPetCanvas.Visibility = Visibility.Collapsed;
+            StatusText.Text = "汪！你好呀";
+        }
+        catch (Exception)
+        {
+            PetImage.Source = null;
+            PetImage.Visibility = Visibility.Collapsed;
+            FallbackPetCanvas.Visibility = Visibility.Visible;
+            StatusText.Text = "比熊素材加载失败";
         }
     }
 
@@ -65,12 +111,6 @@ public partial class MainWindow : Window
     private void Window_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         _wasDragged = false;
-        if (IsInsideButton(e.OriginalSource as DependencyObject))
-        {
-            _dragCandidate = false;
-            return;
-        }
-
         _mouseDownPosition = e.GetPosition(this);
         _dragCandidate = true;
     }
@@ -109,23 +149,6 @@ public partial class MainWindow : Window
         _dragCandidate = false;
     }
 
-    private static bool IsInsideButton(DependencyObject? element)
-    {
-        while (element is not null)
-        {
-            if (element is System.Windows.Controls.Primitives.ButtonBase)
-            {
-                return true;
-            }
-
-            element = element is System.Windows.Media.Visual or System.Windows.Media.Media3D.Visual3D
-                ? System.Windows.Media.VisualTreeHelper.GetParent(element)
-                : LogicalTreeHelper.GetParent(element);
-        }
-
-        return false;
-    }
-
     private void PetCanvas_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
         if (_wasDragged)
@@ -134,8 +157,9 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (IsInsideButton(e.OriginalSource as DependencyObject))
+        if (e.ClickCount >= 2)
         {
+            GiftButton_Click(sender, e);
             return;
         }
 

@@ -1,4 +1,3 @@
-using System.IO;
 using System.Windows.Media;
 
 namespace BichonDesktopPet.App.Services;
@@ -35,7 +34,7 @@ public sealed class AudioService : IDisposable
             return false;
         }
 
-        _player.Open(new Uri(audioPath));
+        _player.Open(new Uri(audioPath, UriKind.Absolute));
         _player.Play();
         return true;
     }

@@ -1,4 +1,5 @@
 using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 
@@ -74,7 +75,7 @@ public sealed class SnowAnimationService : IDisposable
         {
             Width = radius * 2,
             Height = radius * 2,
-            Fill = System.Windows.Media.Brushes.White,
+            Fill = Brushes.White,
             Opacity = 0.35 + _random.NextDouble() * 0.55,
             IsHitTestVisible = false
         };
