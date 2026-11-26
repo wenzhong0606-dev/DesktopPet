@@ -1,10 +1,11 @@
 using System.Windows;
 using BichonDesktopPet.App.Services;
 using BichonDesktopPet.App.Views;
+using WpfApplication = System.Windows.Application;
 
 namespace BichonDesktopPet.App;
 
-public partial class App : Application
+public partial class App : WpfApplication
 {
     private TrayIconService? _trayIconService;
 

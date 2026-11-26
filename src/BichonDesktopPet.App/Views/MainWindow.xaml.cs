@@ -5,6 +5,8 @@ using System.Windows.Input;
 using System.Windows.Media.Animation;
 using BichonDesktopPet.App.Services;
 using BichonDesktopPet.Core.Models;
+using WpfMouseEventArgs = System.Windows.Input.MouseEventArgs;
+using WpfPoint = System.Windows.Point;
 
 namespace BichonDesktopPet.App.Views;
 
@@ -17,7 +19,7 @@ public partial class MainWindow : Window
     private bool _allowExit;
     private bool _dragCandidate;
     private bool _wasDragged;
-    private Point _mouseDownPosition;
+    private WpfPoint _mouseDownPosition;
 
     public MainWindow()
     {
@@ -74,7 +76,7 @@ public partial class MainWindow : Window
         _dragCandidate = true;
     }
 
-    private void Window_PreviewMouseMove(object sender, MouseEventArgs e)
+    private void Window_PreviewMouseMove(object sender, WpfMouseEventArgs e)
     {
         if (!_dragCandidate || e.LeftButton != MouseButtonState.Pressed)
         {
@@ -249,7 +251,7 @@ public partial class MainWindow : Window
         _snowAnimation.Dispose();
         _audioService.Dispose();
         Close();
-        Application.Current.Shutdown();
+        System.Windows.Application.Current.Shutdown();
     }
 
     private void SaveSettings()
