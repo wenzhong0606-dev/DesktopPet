@@ -1,6 +1,5 @@
 using System.ComponentModel;
 using System.Windows;
-using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media.Animation;
 using BichonDesktopPet.App.Services;
@@ -114,7 +113,7 @@ public partial class MainWindow : Window
     {
         while (element is not null)
         {
-            if (element is ButtonBase)
+            if (element is System.Windows.Controls.Primitives.ButtonBase)
             {
                 return true;
             }
