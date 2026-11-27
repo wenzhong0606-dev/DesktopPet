@@ -8,7 +8,7 @@
 - Add a WPF animation adapter for subtle whole-image breathing, bounce, wiggle and sleepy sway.
 - Add a single MainWindow-owned state timer and dispose it and the animation adapter on exit.
 - Add automated tests for timed transitions, rapid clicks, gift interaction, inactivity, wake and species presentation mapping.
-- Pass Windows Release CI with 0 warnings, 0 errors and 30/30 tests on commit `e78c94d706d123c1a5d999e494e6f3ca184380d0` ([run #111](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45946216141)).
+- Pass Windows Release CI with 0 warnings, 0 errors and 30/30 tests on commit `5db5f4dd135f9226665f4defc187c8fe5767ff1d` ([run #124](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45946659068)).
 - M2 formally marked accepted after the user's confirmation.
 
 
