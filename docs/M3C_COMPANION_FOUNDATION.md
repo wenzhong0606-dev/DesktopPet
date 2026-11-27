@@ -77,6 +77,10 @@ Environment variables override local-file values:
 
 The local file is ignored by Git. Never commit an API key or paste it into source code, issues or chat. See [QWEN_CONFIGURATION.md](QWEN_CONFIGURATION.md).
 
+## Windows CI result
+
+Windows Release CI passed on commit `527edd58cec592d7c3a43775c587d151c26a1c44`: 0 warnings, 0 errors and 61/61 automated tests ([run #224](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45960178698)). Local Windows interaction acceptance remains pending.
+
 ## Automated coverage
 
 - Stable identity creation and lookup by avatar ID.
