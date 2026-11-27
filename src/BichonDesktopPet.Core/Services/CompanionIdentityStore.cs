@@ -29,7 +29,8 @@ public sealed class CompanionIdentityStore
             DataSource = _databasePath,
             Mode = SqliteOpenMode.ReadWriteCreate,
             Cache = SqliteCacheMode.Shared,
-            ForeignKeys = true
+            ForeignKeys = true,
+            Pooling = false
         }.ToString();
     }
 
