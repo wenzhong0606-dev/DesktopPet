@@ -25,7 +25,7 @@
 - Keep the window lightweight and avoid one timer per particle.
 - Keep all animation updates on the WPF dispatcher.
 - Bound particle counts and release timers/media resources on exit.
-- Keep user settings local; do not add telemetry or network calls.
+- Keep user settings and companion data local; do not add telemetry. M3-C prepares a Qwen provider but does not send network requests until a future explicit chat interaction.
 - Keep original artwork separate from optimized runtime assets.
 - Do not commit generated binaries, build outputs, or user-specific settings.
 - Avoid adding third-party runtime dependencies unless a concrete requirement justifies it.
@@ -83,3 +83,24 @@ The WPF application is Windows-targeted. EnableWindowsTargeting is set so SDK-ba
 - \`PetBehaviorPresentationResolver\` accepts the active \`AvatarProfile\`, selects bounded local templates using state/species/persona, and rotates templates per avatar/state. Speech style is independent from personality traits; common trait tags add variations, while nicknames/catchphrases are available across speech styles. It does not call an AI provider, interpret free-form user text or store conversation memory.
 - The older species-only resolver overload remains as a fallback for callers that do not have a full avatar profile.
 - Future AI integration should consume \`PersonaProfile\` as context, but must remain behind a separate provider adapter and user opt-in; persona persistence itself has no network dependency.
+
+
+## Companion identity and local interaction journal (M3-C)
+
+- \`AvatarProfile\` remains the current visual/avatar catalog record. \`CompanionIdentity\` is a separate persistent individual with its own stable ID.
+- \`CompanionIdentityStore\` uses SQLite at \`%LOCALAPPDATA%\\BichonDesktopPet\\companions.db\`; it does not rewrite \`settings.json\` or \`avatars/catalog.json\`.
+- On startup, existing avatars are synchronized to companion records. The identity ID and creation timestamp remain stable when display name or initial persona is refreshed.
+- The initial persona snapshot is stored separately from the evolving-personality placeholder. M3-C does not yet calculate personality growth.
+- The local interaction journal records only bounded event metadata for pet clicks, gift interactions and tray wake. It does not record free-form user text.
+- Deleting an avatar archives the linked companion record and retains its event history. Reattachment/archive management UI is a later increment.
+
+## AI provider foundation (M3-C)
+
+- \`IAiChatProvider\` is the provider-neutral text generation boundary.
+- \`QwenChatCompletionProvider\` calls the DashScope OpenAI-compatible Chat Completions endpoint using model \`qwen-plus\`.
+- \`QwenOptionsLoader\` reads the local settings file under LocalAppData and lets \`Qwen__ApiKey\`, \`Qwen__Endpoint\` and \`Qwen__Model\` environment variables override file values.
+- The application creates the provider at startup and exposes it as \`App.AiChatProvider\`. The provider is not called by the current UI; no network request occurs on startup.
+- Missing or invalid local configuration does not prevent the offline desktop pet from starting. API keys are not logged.
+- Version one supports only system/user/assistant messages, non-streaming responses and usage extraction. It does not implement tool calls, automatic retries, conversation history, memory retrieval or streaming.
+- Qwen is the default provider, but companion identity, local storage and behavior code depend on the provider-neutral contract.
+
