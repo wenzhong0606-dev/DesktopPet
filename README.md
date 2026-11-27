@@ -37,7 +37,7 @@ M3-C adds:
 
 - A persistent `CompanionIdentity` separate from the current avatar image/profile, with a stable ID and core/evolving personality data boundaries.
 - A local SQLite database at `%LOCALAPPDATA%\\BichonDesktopPet\\companions.db`.
-- A local interaction journal for pet clicks, gift interactions and tray wake events; it does not record free-form user text.
+- A local interaction journal for single/double clicks, gift opening, hide-to-tray, tray wake and explicit application exit; it does not record free-form user text.
 - Removed avatars are archived so their companion identity and interaction history are not automatically destroyed.
 - A replaceable `IAiChatProvider` contract and Qwen Chat Completions client using the exact model name `qwen-plus`.
 - Qwen configuration from local app settings or environment variables; the API key is not committed to Git.
