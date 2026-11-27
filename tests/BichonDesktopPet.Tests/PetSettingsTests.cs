@@ -16,6 +16,14 @@ public sealed class PetSettingsTests
     }
 
     [TestMethod]
+    public void NewSettings_SelectTheBuiltInBichonByDefault()
+    {
+        var settings = new PetSettings();
+
+        Assert.AreEqual("bichon", settings.ActiveAvatarId);
+    }
+
+    [TestMethod]
     public void Music_IsDisabledByDefault()
     {
         var settings = new PetSettings();
