@@ -105,7 +105,7 @@ public sealed class CompanionIdentityStoreTests
     {
         var companion = _store.EnsureCompanion(CreateAvatar("avatar-1", "豆包"));
 
-        Assert.ThrowsException<JsonException>(() =>
+        Assert.ThrowsException<JsonReaderException>(() =>
             _store.RecordInteraction(companion.Id, "pet_clicked", "{not-json"));
     }
 
