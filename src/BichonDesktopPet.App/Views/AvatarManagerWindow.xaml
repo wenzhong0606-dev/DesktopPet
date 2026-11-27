@@ -99,14 +99,20 @@
                    FontWeight="SemiBold"
                    Foreground="#FF604840"
                    Margin="0,0,0,8" />
+        <TextBlock Text="角色名称（可留空，默认使用图片文件名）"
+                   FontSize="11"
+                   Foreground="#FF8B7770"
+                   Margin="0,0,0,4" />
         <TextBox x:Name="AvatarNameTextBox"
                  Height="32"
                  Padding="8,5"
-                 FontSize="12"
-                 ToolTip="角色名称；留空时使用图片文件名" />
+                 FontSize="12" />
+        <TextBlock Text="角色类型"
+                   FontSize="11"
+                   Foreground="#FF8B7770"
+                   Margin="0,8,0,4" />
         <ComboBox x:Name="SpeciesComboBox"
                   Height="32"
-                  Margin="0,8,0,0"
                   SelectedIndex="5">
           <ComboBoxItem Content="狗狗" Tag="dog" />
           <ComboBoxItem Content="猫咪" Tag="cat" />
