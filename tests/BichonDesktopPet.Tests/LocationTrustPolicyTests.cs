@@ -29,7 +29,7 @@ public sealed class LocationTrustPolicyTests
     }
 
     [TestMethod]
-    public void IsTrusted_RejectsMissingAssessmentFields()
+    public void IsTrusted_RequiresCoreFieldsAndAllowsOmittedOptionalFlags()
     {
         Assert.IsFalse(LocationTrustPolicy.IsTrusted(null, "clean", false, false, false, false, false, false));
         Assert.IsFalse(LocationTrustPolicy.IsTrusted(0.05, null, false, false, false, false, false, false));
