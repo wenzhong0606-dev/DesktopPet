@@ -62,7 +62,7 @@
 - [x] 记录启动失败和比熊图片加载失败。
 - [x] 日志位于 `%LOCALAPPDATA%\BichonDesktopPet\logs\app.log`。
 - [x] 不记录对话或麦克风输入。
-- [ ] Windows 本机确认日志文件创建和内容可读。
+- [ ] Windows 本机确认：发生一条可控诊断事件后，日志文件在预期目录创建且内容可读。正常无异常运行时，日志文件可能尚不存在。
 
 ### M1-05：自动化测试与文档
 
@@ -108,7 +108,7 @@ dotnet run --project src/BichonDesktopPet.App/BichonDesktopPet.App.csproj
 - [ ] 没有音频文件时音乐控件禁用并显示说明。
 - [ ] 恢复默认位置后位置正确，重启后仍保持。
 - [ ] 设置窗口关闭后桌宠仍正常运行。
-- [ ] 日志文件在预期目录生成。
+- [ ] 发生诊断事件后，日志文件在预期目录生成；正常运行时日志文件可暂不存在。
 - [ ] 断网情况下基础桌宠正常运行。
 
 ## 7. 日志与设置路径
@@ -116,7 +116,7 @@ dotnet run --project src/BichonDesktopPet.App/BichonDesktopPet.App.csproj
 - 设置：`%LOCALAPPDATA%\BichonDesktopPet\settings.json`
 - 日志：`%LOCALAPPDATA%\BichonDesktopPet\logs\app.log`
 
-日志记录应用诊断和异常堆栈，不记录用户对话内容或麦克风输入。
+日志记录应用诊断和异常堆栈；首次出现诊断事件时才创建文件。正常无异常运行时，日志文件可能尚不存在。日志不记录用户对话内容或麦克风输入。
 
 ## 8. M1 退出条件
 
