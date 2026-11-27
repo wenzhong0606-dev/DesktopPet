@@ -161,7 +161,7 @@ MVP 阶段不实现完整角色包市场或复杂插件系统。先采用简单�
 
 ### M3 — 轻量行为与宠物人格系统
 
-**状态：M3-A 已通过 Windows Release CI（30/30 测试）；M3-B 已通过 Windows Release CI（47/47 测试，0 警告/错误），等待本机验收。** [M3-B run #179](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45950812579)
+**状态：M3 全部验收通过（用户确认，2026-11-27）。** [M3-B run #179](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45950812579)
 
 **目标**：让每个角色不仅能响应用户操作，而且拥有独立身份、性格和表达方式。
 
@@ -370,9 +370,9 @@ VRM、FBX、OBJ 等格式按需求逐步增加；必要时通过 Blender 转换�
 
 ## 10. 当前下一步
 
-M0、M1 和 M2 已由用户确认完成。M3-A/M3-B 已实现并通过 Windows CI；M3-C 已通过 Windows Release CI（61/61 测试，0 警告/错误），等待用户本机验收。M4-A 才会真正启用 AI 对话，M4-B 再实现自然记忆和成长。 [M3-C run #224](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45960178698)
+M0、M1 和 M2 已由用户确认完成。M3-A/M3-B 已实现并通过 Windows CI；M3-C 已通过 Windows Release CI（61/61 测试，0 警告/错误）及用户本机验收。M4-A 才会真正启用 AI 对话，M4-B 再实现自然记忆和成长。 [M3-C run #224](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45960178698)
 
-M3-C 已完成代码实现和 Windows CI 验证；当前等待用户本机验收。验收内容如下：
+M3-C 已完成代码实现、Windows CI 验证和用户本机验收；M3 正式关闭。验收内容如下：
 
 1. 建立与 AvatarProfile 分离的稳定 CompanionIdentity。
 2. 建立 SQLite 本地身份存储和最小互动事件日志。
@@ -393,3 +393,19 @@ M3-C 不发送 AI 请求、不提供聊天 UI、不提取长期记忆、不改�
 - 是否以及何时开放角色分享。
 
 这些决策在对应里程碑开始前确认，不阻塞当前 M1。
+
+
+## 12. M4-A 首个交付增量（2026-11-27）
+
+M3 已由用户正式确认验收通过。M4-A 开始交付显式文字对话能力。
+
+首个垂直切片包括：
+- 桌宠右键菜单和系统托盘均可打开独立聊天窗口。
+- 复用现有 Qwen `IAiChatProvider`，仅在用户主动发送消息时联网。
+- 上下文包含当前角色人格、伙伴显示身份和当前行为状态。
+- 仅保留当前窗口会话中的最近 12 条消息，每条最多 2,000 字符。
+- 对话不写入 SQLite；关闭窗口后丢弃本次会话，不实现长期记忆。
+- 未配置 API Key 时显示配置指引并禁用发送，桌宠其他能力保持离线可用。
+- 网络错误、Provider 错误、取消和超时有明确反馈。
+
+首个增量通过 Windows CI 后，还需用户在 Windows 本机验证聊天窗口、Qwen 实际请求、API Key 缺失时的离线行为和原有功能回归。通过后再继续 M4-A 的持久化策略决策（仍不等于 M4-B 长期记忆）。

@@ -40,7 +40,7 @@ The user explicitly confirmed M2 acceptance. Windows CI for the M2 baseline pass
 
 Only Bichon artwork is bundled. Other roles are added by local import.
 
-## M3-A — lightweight behavior system (local acceptance pending)
+## M3-A — lightweight behavior system (accepted)
 
 The first implementation is committed to \`main\`. Windows CI passed on commit `5db5f4dd135f9226665f4defc187c8fe5767ff1d`: Release build with 0 warnings and 0 errors, 30/30 tests passed ([run #124](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45946659068)).
 
@@ -59,7 +59,7 @@ The implementation includes:
 
 **Honest visual limitation:** current role assets are static images. M3 first increment transforms the whole image; it does not animate individual limbs, tail, eyes or mouth. Real frame-sequence or rigged animation is a later increment after suitable assets are supplied.
 
-### M3 first-increment acceptance still required
+### M3 first-increment acceptance (passed)
 
 - Windows Release build and all automated tests pass.
 - Startup shows a brief greeting, then idle breathing.
@@ -71,7 +71,7 @@ The implementation includes:
 - M1/M2 functions remain intact: drag, snow, lights, settings, tray, avatar import/switch/delete and persistence.
 - No sustained CPU usage or animation continues after application exit.
 
-## M3-B — per-avatar identity and persona system (Windows CI passed; local acceptance pending)
+## M3-B — per-avatar identity and persona system (accepted)
 
 The first vertical slice is committed to \`main\`:
 
@@ -88,7 +88,7 @@ The first vertical slice is committed to \`main\`:
 
 **Scope boundary:** this is deterministic local template selection, not AI conversation. It does not understand arbitrary user text, retain dialogue memory, or make network requests.
 
-### M3-B acceptance still required
+### M3-B acceptance (passed)
 
 - Windows Release build and all automated tests pass.
 - Existing v1 catalog migrates to v2 without losing avatar IDs, source images, image paths or selected-avatar settings.
@@ -99,11 +99,11 @@ The first vertical slice is committed to \`main\`:
 - M3-A behavior states/effects and M1/M2 desktop functions remain intact.
 - No AI, voice, 3D, network access or cloud storage is introduced.
 
-## M3-C — companion identity and Qwen provider foundation (Windows CI passed; local acceptance pending)
+## M3-C — companion identity and Qwen provider foundation (accepted)
 
 **Goal:** begin separating the persistent companion individual from the avatar currently used to display it, and prepare the first AI provider without making the desktop pet dependent on network access.
 
-Windows Release CI passed on commit `527edd58cec592d7c3a43775c587d151c26a1c44`: build with 0 warnings and 0 errors; 61/61 automated tests passed ([run #224](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45960178698)). Local Windows acceptance remains pending.
+Windows Release CI passed on commit `527edd58cec592d7c3a43775c587d151c26a1c44`: build with 0 warnings and 0 errors; 61/61 automated tests passed ([run #224](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45960178698)). The user confirmed M3 acceptance on 2026-11-27.
 
 Implementation:
 
@@ -114,11 +114,11 @@ Implementation:
 - Add the provider-neutral \`IAiChatProvider\` contract and a non-streaming Qwen Chat Completions implementation.
 - Default provider configuration is Qwen, model \`qwen-plus\`, endpoint \`https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions\`.
 - Read the API key from \`Qwen__ApiKey\` or the optional local file \`%LOCALAPPDATA%\\BichonDesktopPet\\appsettings.Local.json\`; environment variables override file values.
-- Keep the provider initialized but unused by the UI. No AI request is sent at startup; no API key is required for existing offline features.
+- M3-C initialized the provider without invoking it. M4-A now calls it only after the user explicitly sends a message; startup still sends no AI request, and no API key is required for existing offline features.
 
 **Important limitations:** this is not yet a chat experience. \`EvolvingPersonalityJson\` remains an empty placeholder; interaction events are not yet converted into memories; no semantic retrieval, automatic memory extraction or autonomous personality growth is implemented.
 
-### M3-C acceptance
+### M3-C acceptance (passed)
 
 - Windows Release build and all 61 automated tests pass with 0 warnings and 0 errors.
 - Existing settings, avatar catalog, avatar IDs and imported images remain untouched.
@@ -145,7 +145,7 @@ M4-A will add an explicit text conversation UI and a compact context builder. M4
 - M0: image-based desktop pet display — accepted.
 - M1: reliable daily-use image desktop pet — user acceptance passed.
 - M2: multiple image avatars and local avatar management — user acceptance passed.
-- M3: local behavior, per-avatar persona profiles, persistent companion identity, local interaction journal and Qwen provider foundation — M3-C Windows CI/local acceptance pending.
+- M3: local behavior, per-avatar persona profiles, persistent companion identity, local interaction journal and Qwen provider foundation — M3-C accepted by the user on 2026-11-27.
 - M4-A: explicit AI text interaction and compact context construction using Qwen `qwen-plus` by default.
 - M4-B: local memory formation/retrieval and gradual, evidence-based personality development.
 - M5: push-to-talk voice interaction and speech output.
@@ -155,3 +155,20 @@ M4-A will add an explicit text conversation UI and a compact context builder. M4
 - M9: optional character sharing/ecosystem, only after earlier stages are validated.
 
 See [PRODUCT_DEFINITION_AND_MVP_ROADMAP_V1.md](PRODUCT_DEFINITION_AND_MVP_ROADMAP_V1.md), [M2_AVATAR_MANAGEMENT.md](M2_AVATAR_MANAGEMENT.md), [M3_BEHAVIOR_SYSTEM.md](M3_BEHAVIOR_SYSTEM.md) and [M3B_PERSONA_SYSTEM.md](M3B_PERSONA_SYSTEM.md), [M3C_COMPANION_FOUNDATION.md](M3C_COMPANION_FOUNDATION.md) and [QWEN_CONFIGURATION.md](QWEN_CONFIGURATION.md).
+
+
+## 12. M4-A — AI 认知与文字交流（进行中）
+
+M3 已于 2026-11-27 经用户确认全部验收通过并正式关闭。当前研发阶段为 M4-A。
+
+M4-A 首个垂直切片（实现中）：
+- 从桌宠右键菜单和系统托盘菜单显式打开独立聊天窗口。
+- 复用现有 `IAiChatProvider` / Qwen `qwen-plus`，不在启动时发送请求。
+- 将当前角色 PersonaProfile、伙伴身份显示名和当前行为状态构建为 system context。
+- 每次请求仅附带当前聊天窗口内最近 12 条 user/assistant 消息；单条上下文消息限制为 2,000 字符。
+- 发送前明确提示：用户消息、角色人格设定、当前行为状态和最近对话会发送至 Qwen 云端处理；提醒用户不要输入敏感信息。
+- 对话仅保存在当前窗口内存中，关闭窗口即结束该会话；不写入 SQLite，不做长期记忆提取。
+- 未配置 API Key 时，聊天入口明确提示配置要求并禁用发送；所有原有离线桌宠功能继续可用。
+- 请求超时、取消、网络错误和 Provider 错误均提供用户可见反馈。
+
+此切片不包含流式输出、持久化聊天记录、记忆检索、自动记忆提取、人格成长、语音或 AI 工具调用。需经 Windows CI 与用户本机验收后，才可标记 M4-A1/A2 完成。

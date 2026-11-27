@@ -25,6 +25,7 @@
       <ContextMenu>
         <MenuItem Header="设置..." Click="Settings_Click" />
         <MenuItem Header="角色管理..." Click="Avatars_Click" />
+        <MenuItem Header="和伙伴聊天..." Click="Chat_Click" />
         <Separator />
         <MenuItem Header="显示 / 隐藏雪花" Click="ToggleSnow_Click" />
         <MenuItem Header="显示 / 隐藏装饰灯" Click="ToggleLights_Click" />
