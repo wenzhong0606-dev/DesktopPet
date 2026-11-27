@@ -263,7 +263,7 @@ public partial class MainWindow : Window
         settingsWindow.Activate();
     }
 
-    private PetSettings ApplySettings(PetSettings requested)
+    private (PetSettings Settings, bool Saved) ApplySettings(PetSettings requested)
     {
         var musicChanged = requested.MusicEnabled != _settings.MusicEnabled;
 
@@ -301,16 +301,16 @@ public partial class MainWindow : Window
             }
         }
 
-        SaveSettings();
-        return CopySettings(_settings);
+        var saved = SaveSettings();
+        return (CopySettings(_settings), saved);
     }
 
-    private void ResetWindowPosition()
+    private bool ResetWindowPosition()
     {
         var workArea = SystemParameters.WorkArea;
         Left = Clamp(workArea.Right - Width - 24, workArea.Left, workArea.Right - Width);
         Top = Clamp(workArea.Bottom - Height - 24, workArea.Top, workArea.Bottom - Height);
-        SaveSettings();
+        return SaveSettings();
     }
 
     private static PetSettings CopySettings(PetSettings source) => new()
@@ -345,13 +345,15 @@ public partial class MainWindow : Window
     {
         var proposed = CopySettings(_settings);
         proposed.MusicEnabled = !_settings.MusicEnabled;
-        var applied = ApplySettings(proposed);
+        var result = ApplySettings(proposed);
 
-        StatusText.Text = applied.MusicEnabled
-            ? "音乐播放中"
-            : proposed.MusicEnabled
-                ? "音乐素材不可用或启动失败"
-                : "音乐已关闭";
+        StatusText.Text = !result.Saved
+            ? "设置已应用，但保存失败，请检查本地日志"
+            : result.Settings.MusicEnabled
+                ? "音乐播放中"
+                : proposed.MusicEnabled
+                    ? "音乐素材不可用或启动失败"
+                    : "音乐已关闭";
     }
 
     private void SetLightsEnabled(bool enabled)
@@ -401,11 +403,11 @@ public partial class MainWindow : Window
         System.Windows.Application.Current.Shutdown();
     }
 
-    private void SaveSettings()
+    private bool SaveSettings()
     {
         _settings.WindowLeft = Left;
         _settings.WindowTop = Top;
         _settings.AlwaysOnTop = Topmost;
-        _settingsService.Save(_settings);
+        return _settingsService.Save(_settings);
     }
 }
