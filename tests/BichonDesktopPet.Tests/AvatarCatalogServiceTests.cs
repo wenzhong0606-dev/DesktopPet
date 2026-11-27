@@ -262,7 +262,7 @@ public sealed class AvatarCatalogServiceTests
         Assert.AreEqual("豆包", restored.Name);
         Assert.AreEqual("比熊", restored.Breed);
         Assert.AreEqual("dog", restored.Species);
-        Assert.AreEqual("比熊", restored.Persona.SelfReference);
+        Assert.AreEqual("豆包", restored.Persona.SelfReference);
         CollectionAssert.AreEqual(new[] { "小豆", "豆豆" }, restored.Persona.Nicknames);
         CollectionAssert.AreEqual(new[] { "活泼", "黏人", "好奇" }, restored.Persona.PersonalityTraits);
         Assert.AreEqual("playful", restored.Persona.SpeechStyle);
