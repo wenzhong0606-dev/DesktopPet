@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-11-27 — M3-C interaction lifecycle event coverage
+
+- Record double-click gestures separately as pet_double_clicked, while retaining gift_opened for the resulting gift action.
+- Distinguish gift opening from double-click and context-menu sources in the event payload.
+- Record hidden_to_tray for explicit hide actions and window-close gestures that are converted into tray hiding.
+- Record application_exited when the user explicitly exits through the application exit command.
+- Keep tray wake events and single-click events as separate timestamped rows.
+- Add persistence coverage for the complete interaction lifecycle event vocabulary.
+
 ## 2026-11-27 — M3-C companion identity and Qwen provider foundation
 
 - Separate persistent \`CompanionIdentity\` IDs from the avatar currently used to display each companion.
