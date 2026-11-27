@@ -153,6 +153,7 @@
 - Add Open-Meteo city geocoding/hourly forecast integration and conservative cold/rain/heat reminder rules with persisted per-type cooldown; cross-check IP-derived city time zone against Windows local time.
 - Keep automatic IP location and weather reminders disabled by default; document provider data handling, attribution and non-commercial API usage constraints.
 - Add unit coverage for local time intent, activity-session policy, weather thresholds and IP-location trust decisions.
+- Add fake-HTTP integration tests for IPLogs response parsing and Open-Meteo geocoding/forecast timestamps; cancel in-flight weather/location requests when the user disables care or changes the selected city.
 
 ## Unreleased
 
