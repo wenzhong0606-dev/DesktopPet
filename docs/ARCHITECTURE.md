@@ -101,7 +101,7 @@ The WPF application is Windows-targeted. EnableWindowsTargeting is set so SDK-ba
 - \`QwenOptionsLoader\` reads the local settings file under LocalAppData and lets \`Qwen__ApiKey\`, \`Qwen__Endpoint\` and \`Qwen__Model\` environment variables override file values.
 - The application creates the provider at startup and exposes it as \`App.AiChatProvider\`. M4-A's explicit chat window calls it only after a user sends a message; startup never sends a network request.
 - Missing or invalid local configuration does not prevent the offline desktop pet from starting. API keys are not logged.
-- Version one supports only system/user/assistant messages, non-streaming responses and usage extraction. It does not implement tool calls, automatic retries, conversation history, memory retrieval or streaming.
+- Version one supports only system/user/assistant messages, non-streaming responses and usage extraction. It does not implement tool calls, automatic retries, semantic memory retrieval or streaming.
 - Qwen is the default provider, but companion identity, local storage and behavior code depend on the provider-neutral contract.
 
 
@@ -111,7 +111,12 @@ The WPF application is Windows-targeted. EnableWindowsTargeting is set so SDK-ba
 - The explicit chat window is opened by the user from the pet context menu or tray menu. App startup never sends an AI request.
 - `ChatWindow` calls the existing provider-neutral `IAiChatProvider`; the first configured provider remains Qwen `qwen-plus`.
 - `ChatContextBuilder` builds a system message from the active avatar persona, display name and current behavior state. It appends only the latest 12 user/assistant messages and bounds each message to 2,000 characters.
-- Before sending, the UI discloses that user text, active persona settings, current behavior state and recent turns are sent to Qwen cloud for processing, and warns against entering sensitive information. Conversation messages live only in the open chat window's memory. Closing the window discards the session; M4-A does not write user text to the interaction journal or SQLite.
+- Before sending, the UI discloses that user text, active persona settings, current behavior state and recent turns are sent to Qwen cloud for processing, and warns against entering sensitive information.
+- `ChatHistoryStore` persists sessions and user/assistant messages locally in the existing `companions.db`, keyed by stable companion ID. It does not write message text to the interaction journal.
+- Message history uses keyset pagination by the indexed auto-increment message ID. The initial view loads the latest 30 messages; older pages are queried only when requested, with a maximum page size of 100.
+- The WPF message list uses a recycling `VirtualizingStackPanel`; only visible item containers are realized. The in-memory AI context remains bounded to the latest 12 messages and is independent of how many historical pages are viewed.
+- The chat UI restores the latest session for the active companion and supports session switching, deleting one session and clearing all sessions for that companion. Foreign-key cascade removes messages when a session is deleted.
+- User messages are committed locally before an outbound Qwen request; successful assistant responses are persisted after receipt. Closing/reopening the window does not remove saved history.
 - When Qwen is not configured, the chat UI explains the local configuration requirement and disables sending. Existing desktop-pet features remain offline and available.
 - Requests are asynchronous, single-flight and bounded by a 50-second cancellation timeout. The UI handles cancellation, provider failures and network failures without logging conversation content.
 - M4-A first slice does not implement streaming, durable chat history, retrieval, memory extraction, personality growth, voice, tool calls or arbitrary system actions.

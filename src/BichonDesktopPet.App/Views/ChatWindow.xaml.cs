@@ -1,53 +1,75 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using WpfKeyEventArgs = System.Windows.Input.KeyEventArgs;
 using System.Windows.Media;
-using WpfColor = System.Windows.Media.Color;
-using WpfHorizontalAlignment = System.Windows.HorizontalAlignment;
+using System.Windows.Threading;
 using BichonDesktopPet.Core.AI;
 using BichonDesktopPet.Core.Models;
+using BichonDesktopPet.Core.Services;
+using WpfKeyEventArgs = System.Windows.Input.KeyEventArgs;
 
 namespace BichonDesktopPet.App.Views;
 
 public partial class ChatWindow : Window
 {
+    private const int ContextHistoryLimit = 12;
+
     private readonly IAiChatProvider _provider;
     private readonly CompanionIdentity _companion;
     private readonly AvatarProfile _avatar;
     private readonly Func<PetBehaviorState> _getCurrentState;
+    private readonly ChatHistoryStore _historyStore;
+    private readonly ObservableCollection<ChatHistoryMessage> _messages = [];
     private readonly List<AiChatMessage> _conversation = [];
     private CancellationTokenSource? _requestCancellation;
+    private string? _activeSessionId;
+    private long? _olderMessageCursor;
+    private bool _hasOlderMessages;
+    private bool _isRefreshingSessions;
     private bool _isSending;
 
     public ChatWindow(
         IAiChatProvider provider,
         CompanionIdentity companion,
         AvatarProfile avatar,
-        Func<PetBehaviorState> getCurrentState)
+        Func<PetBehaviorState> getCurrentState,
+        ChatHistoryStore historyStore)
     {
         InitializeComponent();
         _provider = provider ?? throw new ArgumentNullException(nameof(provider));
         _companion = companion ?? throw new ArgumentNullException(nameof(companion));
         _avatar = avatar ?? throw new ArgumentNullException(nameof(avatar));
         _getCurrentState = getCurrentState ?? throw new ArgumentNullException(nameof(getCurrentState));
+        _historyStore = historyStore ?? throw new ArgumentNullException(nameof(historyStore));
 
+        MessageList.ItemsSource = _messages;
         CompanionNameText.Text = string.IsNullOrWhiteSpace(avatar.Name)
             ? companion.DisplayName
             : avatar.Name;
+
         ConnectionStatusText.Text = provider.IsConfigured
-            ? $"已连接 {provider.ProviderName} · {provider.Model}。发送时会将消息、角色人格设定、当前状态和最近对话发送至 Qwen 云端处理；请勿输入敏感信息。聊天记录仅保留在当前窗口内存中。"
-            : "尚未配置 Qwen API Key。请先按 docs/QWEN_CONFIGURATION.md 配置；桌宠其他功能仍可离线使用。";
+            ? "聊天记录保存在本机；发送消息时，消息、角色人格和近期上下文会发送至 Qwen 云端处理。请勿输入敏感信息。"
+            : "当前未配置 Qwen API Key。仍可查看和管理本地聊天记录；配置密钥后即可发送消息。";
+
         MessageInput.IsEnabled = provider.IsConfigured;
         SendButton.IsEnabled = provider.IsConfigured;
-        AddMessage("assistant", provider.IsConfigured
-            ? $"你好，我是{CompanionNameText.Text}。我们可以开始聊天啦。"
-            : "我现在还不能连接 AI 服务。配置本地 API Key 后，就可以开始聊天了。");
+
+        var sessions = RefreshSessionSelector(null, selectLatestWhenMissing: true);
+        if (sessions is not null)
+        {
+            LoadSession(sessions.Id);
+        }
+        else
+        {
+            StartNewConversation();
+        }
     }
 
     private async void SendButton_Click(object sender, RoutedEventArgs e) =>
@@ -59,6 +81,145 @@ public partial class ChatWindow : Window
         {
             e.Handled = true;
             await SendCurrentMessageAsync();
+        }
+    }
+
+    private void SessionSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_isRefreshingSessions || _isSending || SessionSelector.SelectedItem is not ChatSession session)
+        {
+            return;
+        }
+
+        if (!string.Equals(session.Id, _activeSessionId, StringComparison.Ordinal))
+        {
+            LoadSession(session.Id);
+        }
+    }
+
+    private void NewChatButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_isSending)
+        {
+            StartNewConversation();
+        }
+    }
+
+    private void DeleteSessionButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_isSending || string.IsNullOrWhiteSpace(_activeSessionId))
+        {
+            return;
+        }
+
+        var confirmation = System.Windows.MessageBox.Show(
+            this,
+            "确定删除当前会话及其中的全部消息吗？此操作不可撤销。",
+            "删除聊天会话",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+        if (confirmation != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        try
+        {
+            _historyStore.DeleteSession(_companion.Id, _activeSessionId);
+            var next = RefreshSessionSelector(null, selectLatestWhenMissing: true);
+            if (next is null)
+            {
+                StartNewConversation();
+            }
+            else
+            {
+                LoadSession(next.Id);
+            }
+        }
+        catch (Exception)
+        {
+            ConnectionStatusText.Text = "删除会话失败，请检查本地数据库状态后重试。";
+        }
+    }
+
+    private void ClearHistoryButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_isSending)
+        {
+            return;
+        }
+
+        var sessions = _historyStore.GetSessions(_companion.Id);
+        if (sessions.Count == 0)
+        {
+            return;
+        }
+
+        var confirmation = System.Windows.MessageBox.Show(
+            this,
+            "确定清空当前角色的全部聊天会话和消息吗？其他角色的聊天记录不会受到影响。此操作不可撤销。",
+            "清空聊天记录",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+        if (confirmation != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        try
+        {
+            _historyStore.DeleteAllSessions(_companion.Id);
+            RefreshSessionSelector(null, selectLatestWhenMissing: false);
+            StartNewConversation();
+        }
+        catch (Exception)
+        {
+            ConnectionStatusText.Text = "清空聊天记录失败，请检查本地数据库状态后重试。";
+        }
+    }
+
+    private void LoadOlderButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_isSending || !_hasOlderMessages || _olderMessageCursor is null || _activeSessionId is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var scrollViewer = FindVisualChild<ScrollViewer>(MessageList);
+            var previousOffset = scrollViewer?.VerticalOffset ?? 0;
+            var previousExtent = scrollViewer?.ExtentHeight ?? 0;
+            var page = _historyStore.GetMessagePage(
+                _companion.Id,
+                _activeSessionId,
+                ChatHistoryStore.DefaultPageSize,
+                _olderMessageCursor);
+
+            for (var index = 0; index < page.Messages.Count; index++)
+            {
+                _messages.Insert(index, page.Messages[index]);
+            }
+
+            _olderMessageCursor = page.NextBeforeMessageId;
+            _hasOlderMessages = page.HasMore;
+            UpdateHistoryButtons();
+
+            Dispatcher.BeginInvoke(
+                DispatcherPriority.Loaded,
+                new Action(() =>
+                {
+                    MessageList.UpdateLayout();
+                    if (scrollViewer is not null)
+                    {
+                        var addedHeight = Math.Max(0, scrollViewer.ExtentHeight - previousExtent);
+                        scrollViewer.ScrollToVerticalOffset(previousOffset + addedHeight);
+                    }
+                }));
+        }
+        catch (Exception)
+        {
+            ConnectionStatusText.Text = "加载更早消息失败，请稍后重试。";
         }
     }
 
@@ -81,9 +242,43 @@ public partial class ChatWindow : Window
             return;
         }
 
+        var createdSession = false;
+        string sessionId;
+        ChatHistoryMessage userMessage;
+        try
+        {
+            if (_activeSessionId is null)
+            {
+                var session = _historyStore.CreateSession(_companion.Id);
+                _activeSessionId = session.Id;
+                createdSession = true;
+            }
+
+            sessionId = _activeSessionId;
+            userMessage = _historyStore.SaveMessage(_companion.Id, sessionId, "user", content);
+        }
+        catch (Exception)
+        {
+            if (createdSession && _activeSessionId is not null)
+            {
+                _historyStore.DeleteSession(_companion.Id, _activeSessionId);
+                _activeSessionId = null;
+            }
+
+            ConnectionStatusText.Text = "本地聊天记录保存失败，消息尚未发送。请检查磁盘空间或数据库权限。";
+            return;
+        }
+
+        if (_messages.Count == 1 && _messages[0].Id == 0)
+        {
+            _messages.Clear();
+        }
+
         MessageInput.Clear();
-        _conversation.Add(new AiChatMessage("user", content));
-        AddMessage("user", content);
+        _messages.Add(userMessage);
+        AppendContextMessage(new AiChatMessage("user", content));
+        RefreshSessionSelector(_activeSessionId, selectLatestWhenMissing: false);
+        ScrollToLatest();
         SetSending(true);
 
         var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(50));
@@ -105,29 +300,53 @@ public partial class ChatWindow : Window
                 },
                 cancellation.Token);
 
-            _conversation.Add(new AiChatMessage("assistant", result.Content));
-            AddMessage("assistant", result.Content);
-            ConnectionStatusText.Text = $"{_provider.ProviderName} · {result.Model} · 本次消息已发送至云端；聊天记录仅保留在当前窗口内存中。";
+            try
+            {
+                var assistantMessage = _historyStore.SaveMessage(
+                    _companion.Id,
+                    sessionId,
+                    "assistant",
+                    result.Content);
+                _messages.Add(assistantMessage);
+                AppendContextMessage(new AiChatMessage("assistant", result.Content));
+                RefreshSessionSelector(sessionId, selectLatestWhenMissing: false);
+                ConnectionStatusText.Text = $"{_provider.ProviderName} · {result.Model} · 回复已保存到本机；请求内容由 Qwen 云端处理。";
+            }
+            catch (Exception)
+            {
+                _messages.Add(new ChatHistoryMessage
+                {
+                    Id = -1,
+                    SessionId = sessionId,
+                    Role = "assistant",
+                    Content = result.Content,
+                    CreatedAtUtc = DateTimeOffset.UtcNow
+                });
+                AppendContextMessage(new AiChatMessage("assistant", result.Content));
+                ConnectionStatusText.Text = "已收到 AI 回复，但保存到本机失败；请检查磁盘空间或数据库权限。";
+            }
+
+            ScrollToLatest();
         }
         catch (OperationCanceledException)
         {
-            ConnectionStatusText.Text = "请求已取消或超时，请检查网络后重试。";
+            ConnectionStatusText.Text = "请求已取消或超时；已发送的消息仍保存在本机。";
         }
         catch (AiProviderNotConfiguredException)
         {
-            ConnectionStatusText.Text = "尚未配置 Qwen API Key。请检查本地配置文件。";
+            ConnectionStatusText.Text = "尚未配置 Qwen API Key；已发送的消息仍保存在本机。";
         }
         catch (AiProviderException exception)
         {
-            ConnectionStatusText.Text = $"AI 服务暂时不可用：{exception.Message}";
+            ConnectionStatusText.Text = $"AI 服务暂时不可用：{exception.Message}；已发送的消息仍保存在本机。";
         }
         catch (HttpRequestException)
         {
-            ConnectionStatusText.Text = "网络连接失败，请检查网络后重试。";
+            ConnectionStatusText.Text = "网络连接失败；已发送的消息仍保存在本机，请检查网络后重试。";
         }
         catch (Exception)
         {
-            ConnectionStatusText.Text = "对话遇到意外错误。详细信息未记录用户消息，请稍后重试。";
+            ConnectionStatusText.Text = "对话遇到意外错误；已发送的消息仍保存在本机。";
         }
         finally
         {
@@ -136,11 +355,116 @@ public partial class ChatWindow : Window
             {
                 _requestCancellation = null;
             }
+
             if (IsLoaded)
             {
                 SetSending(false);
             }
         }
+    }
+
+    private ChatSession? RefreshSessionSelector(
+        string? preferredSessionId,
+        bool selectLatestWhenMissing = false)
+    {
+        var sessions = _historyStore.GetSessions(_companion.Id);
+        var selected = sessions.FirstOrDefault(session =>
+            string.Equals(session.Id, preferredSessionId, StringComparison.Ordinal));
+
+        if (selected is null && selectLatestWhenMissing)
+        {
+            selected = sessions.FirstOrDefault();
+        }
+
+        _isRefreshingSessions = true;
+        SessionSelector.ItemsSource = sessions;
+        SessionSelector.SelectedItem = selected;
+        _isRefreshingSessions = false;
+        UpdateHistoryButtons();
+        return selected;
+    }
+
+    private void LoadSession(string sessionId)
+    {
+        var page = _historyStore.GetMessagePage(
+            _companion.Id,
+            sessionId,
+            ChatHistoryStore.DefaultPageSize);
+
+        _activeSessionId = sessionId;
+        _messages.Clear();
+        _conversation.Clear();
+
+        foreach (var message in page.Messages)
+        {
+            _messages.Add(message);
+        }
+
+        foreach (var message in page.Messages.TakeLast(ContextHistoryLimit))
+        {
+            _conversation.Add(new AiChatMessage(message.Role, message.Content));
+        }
+
+        _olderMessageCursor = page.NextBeforeMessageId;
+        _hasOlderMessages = page.HasMore;
+
+        if (_messages.Count == 0)
+        {
+            ShowWelcomeMessage();
+        }
+        else
+        {
+            ScrollToLatest();
+        }
+
+        UpdateHistoryButtons();
+    }
+
+    private void StartNewConversation()
+    {
+        _activeSessionId = null;
+        _olderMessageCursor = null;
+        _hasOlderMessages = false;
+        _conversation.Clear();
+        _messages.Clear();
+
+        _isRefreshingSessions = true;
+        SessionSelector.SelectedItem = null;
+        _isRefreshingSessions = false;
+
+        ShowWelcomeMessage();
+        UpdateHistoryButtons();
+        MessageInput.Focus();
+    }
+
+    private void ShowWelcomeMessage()
+    {
+        _messages.Add(new ChatHistoryMessage
+        {
+            Id = 0,
+            Role = "assistant",
+            Content = $"你好，我是{CompanionNameText.Text}。新的聊天会话会自动保存在本机。",
+            CreatedAtUtc = DateTimeOffset.UtcNow
+        });
+    }
+
+    private void AppendContextMessage(AiChatMessage message)
+    {
+        _conversation.Add(message);
+        if (_conversation.Count > ContextHistoryLimit)
+        {
+            _conversation.RemoveRange(0, _conversation.Count - ContextHistoryLimit);
+        }
+    }
+
+    private void UpdateHistoryButtons()
+    {
+        NewChatButton.IsEnabled = !_isSending;
+        SessionSelector.IsEnabled = !_isSending && SessionSelector.Items.Count > 0;
+        DeleteSessionButton.IsEnabled = !_isSending && _activeSessionId is not null;
+        ClearHistoryButton.IsEnabled = !_isSending && SessionSelector.Items.Count > 0;
+        LoadOlderButton.IsEnabled = !_isSending && _hasOlderMessages;
+        LoadOlderButton.Visibility = _hasOlderMessages ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void SetSending(bool sending)
@@ -149,37 +473,44 @@ public partial class ChatWindow : Window
         SendButton.IsEnabled = !sending && _provider.IsConfigured;
         MessageInput.IsEnabled = !sending && _provider.IsConfigured;
         SendButton.Content = sending ? "发送中…" : "发送";
+        UpdateHistoryButtons();
+
         if (sending)
         {
-            ConnectionStatusText.Text = "正在联系 AI，请稍候…";
+            ConnectionStatusText.Text = "正在联系 Qwen；消息已先保存到本机。";
         }
-        if (!sending)
+        else
         {
             MessageInput.Focus();
         }
     }
 
-    private void AddMessage(string role, string content)
+    private void ScrollToLatest()
     {
-        var isUser = role == "user";
-        var bubble = new Border
+        if (_messages.Count > 0)
         {
-            MaxWidth = 350,
-            HorizontalAlignment = isUser ? WpfHorizontalAlignment.Right : WpfHorizontalAlignment.Left,
-            Background = isUser ? new SolidColorBrush(WpfColor.FromRgb(226, 239, 255)) : new SolidColorBrush(WpfColor.FromRgb(247, 242, 237)),
-            CornerRadius = new CornerRadius(12),
-            Padding = new Thickness(12, 9, 12, 9),
-            Margin = new Thickness(0, 0, 0, 10)
-        };
-        bubble.Child = new TextBlock
+            MessageList.ScrollIntoView(_messages[_messages.Count - 1]);
+        }
+    }
+
+    private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+    {
+        for (var index = 0; index < VisualTreeHelper.GetChildrenCount(parent); index++)
         {
-            Text = content,
-            TextWrapping = TextWrapping.Wrap,
-            Foreground = new SolidColorBrush(WpfColor.FromRgb(65, 54, 49)),
-            FontSize = 14
-        };
-        MessagePanel.Children.Add(bubble);
-        ConversationScroll.ScrollToEnd();
+            var child = VisualTreeHelper.GetChild(parent, index);
+            if (child is T match)
+            {
+                return match;
+            }
+
+            var nested = FindVisualChild<T>(child);
+            if (nested is not null)
+            {
+                return nested;
+            }
+        }
+
+        return null;
     }
 
     protected override void OnClosed(EventArgs e)

@@ -9,7 +9,8 @@ AI Desktop Companion is a Windows desktop companion platform developed in small,
 - **M0 — Image display:** complete.
 - **M1 — Daily-use desktop pet:** user acceptance passed.
 - **M2 — Multiple image avatars:** user acceptance passed.
-- **M3-C — Companion foundation:** Windows Release CI passed (61/61 tests, 0 warnings/errors); local Windows acceptance is pending. [M3-C CI run #224](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45960178698)
+- **M3 — Companion foundation:** user acceptance passed.
+- **M4-A — AI text conversation:** explicit Qwen chat window, local SQLite conversation history, session management and on-demand message pagination are implemented; Windows CI and local acceptance are tracked per increment.
 
 ## Technology
 
@@ -41,7 +42,12 @@ M3-C adds:
 - Removed avatars are archived so their companion identity and interaction history are not automatically destroyed.
 - A replaceable `IAiChatProvider` contract and Qwen Chat Completions client using the exact model name `qwen-plus`.
 - Qwen configuration from local app settings or environment variables; the API key is not committed to Git.
-- No AI request or chat UI is activated yet; the app remains fully usable without an API key.
+- An explicit WPF chat window, opened from the pet context menu or system tray; no AI request is sent at application startup.
+- Chat sessions and messages are stored locally in `companions.db`, isolated by companion identity. Reopening chat restores the latest session.
+- Message history loads 30 rows at a time with SQLite keyset pagination; older pages are loaded on demand and the WPF list virtualizes item containers.
+- Session switching, per-session deletion and clearing the current companion's history are supported.
+- Only the latest 12 messages are included in each AI context; viewing older pages does not enlarge the prompt.
+- Messages and selected persona/context are sent to Qwen only when the user sends a message; history storage itself is local.
 
 M3-B adds:
 

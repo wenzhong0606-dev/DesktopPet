@@ -20,6 +20,7 @@ public partial class MainWindow : Window
     private readonly SettingsService _settingsService;
     private readonly AvatarCatalogService _avatarCatalogService;
     private readonly CompanionIdentityStore _companionIdentityStore;
+    private readonly ChatHistoryStore _chatHistoryStore;
     private readonly SnowAnimationService _snowAnimation;
     private readonly AudioService _audioService = new();
     private readonly PetBehaviorEngine _behaviorEngine = new();
@@ -33,6 +34,7 @@ public partial class MainWindow : Window
     private ChatWindow? _chatWindow;
     private PetSettings _settings = new();
     private CompanionIdentity? _activeCompanion;
+    private bool _chatHistoryReady;
     private bool _allowExit;
     private bool _petImageLoaded;
     private bool _dragCandidate;
@@ -50,8 +52,9 @@ public partial class MainWindow : Window
             Path.Combine(AppContext.BaseDirectory, "Assets"),
             userDataDirectory,
             AppLogger.Log);
-        _companionIdentityStore = new CompanionIdentityStore(
-            Path.Combine(userDataDirectory, "companions.db"));
+        var companionDatabasePath = Path.Combine(userDataDirectory, "companions.db");
+        _companionIdentityStore = new CompanionIdentityStore(companionDatabasePath);
+        _chatHistoryStore = new ChatHistoryStore(companionDatabasePath);
         _snowAnimation = new SnowAnimationService(SnowCanvas);
         _behaviorAnimation = new PetBehaviorAnimationService(PetRotate, PetScale, PetTranslate);
         _behaviorTimer = new DispatcherTimer(DispatcherPriority.Background)
@@ -142,6 +145,18 @@ public partial class MainWindow : Window
         {
             _activeCompanion = null;
             AppLogger.Log("Unable to initialize the local companion identity store. The desktop pet will continue without its interaction journal.", exception);
+            return;
+        }
+
+        try
+        {
+            _chatHistoryStore.Initialize();
+            _chatHistoryReady = true;
+        }
+        catch (Exception exception)
+        {
+            _chatHistoryReady = false;
+            AppLogger.Log("Unable to initialize local chat history. Chat history features will remain unavailable.", exception);
         }
     }
 
@@ -522,6 +537,12 @@ public partial class MainWindow : Window
             return;
         }
 
+        if (!_chatHistoryReady)
+        {
+            System.Windows.MessageBox.Show("本地聊天记录数据库初始化失败，暂时无法打开聊天窗口。桌宠其他功能不受影响。", "桌面伙伴", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
         var companion = _activeCompanion;
         if (companion is null)
         {
@@ -529,7 +550,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        var chat = new ChatWindow(provider, companion, avatar, () => _behaviorEngine.CurrentState)
+        var chat = new ChatWindow(provider, companion, avatar, () => _behaviorEngine.CurrentState, _chatHistoryStore)
         {
             Owner = this
         };

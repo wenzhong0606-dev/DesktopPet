@@ -1,14 +1,24 @@
 # Changelog
 
+## 2026-11-27 — M4-A local chat history and pagination
+
+- Add `ChatHistoryStore` with additive SQLite `chat_sessions` and `chat_messages` tables in the existing companions database.
+- Persist user messages before sending and assistant replies after receipt; keep chat text out of the interaction journal.
+- Isolate sessions by stable companion ID and support latest-session restore, session switching, per-session deletion and per-companion history clearing.
+- Add indexed keyset pagination: load the latest 30 messages first, then query older pages on demand (maximum 100 per page).
+- Use a recycling WPF `VirtualizingStackPanel` so only visible message item containers are realized.
+- Keep the AI prompt context bounded to the latest 12 messages regardless of how much history the user browses.
+- Add SQLite tests for pagination order/bounds, session titles, persistence, companion isolation and cascade deletion.
+
 ## 2026-11-27 — M4-A first chat vertical slice
 
 - Add an explicit WPF chat window reachable from the desktop-pet context menu and system tray.
 - Reuse the provider-neutral Qwen `IAiChatProvider`; no request is sent at application startup.
 - Build bounded system context from the active avatar persona and current behavior state, plus up to 12 recent in-window user/assistant messages.
-- Keep conversation content in window memory only; do not persist chat text to the interaction journal or SQLite.
+- The first chat increment initially kept conversation content in window memory; the follow-up M4-A history increment now persists it in local SQLite without adding message text to the interaction journal.
 - Disable sending and show local setup guidance when the Qwen API key is not configured; offline pet functions remain available.
 - Handle asynchronous requests, cancellation/timeout and provider/network failures without logging conversation text.
-- Add unit tests for persona context, history filtering and message-size bounds. Windows CI and local UI acceptance are pending.
+- Add unit tests for persona context, history filtering and message-size bounds. Windows CI and local UI acceptance are tracked per increment.
 
 
 ## 2026-11-27 — Correct delayed single/double-click recognition
