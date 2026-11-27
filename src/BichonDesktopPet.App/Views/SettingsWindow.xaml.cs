@@ -95,6 +95,7 @@ public partial class SettingsWindow : Window
     {
         WindowLeft = source.WindowLeft,
         WindowTop = source.WindowTop,
+        ActiveAvatarId = source.ActiveAvatarId,
         AlwaysOnTop = source.AlwaysOnTop,
         SnowEnabled = source.SnowEnabled,
         DecorativeLightsEnabled = source.DecorativeLightsEnabled,
