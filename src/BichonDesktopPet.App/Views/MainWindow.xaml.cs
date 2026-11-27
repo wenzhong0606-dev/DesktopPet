@@ -18,6 +18,7 @@ public partial class MainWindow : Window
 {
     private readonly SettingsService _settingsService;
     private readonly AvatarCatalogService _avatarCatalogService;
+    private readonly CompanionIdentityStore _companionIdentityStore;
     private readonly SnowAnimationService _snowAnimation;
     private readonly AudioService _audioService = new();
     private readonly PetBehaviorEngine _behaviorEngine = new();
@@ -27,6 +28,7 @@ public partial class MainWindow : Window
     private SettingsWindow? _settingsWindow;
     private AvatarManagerWindow? _avatarManagerWindow;
     private PetSettings _settings = new();
+    private CompanionIdentity? _activeCompanion;
     private bool _allowExit;
     private bool _petImageLoaded;
     private bool _dragCandidate;
@@ -44,6 +46,8 @@ public partial class MainWindow : Window
             Path.Combine(AppContext.BaseDirectory, "Assets"),
             userDataDirectory,
             AppLogger.Log);
+        _companionIdentityStore = new CompanionIdentityStore(
+            Path.Combine(userDataDirectory, "companions.db"));
         _snowAnimation = new SnowAnimationService(SnowCanvas);
         _behaviorAnimation = new PetBehaviorAnimationService(PetRotate, PetScale, PetTranslate);
         _behaviorTimer = new DispatcherTimer(DispatcherPriority.Background)
@@ -67,6 +71,7 @@ public partial class MainWindow : Window
             _settings.ActiveAvatarId = AvatarCatalogService.DefaultAvatarId;
         }
 
+        InitializeCompanionIdentities();
         Topmost = _settings.AlwaysOnTop;
 
         var workArea = SystemParameters.WorkArea;
@@ -103,6 +108,58 @@ public partial class MainWindow : Window
 
         ApplyBehavior(_behaviorEngine.Start(DateTimeOffset.UtcNow));
         _behaviorTimer.Start();
+    }
+
+    private void InitializeCompanionIdentities()
+    {
+        try
+        {
+            _companionIdentityStore.Initialize();
+            foreach (var avatar in _avatarCatalogService.GetAvatars())
+            {
+                _companionIdentityStore.EnsureCompanion(avatar);
+            }
+
+            _activeCompanion = _companionIdentityStore.GetByAvatarId(_settings.ActiveAvatarId);
+        }
+        catch (Exception exception)
+        {
+            _activeCompanion = null;
+            AppLogger.Log("Unable to initialize the local companion identity store. The desktop pet will continue without its interaction journal.", exception);
+        }
+    }
+
+    private void SetActiveCompanion(AvatarProfile avatar)
+    {
+        try
+        {
+            _activeCompanion = _companionIdentityStore.EnsureCompanion(avatar);
+        }
+        catch (Exception exception)
+        {
+            _activeCompanion = null;
+            AppLogger.Log("Unable to resolve the active companion identity.", exception);
+        }
+    }
+
+    private void RecordInteraction(string eventType, string payloadJson = "{}")
+    {
+        if (_activeCompanion is null)
+        {
+            return;
+        }
+
+        try
+        {
+            _companionIdentityStore.RecordInteraction(
+                _activeCompanion.Id,
+                eventType,
+                payloadJson);
+        }
+        catch (Exception exception)
+        {
+            AppLogger.Log($"Unable to record companion interaction '{eventType}'.", exception);
+        }
     }
 
     private void LoadPetImage()
@@ -258,11 +315,13 @@ public partial class MainWindow : Window
         }
 
         ApplyBehavior(_behaviorEngine.OnPetClicked(DateTimeOffset.UtcNow));
+        RecordInteraction("pet_clicked", "{\"clickCount\":1}");
     }
 
     private void GiftButton_Click(object sender, RoutedEventArgs e)
     {
         ApplyBehavior(_behaviorEngine.OnGiftOpened(DateTimeOffset.UtcNow));
+        RecordInteraction("gift_opened");
     }
 
     public void ShowFromTray()
@@ -272,6 +331,7 @@ public partial class MainWindow : Window
         {
             Show();
             ApplyBehavior(_behaviorEngine.OnWake(DateTimeOffset.UtcNow));
+            RecordInteraction("woke_from_tray");
         }
 
         WindowState = WindowState.Normal;
@@ -366,6 +426,7 @@ public partial class MainWindow : Window
         }
 
         _settings.ActiveAvatarId = avatar.Id;
+        SetActiveCompanion(avatar);
         LoadPetImage();
         ApplyBehavior(_behaviorEngine.CurrentState);
         var saved = SaveSettings();
@@ -390,6 +451,12 @@ public partial class MainWindow : Window
         }
 
         _settings.ActiveAvatarId = AvatarCatalogService.DefaultAvatarId;
+        var defaultAvatar = _avatarCatalogService.GetAvatar(AvatarCatalogService.DefaultAvatarId);
+        if (defaultAvatar is not null)
+        {
+            SetActiveCompanion(defaultAvatar);
+        }
+
         LoadPetImage();
         ApplyBehavior(_behaviorEngine.CurrentState);
         return (true, SaveSettings());
