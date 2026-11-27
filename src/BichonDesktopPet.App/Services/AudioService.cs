@@ -21,6 +21,9 @@ public sealed class AudioService : IDisposable
         };
     }
 
+    public bool IsAvailable => File.Exists(
+        Path.Combine(AppContext.BaseDirectory, "Assets", "audio", "holiday-ambient.mp3"));
+
     public bool SetEnabled(bool enabled)
     {
         if (!enabled)
