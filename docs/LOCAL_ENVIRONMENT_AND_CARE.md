@@ -37,7 +37,7 @@
 - 本地检查是保守启发式，可能误判企业网络或特殊适配器。
 
 IPLogs 远端检查：
-- 仅在用户开启天气提醒且勾选自动 IP 城市定位后调用 \`GET https://iplogs.com/v1/check\`，检查当前请求来源出口；该接口无需在 URL 或请求体中传入 IP。
+- 仅在用户开启天气提醒且勾选自动 IP 城市定位后调用 \`POST https://iplogs.com/v1/check\`，发送空 JSON 对象并省略 \`ip\` 字段，以检查当前请求来源出口。
 - 仅当 verdict 为 \`clean\`、score 小于 0.30、\`is_vpn\` 明确为 false，且响应中任何 proxy/Tor/relay/hosting/satellite 标记均未为 true 时接受其城市/国家；随后由 Open-Meteo Geocoding 将该城市解析为天气坐标。IPLogs 不提供可依赖的城市经纬度字段。
 - 任何可疑、缺失或不完整结果均 fail closed：不采用出口位置。
 - 不尝试通过 VPN 隧道反查原始公网 IP。无法可靠地从 VPN 出口推断真实位置。

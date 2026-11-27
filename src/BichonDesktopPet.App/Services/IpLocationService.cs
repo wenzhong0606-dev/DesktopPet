@@ -1,5 +1,6 @@
 using System;
 using System.Net.Http;
+using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -29,7 +30,11 @@ public sealed class IpLocationService
 
     public async Task<IpLocationResult> ResolveCurrentAsync(CancellationToken cancellationToken = default)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Get, Endpoint);
+        using var request = new HttpRequestMessage(HttpMethod.Post, Endpoint)
+        {
+            // Omitting "ip" makes IPLogs assess the public IP of this request.
+            Content = new StringContent("{}", Encoding.UTF8, "application/json")
+        };
         using var response = await _httpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
 
