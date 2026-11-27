@@ -16,9 +16,9 @@ AI Desktop Companion is a Windows desktop companion platform in gradual developm
 
 ## Current implementation
 
-The current WPF app includes a transparent 280 × 360 DIP window, PNG loading with a vector fallback, dragging, position persistence, click and gift reactions, snow, decorative lights, system tray controls, local settings persistence, and an optional audio integration point.
+The current WPF app includes a transparent 280 × 360 DIP window, PNG loading with a vector fallback, dragging, position persistence, click and gift reactions, snow, decorative lights, system tray controls, local settings persistence, and an optional audio integration point. An explicit hide-to-tray action has now been added to both the pet context menu and the system tray menu; it still needs a Windows build and runtime check.
 
-Some daily-use details remain to be completed in M1, including a dedicated settings window, an explicit tray hide action, and diagnosable error logging. See the verified inventory and acceptance checklist.
+Remaining M1 work includes a dedicated settings window, diagnosable error logging, and local build/runtime acceptance. See the M1 baseline and acceptance checklist.
 
 ## Build (Windows)
 
