@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-11-27 — M1 settings and diagnostics
+
+- Add a dedicated settings window, accessible from the pet context menu and system tray.
+- Add live controls for always-on-top, snow, decorative lights and optional background music.
+- Disable the music control and explain the missing asset when the optional audio file is unavailable.
+- Add a reset-to-default-position action.
+- Move settings persistence into a Core service with injectable path and diagnostic callback.
+- Save settings through a temporary file and replace the previous JSON file after serialization.
+- Add local application logging for settings failures, startup failures, image-load failures, and unhandled UI/application/task exceptions.
+- Add tests for settings round-trip, missing-file defaults, corrupt JSON fallback and save-failure logging.
+- Record that the user confirmed the previous M1 desktop-pet and tray baseline works locally; the new settings window and diagnostics still require Windows verification.
+
 ## 2026-11-27 — M1 implementation progress
 
 - Add an explicit “hide Bichon” action to the pet context menu and system tray menu; hiding keeps the application running and the tray can restore it.
@@ -13,7 +25,6 @@
 - Confirm from the current main branch that PNG loading, dragging, click/gift reactions, snow, lights, tray integration, and local JSON settings already exist.
 - Verify the committed runtime PNG as 420 × 540 RGBA, 132,158 bytes, SHA-256 `326d10ace28d53e8a4289b9f103c648ecb79d6b1b32e4a8f76d715793b97d210`.
 - Keep M1 limited to daily-use image desktop pet improvements. AI, voice, 3D, and user model import remain future milestones.
-- Record that Windows runtime visual validation and local Release build/test are still pending.
 
 ## Unreleased
 
