@@ -1,34 +1,51 @@
 # Project Baseline
 
-## Product
+## Product direction
 
-BichonDesktopPet is a Windows-only desktop companion. Its mascot is a fluffy white Bichon Frise based on the user's uploaded visual reference: oversized dark eyes, a small dark nose, blush cheeks, a pink gingham strawberry outfit, and a red festive bow with a gold bell.
+The product is **AI Desktop Companion**, a Windows desktop companion platform. The repository and executable retain the engineering name `BichonDesktopPet` for now; no rename is needed during the MVP phase.
 
-## Product decisions
+The Bichon Frise is the first sample avatar. The long-term platform may support different animals, stylized human characters, and user-imported legal assets. Different character types will have different rigs, action capabilities, and behavior profiles. This direction does not expand the current milestone scope.
 
-- Target OS: Windows 10 and Windows 11 (x64).
-- Runtime: .NET 10.
-- UI: WPF.
+## Current product baseline (M0)
+
+The user has confirmed that image-based desktop pet display is complete. The current implementation uses .NET 10 and WPF.
+
+- Target OS: Windows 10/11 x64.
 - Initial window: 280 × 360 device-independent pixels (DIP).
 - Window: transparent, borderless, non-resizable, topmost by default, hidden from the taskbar.
-- Music: optional and disabled by default.
+- Character display: load `Assets/characters/bichon/base/bichon-idle.png` from the application output directory.
+- Fallback: retain the temporary vector character if the PNG is absent or cannot be decoded.
 - Settings: local JSON under the LocalAppData BichonDesktopPet settings folder.
-- Character display: load Assets/characters/bichon/base/bichon-idle.png from the application output directory.
-- Fallback: retain the temporary vector character if the optimized PNG is absent or cannot be decoded.
+- Music: optional and disabled by default.
 
-## Initial interaction scope
+## Existing interactions confirmed in main
 
 - Drag the pet window with the left mouse button.
 - Click the character to trigger a small reaction.
 - Double-click the character or choose “拆开礼物” from the context menu for the gift reaction.
 - Toggle snow and decorative lights from the context menu or system tray.
-- Hide the window without terminating the process; restore it from the tray.
-- Exit from the tray menu.
+- Restore the pet from the system tray.
+- Closing the window hides it without terminating the process; exit is available from the tray menu.
+
+## Current M1 gaps
+
+- Add an explicit hide action to the tray menu.
+- Add a lightweight settings window for existing settings (topmost, snow, decorative lights, music) and reset position.
+- Improve settings persistence diagnostics and application exception logging.
+- Recheck the committed PNG's dimensions and SHA-256; current Git tree size is 132,158 bytes, while the older manifest expected 45,559 bytes.
+- Run Release build, tests, and Windows visual/interaction smoke tests on the user's machine.
 
 ## Milestones
 
-- M0: repository and WPF skeleton — complete.
-- M1: integrate the user's 3D Bichon artwork — image-loading code committed; runtime PNG upload and Windows visual verification remain.
-- M2: polished idle, blink, and reaction animations.
-- M3: gift interactions, optional audio, and settings UX.
-- M4: performance, DPI, multi-monitor, packaging, and release validation.
+- M0: image-based desktop pet display — user-confirmed baseline.
+- M1: reliable daily-use image desktop pet — in progress.
+- M2: multiple image avatars and local avatar management.
+- M3: lightweight rule-based behavior system.
+- M4: AI text interaction and constrained action mapping.
+- M5: push-to-talk voice interaction and speech output.
+- M6: single-character real-time 3D technical validation.
+- M7: user-imported GLB/glTF static avatar support.
+- M8: rig profiles and character-specific animation expansion.
+- M9: optional character sharing/ecosystem, only after earlier stages are validated.
+
+See [PRODUCT_DEFINITION_AND_MVP_ROADMAP_V1.md](PRODUCT_DEFINITION_AND_MVP_ROADMAP_V1.md) for the full product definition and release gates.
