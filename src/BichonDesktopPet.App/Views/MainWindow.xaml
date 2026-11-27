@@ -55,7 +55,11 @@
             MouseLeftButtonUp="PetCanvas_MouseLeftButtonUp"
             RenderTransformOrigin="0.5,0.5">
       <Canvas.RenderTransform>
-        <RotateTransform x:Name="PetRotate" Angle="0" />
+        <TransformGroup>
+          <ScaleTransform x:Name="PetScale" ScaleX="1" ScaleY="1" />
+          <RotateTransform x:Name="PetRotate" Angle="0" />
+          <TranslateTransform x:Name="PetTranslate" X="0" Y="0" />
+        </TransformGroup>
       </Canvas.RenderTransform>
 
       <!-- Keep the lightweight vector fallback only for missing or invalid runtime PNG assets. -->
