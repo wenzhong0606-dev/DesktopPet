@@ -33,9 +33,8 @@ public sealed class PetBehaviorPresentationResolver
     /// </summary>
     public PetBehaviorPresentation Resolve(PetBehaviorState state, AvatarProfile? avatar)
     {
-        var species = string.IsNullOrWhiteSpace(avatar?.Species)
-            ? "custom"
-            : avatar.Species.Trim().ToLowerInvariant();
+        var species = avatar?.Species?.Trim();
+        species = string.IsNullOrWhiteSpace(species) ? "custom" : species.ToLowerInvariant();
         var persona = PersonaProfileValidator.NormalizeOrDefault(avatar?.Persona);
         var templates = BuildTemplates(state, species, persona);
         var key = $"{avatar?.Id ?? "unknown"}:{state}";
@@ -270,7 +269,7 @@ public sealed class PetBehaviorPresentationResolver
 
         if (persona.Nicknames.Count > 0 && state == PetBehaviorState.Greeting)
         {
-            templates.Add($"你也可以叫{self}{persona.Nicknames[0]}，{address}！");
+            templates.Add($"你也可以叫我{persona.Nicknames[0]}，{address}！");
         }
 
         if (persona.Catchphrases.Count > 0 && state is PetBehaviorState.Happy or PetBehaviorState.Excited)
