@@ -59,11 +59,11 @@ public partial class MainWindow : Window
         _behaviorTimer.Tick += BehaviorTimer_Tick;
 
         var doubleClickInterval = TimeSpan.FromMilliseconds(
-            Math.Max(1, SystemParameters.DoubleClickTime));
+            Math.Max(1, System.Windows.Forms.SystemInformation.DoubleClickTime));
         _clickGestureRecognizer = new PetClickGestureRecognizer(
             doubleClickInterval,
-            Math.Max(1, SystemParameters.DoubleClickWidth),
-            Math.Max(1, SystemParameters.DoubleClickHeight));
+            Math.Max(1, System.Windows.Forms.SystemInformation.DoubleClickSize.Width),
+            Math.Max(1, System.Windows.Forms.SystemInformation.DoubleClickSize.Height));
         _clickGestureTimer = new DispatcherTimer(DispatcherPriority.Input)
         {
             Interval = doubleClickInterval
