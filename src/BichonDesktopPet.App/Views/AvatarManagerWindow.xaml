@@ -107,7 +107,7 @@
         <ComboBox x:Name="SpeciesComboBox"
                   Height="32"
                   Margin="0,8,0,0"
-                  SelectedIndex="4">
+                  SelectedIndex="5">
           <ComboBoxItem Content="狗狗" Tag="dog" />
           <ComboBoxItem Content="猫咪" Tag="cat" />
           <ComboBoxItem Content="兔子" Tag="rabbit" />
