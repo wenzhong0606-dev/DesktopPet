@@ -258,7 +258,7 @@ public sealed class AvatarCatalogService
         return true;
     }
 
-    private List<AvatarProfile> Normalize(List<AvatarProfile?> sourceProfiles)
+    private List<AvatarProfile> Normalize(List<AvatarProfile> sourceProfiles)
     {
         var normalized = new List<AvatarProfile> { CreateDefaultBichon() };
 
@@ -441,6 +441,6 @@ public sealed class AvatarCatalogService
     {
         public int SchemaVersion { get; set; } = 1;
 
-        public List<AvatarProfile?> Avatars { get; set; } = [];
+        public List<AvatarProfile> Avatars { get; set; } = [];
     }
 }
