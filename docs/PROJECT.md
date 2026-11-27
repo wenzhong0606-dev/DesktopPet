@@ -128,7 +128,7 @@ Implementation:
 - The app starts and all offline features work when no Qwen API key is configured.
 - The exact Qwen defaults are \`qwen-plus\` and the configured DashScope compatible endpoint.
 - The API key is loaded locally and never committed or written to logs.
-- No network request is sent during startup.
+- No Qwen request is sent during startup. Optional location/weather requests occur only after the user explicitly enables weather reminders.
 
 ### Next increment
 
@@ -172,7 +172,7 @@ M4-A 首个垂直切片（已实现；Windows CI 通过，待用户本机验收�
 - 每个伙伴身份独立保存会话；再次打开聊天窗口会恢复该角色最近一次会话，并支持切换、删除会话和清空当前角色全部聊天记录。
 - 历史消息采用 SQLite keyset pagination：首次只加载最近 30 条，点击“加载更早消息”时再查询上一页；单页上限 100 条，消息列表启用 WPF 虚拟化。
 - 用户消息先写入本地数据库再发送给 Qwen；AI 回复收到后写入本地数据库。关闭窗口或重启应用不会删除已保存记录。
-- 未配置 API Key 时，聊天入口明确提示配置要求并禁用发送；所有原有离线桌宠功能继续可用。
+- 未配置 API Key 时，当前日期/时间/星期问题仍可由本机时钟离线回答；其他 AI 对话明确提示需要配置密钥。
 - 请求超时、取消、网络错误和 Provider 错误均提供用户可见反馈。
 - 聊天窗口采用克制的桌面对话工作区视觉：中性色背景、细分隔线、充足留白和轻量消息底色；保留键盘发送与历史分页虚拟化。
 - `AvatarProfile.Name` 仅为角色管理标签；`PersonaProfile.Nicknames` 第一项是宠物常用名字，后续项是别名。聊天标题、欢迎语和 AI 身份上下文均使用首个昵称，不读取管理标签作为宠物名字。
@@ -187,3 +187,19 @@ M4-A 首个垂直切片（已实现；Windows CI 通过，待用户本机验收�
 - 聊天窗口采用克制的桌面对话工作区视觉：中性色背景、细分隔线、充足留白和轻量消息底色，不使用传统大圆角气泡或嵌套卡片；保留键盘发送与历史分页虚拟化。
 - 角色管理和个性编辑窗口使用同一低装饰度视觉规范，并明确区分管理名称与宠物昵称。
 - AI system prompt 将事实准确和直接回答置于角色表达之前，排除内部动画状态与口头禅，并明确禁止动作、神态和表情旁白；回复入库前由 `ChatReplySanitizer` 清理常见括号/星号动作旁白，保留正常解释性括号。
+
+
+## 13. 本机环境感知与主动关怀（M4-A 增量，已实现待本机验收）
+
+- `SystemClockService` 读取 Windows 本机日期、时间和时区；`LocalTimeQueryHandler` 对明确的当前时间、日期和星期问题直接本地回答，不调用 Qwen、不消耗 Token。普通 AI 对话的上下文也包含本机时间和时区。
+- `WindowsActivityMonitor` 只读取 Windows `GetLastInputInfo` 的最近输入空闲时长；不采集按键内容、鼠标坐标、应用名称、窗口标题、网页或文件。该能力默认开启，可在设置中关闭。
+- `ActivityRhythmEngine` 不要求填写固定作息：空闲达到 5 分钟即结束连续活跃段；连续活跃约 60 分钟提醒休息，之后至少间隔 90 分钟才可能再次提醒。当前版本是本地会话级规则，不推断睡眠时间，也不建立跨日行为画像。
+- IP 自动城市定位和天气提醒默认关闭。天气提醒启用后，用户可手动设置城市（优先级最高），或单独授权 IP 自动定位。
+- `NetworkPrivacyInspector` 在本地检查系统代理和已启用的隧道/VPN 网络接口；存在疑似代理/VPN 时不发起 IP 定位。否则调用 IPLogs 的当前出口检测，只有 clean 且分数低于 0.30、未命中 VPN/代理/Tor/Relay/Hosting/Satellite 标记时才采用城市坐标。
+- 被识别为匿名网络或可信度不足时，不使用 VPN/代理出口城市；保留上次可信城市（若有），否则要求用户手动指定城市。不会尝试反查 VPN 隧道内的原始公网 IP。
+- 仅缓存城市、国家、城市级经纬度、来源和更新时间；不保存原始公网 IP。手动城市覆盖自动 IP 城市。IPLogs 声明其访问日志保留 30 天；启用前在设置中明确告知用户。
+- `OpenMeteoWeatherService` 使用 Open-Meteo 地理编码和逐小时预报；`WeatherReminderPolicy` 仅根据真实预报触发降温/添衣、降雨/带伞和高温/补水提示。按类型持久化 6 小时冷却，天气刷新周期为 1 小时；服务失败或数据过期时不生成天气提醒。
+- 天气服务只在用户启用天气提醒后请求；城市级手动位置和 IP 位置都不会发送给 Qwen。Open-Meteo 免费 API 的使用需遵守其非商业许可和署名要求；商业发行前必须重新核实授权。
+- 当前版本未接入 Windows 精确地理位置 API；IP 城市是近似值，VPN/代理检测也不能保证识别所有住宅代理。用户始终可以手动指定城市。
+
+验收重点：本机时间离线回答；持续活跃/空闲状态重置与提醒冷却；IPLogs clean/VPN/proxy/relay 等结果的 fail-closed 处理；VPN 环境不采纳出口城市；手动城市覆盖；天气 API 不可用或数据过期时不误提醒；天气提醒重启后仍遵守冷却。

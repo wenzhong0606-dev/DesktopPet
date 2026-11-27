@@ -145,6 +145,15 @@
 - Verify the committed runtime PNG as 420 × 540 RGBA, 132,158 bytes, SHA-256 `326d10ace28d53e8a4289b9f103c648ecb79d6b1b32e4a8f76d715793b97d210`.
 - Keep M1 limited to daily-use image desktop pet improvements. AI, voice, 3D, and user model import remain future milestones.
 
+## 2026-11-27 — Local time, activity rhythm, VPN-aware location and weather care
+
+- Add local system clock context to Qwen prompts and handle clear current-time/date/weekday questions entirely offline.
+- Add Windows last-input idle monitoring without keyboard/mouse content collection; implement session-based break reminders with idle reset and cooldown.
+- Add opt-in city-level IP location using IPLogs, local system proxy/VPN adapter checks, fail-closed VPN/proxy/relay/hosting assessment, and manual city override.
+- Add Open-Meteo city geocoding/hourly forecast integration and conservative cold/rain/heat reminder rules with persisted per-type cooldown.
+- Keep automatic IP location and weather reminders disabled by default; document provider data handling, attribution and non-commercial API usage constraints.
+- Add unit coverage for local time intent, activity-session policy, weather thresholds and IP-location trust decisions.
+
 ## Unreleased
 
 - Add image-based Bichon character loading with a transparent PNG runtime asset path.

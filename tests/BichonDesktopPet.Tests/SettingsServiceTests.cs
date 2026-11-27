@@ -43,6 +43,21 @@ public sealed class SettingsServiceTests
             DecorativeLightsEnabled = true,
             MusicEnabled = false,
             ActivityAwarenessEnabled = false,
+            AutomaticIpLocationEnabled = true,
+            WeatherRemindersEnabled = true,
+            PreferredLocation = "上海",
+            CachedLocationName = "上海, 中国",
+            CachedLocationCity = "上海",
+            CachedLocationCountry = "中国",
+            CachedLocationLatitude = 31.2304,
+            CachedLocationLongitude = 121.4737,
+            CachedLocationTimeZoneId = "Asia/Shanghai",
+            CachedLocationSource = "manual",
+            CachedLocationQuery = "上海",
+            CachedLocationUpdatedAtUtc = new DateTimeOffset(2026, 11, 27, 8, 0, 0, TimeSpan.Zero),
+            LastColdWeatherReminderAtUtc = new DateTimeOffset(2026, 11, 27, 9, 0, 0, TimeSpan.Zero),
+            LastRainReminderAtUtc = new DateTimeOffset(2026, 11, 27, 10, 0, 0, TimeSpan.Zero),
+            LastHeatReminderAtUtc = new DateTimeOffset(2026, 11, 27, 11, 0, 0, TimeSpan.Zero),
             WindowWidth = 280,
             WindowHeight = 360
         };
@@ -59,6 +74,17 @@ public sealed class SettingsServiceTests
         Assert.AreEqual(expected.DecorativeLightsEnabled, actual.DecorativeLightsEnabled);
         Assert.AreEqual(expected.MusicEnabled, actual.MusicEnabled);
         Assert.AreEqual(expected.ActivityAwarenessEnabled, actual.ActivityAwarenessEnabled);
+        Assert.AreEqual(expected.AutomaticIpLocationEnabled, actual.AutomaticIpLocationEnabled);
+        Assert.AreEqual(expected.WeatherRemindersEnabled, actual.WeatherRemindersEnabled);
+        Assert.AreEqual(expected.PreferredLocation, actual.PreferredLocation);
+        Assert.AreEqual(expected.CachedLocationName, actual.CachedLocationName);
+        Assert.AreEqual(expected.CachedLocationLatitude, actual.CachedLocationLatitude);
+        Assert.AreEqual(expected.CachedLocationLongitude, actual.CachedLocationLongitude);
+        Assert.AreEqual(expected.CachedLocationSource, actual.CachedLocationSource);
+        Assert.AreEqual(expected.CachedLocationUpdatedAtUtc, actual.CachedLocationUpdatedAtUtc);
+        Assert.AreEqual(expected.LastColdWeatherReminderAtUtc, actual.LastColdWeatherReminderAtUtc);
+        Assert.AreEqual(expected.LastRainReminderAtUtc, actual.LastRainReminderAtUtc);
+        Assert.AreEqual(expected.LastHeatReminderAtUtc, actual.LastHeatReminderAtUtc);
     }
 
     [TestMethod]

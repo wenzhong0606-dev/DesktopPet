@@ -1,5 +1,7 @@
 using System;
 using System.ComponentModel;
+using System.Net.Http;
+using System.Threading.Tasks;
 using System.IO;
 using System.Windows;
 using System.Windows.Input;
@@ -27,6 +29,13 @@ public partial class MainWindow : Window
     private readonly ActivityRhythmEngine _activityRhythmEngine = new();
     private readonly WindowsActivityMonitor _activityMonitor = new();
     private DateTimeOffset _lastActivitySampleAt = DateTimeOffset.MinValue;
+    private readonly HttpClient _careHttpClient;
+    private readonly IpLocationService _ipLocationService;
+    private readonly OpenMeteoWeatherService _weatherService;
+    private readonly NetworkPrivacyInspector _networkPrivacyInspector = new();
+    private readonly WeatherReminderPolicy _weatherReminderPolicy = new();
+    private DateTimeOffset _lastWeatherRefreshAt = DateTimeOffset.MinValue;
+    private bool _weatherRefreshInProgress;
     private readonly PetBehaviorPresentationResolver _behaviorPresentationResolver = new();
     private readonly PetBehaviorAnimationService _behaviorAnimation;
     private readonly DispatcherTimer _behaviorTimer;
@@ -58,6 +67,9 @@ public partial class MainWindow : Window
         var companionDatabasePath = Path.Combine(userDataDirectory, "companions.db");
         _companionIdentityStore = new CompanionIdentityStore(companionDatabasePath);
         _chatHistoryStore = new ChatHistoryStore(companionDatabasePath);
+        _careHttpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
+        _ipLocationService = new IpLocationService(_careHttpClient);
+        _weatherService = new OpenMeteoWeatherService(_careHttpClient);
         _snowAnimation = new SnowAnimationService(SnowCanvas);
         _behaviorAnimation = new PetBehaviorAnimationService(PetRotate, PetScale, PetTranslate);
         _behaviorTimer = new DispatcherTimer(DispatcherPriority.Background)
@@ -130,6 +142,10 @@ public partial class MainWindow : Window
 
         ApplyBehavior(_behaviorEngine.Start(DateTimeOffset.UtcNow));
         _behaviorTimer.Start();
+        if (_settings.WeatherRemindersEnabled)
+        {
+            _ = RefreshWeatherAsync(forceLocationRefresh: false);
+        }
     }
 
     private void InitializeCompanionIdentities()
@@ -291,37 +307,234 @@ public partial class MainWindow : Window
         if (!_settings.ActivityAwarenessEnabled)
         {
             _activityRhythmEngine.Reset();
-            return;
+        }
+        else
+        {
+            var localNow = DateTimeOffset.Now;
+            if (localNow - _lastActivitySampleAt >= TimeSpan.FromSeconds(30))
+            {
+                _lastActivitySampleAt = localNow;
+                var idleDuration = _activityMonitor.GetIdleDuration();
+                if (idleDuration is { } idle)
+                {
+                    var reminder = _activityRhythmEngine.Observe(localNow, idle);
+                    if (reminder?.Type == CareReminderType.TakeBreak)
+                    {
+                        var avatar = _avatarCatalogService.GetAvatar(_settings.ActiveAvatarId);
+                        ShowCareReminder(CareReminderMessageBuilder.BuildBreakReminder(avatar), "桌面伙伴 · 休息提醒");
+                    }
+                }
+            }
         }
 
-        var localNow = DateTimeOffset.Now;
-        if (localNow - _lastActivitySampleAt < TimeSpan.FromSeconds(30))
+        var utcNow = DateTimeOffset.UtcNow;
+        if (_settings.WeatherRemindersEnabled &&
+            !_weatherRefreshInProgress &&
+            utcNow - _lastWeatherRefreshAt >= TimeSpan.FromHours(1))
         {
-            return;
-        }
-
-        _lastActivitySampleAt = localNow;
-        var idleDuration = _activityMonitor.GetIdleDuration();
-        if (idleDuration is not { } idle)
-        {
-            return;
-        }
-
-        var reminder = _activityRhythmEngine.Observe(localNow, idle);
-        if (reminder?.Type == CareReminderType.TakeBreak)
-        {
-            var avatar = _avatarCatalogService.GetAvatar(_settings.ActiveAvatarId);
-            ShowCareReminder(CareReminderMessageBuilder.BuildBreakReminder(avatar));
+            _ = RefreshWeatherAsync(forceLocationRefresh: false);
         }
     }
 
-    private void ShowCareReminder(string message)
+    private void ShowCareReminder(string message, string title = "桌面伙伴 · 关怀提醒")
     {
         StatusText.Text = message;
         if (!IsActive)
         {
-            (System.Windows.Application.Current as App)?.ShowTrayNotification("桌面伙伴 · 休息提醒", message);
+            (System.Windows.Application.Current as App)?.ShowTrayNotification(title, message);
         }
+    }
+
+    private async Task RefreshWeatherAsync(bool forceLocationRefresh)
+    {
+        if (!_settings.WeatherRemindersEnabled || _weatherRefreshInProgress)
+        {
+            return;
+        }
+
+        _weatherRefreshInProgress = true;
+        try
+        {
+            var location = await ResolveCareLocationAsync(forceLocationRefresh);
+            if (location is null)
+            {
+                if (string.IsNullOrWhiteSpace(_settings.PreferredLocation) &&
+                    !_settings.AutomaticIpLocationEnabled)
+                {
+                    StatusText.Text = "天气提醒已开启；请设置关注城市或允许 IP 自动定位。";
+                }
+
+                _lastWeatherRefreshAt = DateTimeOffset.UtcNow;
+                return;
+            }
+
+            var snapshot = await _weatherService.GetForecastAsync(location);
+            var now = DateTimeOffset.UtcNow;
+            _lastWeatherRefreshAt = now;
+            var alert = _weatherReminderPolicy.Evaluate(snapshot, now);
+            if (alert is null)
+            {
+                return;
+            }
+
+            if (!TryMarkWeatherReminder(alert.Type, now))
+            {
+                return;
+            }
+            var avatar = _avatarCatalogService.GetAvatar(_settings.ActiveAvatarId);
+            ShowCareReminder(
+                CareReminderMessageBuilder.BuildWeatherReminder(avatar, location, alert),
+                "桌面伙伴 · 天气提醒");
+        }
+        catch (OperationCanceledException)
+        {
+            _lastWeatherRefreshAt = DateTimeOffset.UtcNow;
+        }
+        catch (Exception exception)
+        {
+            _lastWeatherRefreshAt = DateTimeOffset.UtcNow;
+            AppLogger.Log("Weather and location refresh failed; no weather reminder was issued.", exception);
+        }
+        finally
+        {
+            _weatherRefreshInProgress = false;
+        }
+    }
+
+    private bool TryMarkWeatherReminder(CareReminderType type, DateTimeOffset now)
+    {
+        var lastReminderAt = type switch
+        {
+            CareReminderType.ColdWeather => _settings.LastColdWeatherReminderAtUtc,
+            CareReminderType.RainExpected => _settings.LastRainReminderAtUtc,
+            CareReminderType.HeatWarning => _settings.LastHeatReminderAtUtc,
+            _ => null
+        };
+
+        if (lastReminderAt is not null &&
+            now >= lastReminderAt.Value &&
+            now - lastReminderAt.Value < TimeSpan.FromHours(6))
+        {
+            return false;
+        }
+
+        switch (type)
+        {
+            case CareReminderType.ColdWeather:
+                _settings.LastColdWeatherReminderAtUtc = now;
+                break;
+            case CareReminderType.RainExpected:
+                _settings.LastRainReminderAtUtc = now;
+                break;
+            case CareReminderType.HeatWarning:
+                _settings.LastHeatReminderAtUtc = now;
+                break;
+            default:
+                return false;
+        }
+
+        SaveSettings();
+        return true;
+    }
+
+    private async Task<CareLocation?> ResolveCareLocationAsync(bool forceRefresh)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var manualQuery = _settings.PreferredLocation?.Trim() ?? string.Empty;
+        if (manualQuery.Length > 0)
+        {
+            var cachedManual = GetCachedLocation("manual");
+            if (!forceRefresh &&
+                cachedManual is not null &&
+                string.Equals(_settings.CachedLocationQuery, manualQuery, StringComparison.OrdinalIgnoreCase) &&
+                _settings.CachedLocationUpdatedAtUtc is { } manualUpdatedAt &&
+                now - manualUpdatedAt < TimeSpan.FromDays(30))
+            {
+                return cachedManual;
+            }
+
+            var resolvedManual = await _weatherService.ResolveCityAsync(manualQuery);
+            if (resolvedManual is null)
+            {
+                StatusText.Text = "没有找到这个城市；请补充省份或国家/地区名称。";
+                return null;
+            }
+
+            SaveCachedLocation(resolvedManual, manualQuery);
+            return resolvedManual;
+        }
+
+        if (!_settings.AutomaticIpLocationEnabled)
+        {
+            return null;
+        }
+
+        var cachedIp = GetCachedLocation("ip");
+        if (!forceRefresh &&
+            cachedIp is not null &&
+            _settings.CachedLocationUpdatedAtUtc is { } ipUpdatedAt &&
+            now - ipUpdatedAt < TimeSpan.FromHours(12))
+        {
+            return cachedIp;
+        }
+
+        var localRouteWarning = _networkPrivacyInspector.GetPotentialAnonymizationReason();
+        if (localRouteWarning is not null)
+        {
+            StatusText.Text = $"{localRouteWarning}；为避免定位到代理出口，暂不更新自动位置。";
+            return cachedIp;
+        }
+
+        var ipResult = await _ipLocationService.ResolveCurrentAsync();
+        if (!ipResult.IsTrusted || ipResult.Location is null)
+        {
+            StatusText.Text = $"{ipResult.RejectionReason ?? "无法确认网络位置"}；未采用出口城市，可在设置中手动指定关注城市。";
+            return cachedIp;
+        }
+
+        SaveCachedLocation(ipResult.Location, query: null);
+        return ipResult.Location;
+    }
+
+    private CareLocation? GetCachedLocation(string? requiredSource = null)
+    {
+        if (_settings.CachedLocationLatitude is not { } latitude ||
+            _settings.CachedLocationLongitude is not { } longitude ||
+            string.IsNullOrWhiteSpace(_settings.CachedLocationCity) ||
+            string.IsNullOrWhiteSpace(_settings.CachedLocationCountry))
+        {
+            return null;
+        }
+
+        if (!string.IsNullOrWhiteSpace(requiredSource) &&
+            !string.Equals(_settings.CachedLocationSource, requiredSource, StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        return new CareLocation(
+            _settings.CachedLocationName ?? $"{_settings.CachedLocationCity}, {_settings.CachedLocationCountry}",
+            _settings.CachedLocationCity,
+            _settings.CachedLocationCountry,
+            latitude,
+            longitude,
+            _settings.CachedLocationTimeZoneId ?? "auto",
+            _settings.CachedLocationSource ?? "cached",
+            _settings.CachedLocationUpdatedAtUtc ?? DateTimeOffset.MinValue);
+    }
+
+    private void SaveCachedLocation(CareLocation location, string? query)
+    {
+        _settings.CachedLocationName = location.DisplayName;
+        _settings.CachedLocationCity = location.City;
+        _settings.CachedLocationCountry = location.Country;
+        _settings.CachedLocationLatitude = location.Latitude;
+        _settings.CachedLocationLongitude = location.Longitude;
+        _settings.CachedLocationTimeZoneId = location.TimeZoneId;
+        _settings.CachedLocationSource = location.Source;
+        _settings.CachedLocationQuery = query;
+        _settings.CachedLocationUpdatedAtUtc = DateTimeOffset.UtcNow;
+        SaveSettings();
     }
 
     private void ApplyBehavior(PetBehaviorState state)
@@ -684,12 +897,19 @@ public partial class MainWindow : Window
     private (PetSettings Settings, bool Saved) ApplySettings(PetSettings requested)
     {
         var musicChanged = requested.MusicEnabled != _settings.MusicEnabled;
+        var weatherSettingsChanged =
+            requested.AutomaticIpLocationEnabled != _settings.AutomaticIpLocationEnabled ||
+            requested.WeatherRemindersEnabled != _settings.WeatherRemindersEnabled ||
+            !string.Equals(requested.PreferredLocation, _settings.PreferredLocation, StringComparison.Ordinal);
 
         _settings.AlwaysOnTop = requested.AlwaysOnTop;
         _settings.SnowEnabled = requested.SnowEnabled;
         _settings.DecorativeLightsEnabled = requested.DecorativeLightsEnabled;
         _settings.MusicEnabled = requested.MusicEnabled;
         _settings.ActivityAwarenessEnabled = requested.ActivityAwarenessEnabled;
+        _settings.AutomaticIpLocationEnabled = requested.AutomaticIpLocationEnabled;
+        _settings.WeatherRemindersEnabled = requested.WeatherRemindersEnabled;
+        _settings.PreferredLocation = requested.PreferredLocation?.Trim() ?? string.Empty;
 
         Topmost = _settings.AlwaysOnTop;
         _snowAnimation.SetEnabled(_settings.SnowEnabled);
@@ -721,6 +941,15 @@ public partial class MainWindow : Window
         }
 
         var saved = SaveSettings();
+        if (weatherSettingsChanged)
+        {
+            _lastWeatherRefreshAt = DateTimeOffset.MinValue;
+            if (_settings.WeatherRemindersEnabled)
+            {
+                _ = RefreshWeatherAsync(forceLocationRefresh: true);
+            }
+        }
+
         return (CopySettings(_settings), saved);
     }
 
@@ -743,7 +972,22 @@ public partial class MainWindow : Window
         MusicEnabled = source.MusicEnabled,
         WindowWidth = source.WindowWidth,
         WindowHeight = source.WindowHeight,
-        ActivityAwarenessEnabled = source.ActivityAwarenessEnabled
+        ActivityAwarenessEnabled = source.ActivityAwarenessEnabled,
+        AutomaticIpLocationEnabled = source.AutomaticIpLocationEnabled,
+        WeatherRemindersEnabled = source.WeatherRemindersEnabled,
+        PreferredLocation = source.PreferredLocation,
+        CachedLocationName = source.CachedLocationName,
+        CachedLocationCity = source.CachedLocationCity,
+        CachedLocationCountry = source.CachedLocationCountry,
+        CachedLocationLatitude = source.CachedLocationLatitude,
+        CachedLocationLongitude = source.CachedLocationLongitude,
+        CachedLocationTimeZoneId = source.CachedLocationTimeZoneId,
+        CachedLocationSource = source.CachedLocationSource,
+        CachedLocationQuery = source.CachedLocationQuery,
+        CachedLocationUpdatedAtUtc = source.CachedLocationUpdatedAtUtc,
+        LastColdWeatherReminderAtUtc = source.LastColdWeatherReminderAtUtc,
+        LastRainReminderAtUtc = source.LastRainReminderAtUtc,
+        LastHeatReminderAtUtc = source.LastHeatReminderAtUtc
     };
 
     public void ToggleSnow()
@@ -837,6 +1081,7 @@ public partial class MainWindow : Window
         _behaviorAnimation.Dispose();
         _snowAnimation.Dispose();
         _audioService.Dispose();
+        _careHttpClient.Dispose();
         Close();
         System.Windows.Application.Current.Shutdown();
     }

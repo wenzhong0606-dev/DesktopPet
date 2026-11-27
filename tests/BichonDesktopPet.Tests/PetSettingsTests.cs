@@ -30,6 +30,8 @@ public sealed class PetSettingsTests
 
         Assert.IsFalse(settings.MusicEnabled);
         Assert.IsTrue(settings.ActivityAwarenessEnabled);
+        Assert.IsFalse(settings.AutomaticIpLocationEnabled);
+        Assert.IsFalse(settings.WeatherRemindersEnabled);
     }
 
     [TestMethod]

@@ -54,7 +54,7 @@ M4-A adds:
 - `AvatarProfile.Name` is only a management label. The first pet nickname is the primary conversational name; remaining nicknames are aliases. Chat titles, greetings and AI identity context never use the management label as the pet's name.
 - Empty-session welcome messages are generated locally from the primary nickname and active persona. Welcome text is not persisted or sent to Qwen.
 - Qwen context prioritizes factual correctness, excludes internal animation state and catchphrases, and prohibits action/facial-expression stage directions. Persona settings influence tone only, not facts or reasoning.
-- Messages and selected persona/context are sent to Qwen only when the user sends a message; history storage itself is local.
+- Messages and selected persona/context are sent to Qwen only when the user sends a message; history storage itself is local. Current-time/date/weekday questions are answered locally. Optional IP location and weather requests require explicit settings opt-in.
 
 M3-B adds:
 
@@ -73,6 +73,13 @@ M3 first increment provides:
 - Unit tests for state transitions and presentation mapping.
 
 Only the Bichon artwork is bundled. Users can import other images they own or have permission to use. M3 currently animates the whole static image; it does not claim skeletal movement, tail wagging or limb animation.
+
+## Local environment awareness and proactive care
+
+- Current time, date and weekday questions are answered from the Windows system clock locally; they do not require a Qwen API key or cloud request.
+- Local break reminders use only Windows' last-input idle duration. They do not record typed text, mouse paths, application names, URLs or window titles.
+- Automatic IP city estimation and weather reminders are off by default. Users can set a city manually or explicitly opt into IP-based city estimation; suspected VPN/proxy/relay exits are not adopted as the user's location.
+- Weather care uses Open-Meteo hourly forecasts for conservative cold/rain/heat reminders. See [Local environment and care design](docs/LOCAL_ENVIRONMENT_AND_CARE.md) for thresholds, privacy details, providers and limitations.
 
 ## Build and test (Windows)
 
@@ -111,8 +118,9 @@ Imported images remain on this computer. They are not copied into the Git reposi
 - [Qwen local configuration](docs/QWEN_CONFIGURATION.md)
 - [Project baseline](docs/PROJECT.md)
 - [Architecture](docs/ARCHITECTURE.md)
+- [Local environment and proactive care](docs/LOCAL_ENVIRONMENT_AND_CARE.md)
 - [Visual specification](docs/VISUAL_SPECIFICATION.md)
 
 ## Scope discipline
 
-M3-A/M3-B provide local behavior and per-avatar persona templates; M3-C adds persistent companion identity and a local interaction journal. M4-A adds explicit Qwen text chat, local SQLite history, session management and paginated history browsing. The chat prompt prioritizes factual answers over role-play, excludes internal behavior state, and forbids action/facial-expression stage directions. Long-term memory extraction, voice, 3D models, rigging, cloud sync, accounts and a character marketplace remain later milestones. Each milestone must build on the user-accepted baseline and remain independently runnable.
+M3-A/M3-B provide local behavior and per-avatar persona templates; M3-C adds persistent companion identity and a local interaction journal. M4-A adds explicit Qwen text chat, local SQLite history, session management and paginated history browsing. The chat prompt prioritizes factual answers over role-play, excludes internal behavior state, and forbids action/facial-expression stage directions. Long-term memory extraction, voice, 3D models, rigging, cloud sync, accounts and a character marketplace remain later milestones. Local time awareness, opt-in VPN-aware city resolution, local activity reminders and opt-in weather care are now part of the M4-A environment-awareness increment. Each milestone must build on the user-accepted baseline and remain independently runnable.

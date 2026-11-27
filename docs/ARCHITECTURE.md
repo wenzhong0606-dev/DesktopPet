@@ -119,7 +119,7 @@ The WPF application is Windows-targeted. EnableWindowsTargeting is set so SDK-ba
 - `ChatWelcomeMessageBuilder` generates the empty-session greeting locally from the first pet nickname and normalized `PersonaProfile` (self-reference, user address, speech style and recognized traits). The greeting is a transient UI-only placeholder with message ID 0; it is cleared before the first user message is appended, never saved to SQLite and never included in `ChatContextBuilder` history.
 - The chat UI restores the latest session for the active companion and supports session switching, deleting one session and clearing all sessions for that companion. Foreign-key cascade removes messages when a session is deleted.
 - User messages are committed locally before an outbound Qwen request; successful assistant responses are persisted after receipt. Closing/reopening the window does not remove saved history.
-- When Qwen is not configured, the chat UI explains the local configuration requirement and disables sending. Existing desktop-pet features remain offline and available.
+- When Qwen is not configured, explicit current-time/date/weekday questions remain available through the local clock; other AI chat requires a configured key. Existing desktop-pet features remain available.
 - Requests are asynchronous, single-flight and bounded by a 50-second cancellation timeout. The UI handles cancellation, provider failures and network failures without logging conversation content.
 - M4-A first slice does not implement streaming, semantic memory retrieval, automatic memory extraction, personality growth, voice, tool calls or arbitrary system actions.
 

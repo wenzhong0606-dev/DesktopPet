@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="比熊桌宠设置"
         Width="440"
-        Height="680"
+        Height="760"
         MinWidth="420"
         MinHeight="440"
         WindowStartupLocation="CenterOwner"
@@ -89,6 +89,64 @@
                     Unchecked="SettingChanged" />
 
           <TextBlock Text="仅读取系统最近输入的空闲时长；不记录键盘内容、鼠标轨迹、应用名称或访问记录。连续活跃约一小时后温和提醒。"
+                     TextWrapping="Wrap"
+                     FontSize="11"
+                     Foreground="#FF8B7770"
+                     Margin="0,0,0,18" />
+
+          <Separator Background="#FFF0E7E1" Margin="0,0,0,16" />
+
+          <TextBlock Text="生活地点与天气"
+                     FontSize="14"
+                     FontWeight="SemiBold"
+                     Foreground="#FF604840"
+                     Margin="0,0,0,10" />
+
+          <CheckBox x:Name="AutomaticIpLocationCheckBox"
+                    Content="允许通过公网 IP 自动估算所在城市"
+                    FontSize="13"
+                    Foreground="#FF49352F"
+                    Margin="0,0,0,6"
+                    Checked="SettingChanged"
+                    Unchecked="SettingChanged" />
+
+          <TextBlock Text="启用天气提醒后才会进行定位。开启后会将当前公网 IP 发送给 IPLogs，用于城市定位和 VPN/代理/中继检测。检测到匿名网络时不会采用出口城市；IPLogs 声明访问日志保留 30 天。"
+                     TextWrapping="Wrap"
+                     FontSize="11"
+                     Foreground="#FF8B7770"
+                     Margin="0,0,0,12" />
+
+          <TextBlock Text="手动关注城市（优先于 IP 自动定位）"
+                     FontSize="12"
+                     FontWeight="SemiBold"
+                     Foreground="#FF604840"
+                     Margin="0,0,0,6" />
+
+          <TextBox x:Name="PreferredLocationTextBox"
+                   Height="34"
+                   Padding="8,6"
+                   FontSize="12"
+                   BorderBrush="#FFE2D8D0"
+                   Background="#FFFFFCFA" />
+
+          <Button Content="保存关注城市"
+                  HorizontalAlignment="Left"
+                  Padding="12,7"
+                  Margin="0,8,0,12"
+                  Background="#FFFFF1E8"
+                  BorderBrush="#FFE8CFC1"
+                  Foreground="#FF805C4F"
+                  Click="ApplyLocation_Click" />
+
+          <CheckBox x:Name="WeatherRemindersCheckBox"
+                    Content="启用天气关怀（降温、降雨、高温提醒）"
+                    FontSize="13"
+                    Foreground="#FF49352F"
+                    Margin="0,0,0,6"
+                    Checked="SettingChanged"
+                    Unchecked="SettingChanged" />
+
+          <TextBlock Text="天气提醒需要手动关注城市或启用 IP 自动定位。天气查询使用 Open-Meteo；城市坐标和网络请求会发送给天气服务。数据来源：Open-Meteo。"
                      TextWrapping="Wrap"
                      FontSize="11"
                      Foreground="#FF8B7770"
