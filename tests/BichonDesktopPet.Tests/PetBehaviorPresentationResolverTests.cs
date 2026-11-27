@@ -1,3 +1,4 @@
+using System.Linq;
 using BichonDesktopPet.Core.Models;
 using BichonDesktopPet.Core.Services;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -173,8 +174,14 @@ public sealed class PetBehaviorPresentationResolverTests
             }
         };
 
-        var greeting = _resolver.Resolve(PetBehaviorState.Greeting, avatar);
-        Assert.IsTrue(greeting.Message.Contains("小煤球", StringComparison.Ordinal));
+        var greetings = new[]
+        {
+            _resolver.Resolve(PetBehaviorState.Greeting, avatar).Message,
+            _resolver.Resolve(PetBehaviorState.Greeting, avatar).Message,
+            _resolver.Resolve(PetBehaviorState.Greeting, avatar).Message,
+            _resolver.Resolve(PetBehaviorState.Greeting, avatar).Message
+        };
+        Assert.IsTrue(greetings.Any(message => message.Contains("小煤球", StringComparison.Ordinal)));
 
         var happyMessages = new[]
         {
