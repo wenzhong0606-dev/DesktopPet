@@ -150,7 +150,7 @@
 - Add local system clock context to Qwen prompts and handle clear current-time/date/weekday questions entirely offline.
 - Add Windows last-input idle monitoring without keyboard/mouse content collection; implement session-based break reminders with idle reset and cooldown.
 - Add opt-in city-level IP location using IPLogs, local system proxy/VPN adapter checks, fail-closed VPN/proxy/relay/hosting assessment, and manual city override.
-- Add Open-Meteo city geocoding/hourly forecast integration and conservative cold/rain/heat reminder rules with persisted per-type cooldown.
+- Add Open-Meteo city geocoding/hourly forecast integration and conservative cold/rain/heat reminder rules with persisted per-type cooldown; cross-check IP-derived city time zone against Windows local time.
 - Keep automatic IP location and weather reminders disabled by default; document provider data handling, attribution and non-commercial API usage constraints.
 - Add unit coverage for local time intent, activity-session policy, weather thresholds and IP-location trust decisions.
 
