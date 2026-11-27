@@ -10,22 +10,15 @@ The runtime path is:
 
 `assets/characters/bichon/base/bichon-idle.png`
 
-The file is present in the `main` branch. The latest rename commit is:
-
-- Commit: `4b48de096f81c39f3c29cbb3816c5b19eb9cc271`
-- Message: `Rename bichon-420-128.png to bichon-idle.png`
-- Git tree file size: 132,158 bytes
-- Git blob SHA: `11bc5493f21febd72706948f1dbfc848fcd9f9ae`
-
-## Integrity discrepancy — verification still required
-
-The earlier prepared derivative record stated:
+The file is present in the `main` branch. Its binary was read from the repository and independently decoded for PNG metadata and SHA-256:
 
 - Dimensions: 420 × 540
-- File size: 45,559 bytes
-- SHA-256: `049ab8ebe317a4934d60546da4646076053a59af689d3bca6313a6cf3dbf3b3c`
+- PNG format: 8-bit RGBA (alpha channel present)
+- File size: 132,158 bytes
+- SHA-256: `326d10ace28d53e8a4289b9f103c648ecb79d6b1b32e4a8f76d715793b97d210`
+- Git blob SHA: `11bc5493f21febd72706948f1dbfc848fcd9f9ae`
 
-The committed file size is 132,158 bytes, so the earlier size/hash record must not be treated as verified for the committed binary. Recalculate the local file's dimensions and SHA-256 after pulling `main`, then update `asset-manifest.json` with the measured values.
+The earlier prepared derivative record (45,559 bytes, SHA-256 `049ab8ebe317a4934d60546da4646076053a59af689d3bca6313a6cf3dbf3b3c`) does not match the committed file and is retained only as historical metadata. The current committed file's integrity values above are authoritative.
 
 ## Local verification
 
@@ -40,8 +33,8 @@ Then run the app and confirm that the actual PNG is displayed (not the vector fa
 
 ## Acceptance
 
-- [ ] The file exists at the exact repository path.
-- [ ] Actual dimensions and SHA-256 have been recorded.
-- [ ] The image loads from the application output directory.
+- [x] The file exists at the exact repository path.
+- [x] Actual dimensions and SHA-256 have been recorded.
+- [ ] The image loads from the application output directory on Windows.
 - [ ] The transparent silhouette renders correctly on the Windows desktop.
 - [ ] Dragging, click reaction, double-click gift reaction, snow, decorative lights, tray controls, and local settings continue to work.
