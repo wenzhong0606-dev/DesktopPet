@@ -89,6 +89,18 @@ public sealed class CompanionIdentityStoreTests
     }
 
     [TestMethod]
+    public void ArchiveByAvatarId_PreservesIdentityAndHistoryButHidesActiveMapping()
+    {
+        var companion = _store.EnsureCompanion(CreateAvatar("avatar-1", "豆包"));
+        _store.RecordInteraction(companion.Id, "pet_clicked");
+
+        _store.ArchiveByAvatarId("avatar-1");
+
+        Assert.IsNull(_store.GetByAvatarId("avatar-1"));
+        Assert.AreEqual(1, _store.GetRecentInteractions(companion.Id).Count);
+    }
+
+    [TestMethod]
     public void RecordInteraction_RejectsInvalidJsonPayload()
     {
         var companion = _store.EnsureCompanion(CreateAvatar("avatar-1", "豆包"));
