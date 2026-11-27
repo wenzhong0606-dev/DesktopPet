@@ -40,9 +40,11 @@ The user explicitly confirmed M2 acceptance. Windows CI for the M2 baseline pass
 
 Only Bichon artwork is bundled. Other roles are added by local import.
 
-## M3 — lightweight behavior system (first increment in progress)
+## M3 — lightweight behavior system (first increment; local acceptance pending)
 
-The first implementation is committed to \`main\`:
+The first implementation is committed to \`main\`. Windows CI passed on commit `e78c94d706d123c1a5d999e494e6f3ca184380d0`: Release build with 0 warnings and 0 errors, 30/30 tests passed ([run #111](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45946216141)).
+
+The implementation includes:
 
 - \`PetBehaviorEngine\` is platform-independent and deterministic; callers provide timestamps so state transitions can be unit-tested without WPF timers.
 - States: Idle, Greeting, Happy, Excited and Sleepy.
