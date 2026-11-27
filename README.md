@@ -50,7 +50,7 @@ dotnet run --project src/BichonDesktopPet.App/BichonDesktopPet.App.csproj
 - Settings: `%LOCALAPPDATA%\BichonDesktopPet\settings.json`
 - Diagnostic log: `%LOCALAPPDATA%\BichonDesktopPet\logs\app.log`
 
-Logs contain application diagnostics and exception details. The application does not log chat content or microphone input.
+Logs contain application diagnostics and exception details. The log file is created when the first diagnostic event is recorded, so it may not exist during a normal error-free session. The application does not log chat content or microphone input.
 
 ## Product and development documents
 
