@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-11-27 — M3 behavior system (first increment)
+
+- Add a deterministic, platform-independent behavior state engine for Idle, Greeting, Happy, Excited and Sleepy.
+- Map startup/tray wake, pet clicks, gift interactions, rapid repeated clicks and 60-second inactivity to state transitions.
+- Add species-aware status messages and a separate state-to-visual-effect resolver.
+- Add a WPF animation adapter for subtle whole-image breathing, bounce, wiggle and sleepy sway.
+- Add a single MainWindow-owned state timer and dispose it and the animation adapter on exit.
+- Add automated tests for timed transitions, rapid clicks, gift interaction, inactivity, wake and species presentation mapping.
+- M2 formally marked accepted after the user's confirmation.
+
+
 ## 2026-11-27 — M2 local avatar management (first increment)
 
 - Add a versioned local avatar catalog and a stable `AvatarProfile` model.
