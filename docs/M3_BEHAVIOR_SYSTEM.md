@@ -50,7 +50,7 @@ Core unit tests cover:
 - Tray wake greeting and inactivity reset.
 - Species-aware presentation messages and visual-effect mapping.
 
-Windows CI result for this increment will be recorded after the latest workflow run completes.
+Windows CI passed on commit `e78c94d706d123c1a5d999e494e6f3ca184380d0`: Release build completed with 0 warnings and 0 errors; all 30 automated tests passed ([run #111](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45946216141)). Local Windows interaction acceptance remains pending.
 
 ## Windows local acceptance checklist
 
