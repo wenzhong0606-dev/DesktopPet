@@ -31,6 +31,12 @@ public partial class PersonaEditorWindow : Window
         NameTextBox.Text = _avatar.Name;
         SpeciesComboBox.SelectedValue = _avatar.Species;
         BreedTextBox.Text = _avatar.Breed;
+        if (_avatar.IsBuiltIn)
+        {
+            SpeciesComboBox.IsEnabled = false;
+            BreedTextBox.IsEnabled = false;
+        }
+
         NicknamesTextBox.Text = string.Join("，", persona.Nicknames);
         SelfReferenceTextBox.Text = persona.SelfReference;
         UserAddressTextBox.Text = persona.UserAddress;
