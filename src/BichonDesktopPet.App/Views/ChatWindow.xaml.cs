@@ -41,7 +41,7 @@ public partial class ChatWindow : Window
             ? companion.DisplayName
             : avatar.Name;
         ConnectionStatusText.Text = provider.IsConfigured
-            ? $"已连接 {provider.ProviderName} · {provider.Model}。本次对话仅保存在当前窗口内。"
+            ? $"已连接 {provider.ProviderName} · {provider.Model}。发送时会将消息、角色人格设定、当前状态和最近对话发送至 Qwen 云端处理；请勿输入敏感信息。聊天记录仅保留在当前窗口内存中。"
             : "尚未配置 Qwen API Key。请先按 docs/QWEN_CONFIGURATION.md 配置；桌宠其他功能仍可离线使用。";
         MessageInput.IsEnabled = provider.IsConfigured;
         SendButton.IsEnabled = provider.IsConfigured;
