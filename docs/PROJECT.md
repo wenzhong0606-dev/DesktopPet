@@ -71,7 +71,7 @@ The implementation includes:
 - M1/M2 functions remain intact: drag, snow, lights, settings, tray, avatar import/switch/delete and persistence.
 - No sustained CPU usage or animation continues after application exit.
 
-## M3-B — per-avatar identity and persona system (implementation committed; CI/local acceptance pending)
+## M3-B — per-avatar identity and persona system (Windows CI passed; local acceptance pending)
 
 The first vertical slice is committed to \`main\`:
 
