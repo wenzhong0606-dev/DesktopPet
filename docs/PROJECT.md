@@ -110,7 +110,7 @@ The first vertical slice is committed to \`main\`:
 - M0: image-based desktop pet display — accepted.
 - M1: reliable daily-use image desktop pet — user acceptance passed.
 - M2: multiple image avatars and local avatar management — user acceptance passed.
-- M3: rule-based behavior and lightweight image effects — first increment in progress.
+- M3: rule-based behavior and lightweight image effects plus per-avatar persona profiles — Windows CI passed; local acceptance pending.
 - M4: AI text interaction and constrained action mapping.
 - M5: push-to-talk voice interaction and speech output.
 - M6: single-character real-time 3D technical validation.
@@ -118,4 +118,4 @@ The first vertical slice is committed to \`main\`:
 - M8: rig profiles and character-specific animation expansion.
 - M9: optional character sharing/ecosystem, only after earlier stages are validated.
 
-See [PRODUCT_DEFINITION_AND_MVP_ROADMAP_V1.md](PRODUCT_DEFINITION_AND_MVP_ROADMAP_V1.md), [M2_AVATAR_MANAGEMENT.md](M2_AVATAR_MANAGEMENT.md) and [M3_BEHAVIOR_SYSTEM.md](M3_BEHAVIOR_SYSTEM.md).
+See [PRODUCT_DEFINITION_AND_MVP_ROADMAP_V1.md](PRODUCT_DEFINITION_AND_MVP_ROADMAP_V1.md), [M2_AVATAR_MANAGEMENT.md](M2_AVATAR_MANAGEMENT.md), [M3_BEHAVIOR_SYSTEM.md](M3_BEHAVIOR_SYSTEM.md) and [M3B_PERSONA_SYSTEM.md](M3B_PERSONA_SYSTEM.md).
