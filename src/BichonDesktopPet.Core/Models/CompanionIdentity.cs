@@ -21,4 +21,6 @@ public sealed class CompanionIdentity
     public DateTimeOffset CreatedAtUtc { get; init; }
 
     public DateTimeOffset UpdatedAtUtc { get; init; }
+
+    public bool IsArchived { get; init; }
 }
