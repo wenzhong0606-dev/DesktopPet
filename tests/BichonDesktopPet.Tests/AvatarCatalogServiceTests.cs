@@ -1,0 +1,152 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using BichonDesktopPet.Core.Services;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+namespace BichonDesktopPet.Tests;
+
+[TestClass]
+public sealed class AvatarCatalogServiceTests
+{
+    private const string OnePixelPngBase64 =
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j5ZkAAAAASUVORK5CYII=";
+
+    private string _testDirectory = null!;
+    private string _assetsDirectory = null!;
+    private string _userDataDirectory = null!;
+
+    [TestInitialize]
+    public void SetUp()
+    {
+        _testDirectory = Path.Combine(Path.GetTempPath(), "BichonDesktopPet.AvatarTests", Guid.NewGuid().ToString("N"));
+        _assetsDirectory = Path.Combine(_testDirectory, "Assets");
+        _userDataDirectory = Path.Combine(_testDirectory, "UserData");
+
+        var bichonDirectory = Path.Combine(_assetsDirectory, "characters", "bichon", "base");
+        Directory.CreateDirectory(bichonDirectory);
+        File.WriteAllBytes(Path.Combine(bichonDirectory, "bichon-idle.png"), Convert.FromBase64String(OnePixelPngBase64));
+    }
+
+    [TestCleanup]
+    public void TearDown()
+    {
+        if (Directory.Exists(_testDirectory))
+        {
+            Directory.Delete(_testDirectory, recursive: true);
+        }
+    }
+
+    [TestMethod]
+    public void Load_WhenCatalogDoesNotExist_SeedsBuiltInBichon()
+    {
+        var service = CreateService();
+
+        var avatars = service.Load();
+
+        Assert.AreEqual(1, avatars.Count);
+        Assert.AreEqual(AvatarCatalogService.DefaultAvatarId, avatars[0].Id);
+        Assert.AreEqual("比熊", avatars[0].Name);
+        Assert.IsTrue(avatars[0].IsBuiltIn);
+        Assert.IsTrue(File.Exists(service.CatalogPath));
+        Assert.IsNotNull(service.ResolveImagePath(AvatarCatalogService.DefaultAvatarId));
+    }
+
+    [TestMethod]
+    public void ImportImage_CopiesImageAndPersistsProfileAcrossReload()
+    {
+        var sourcePath = Path.Combine(_testDirectory, "border-collie.png");
+        File.WriteAllBytes(sourcePath, Convert.FromBase64String(OnePixelPngBase64));
+
+        var service = CreateService();
+        service.Load();
+
+        var imported = service.ImportImage(sourcePath, "边牧", "dog");
+        var storedImagePath = service.ResolveImagePath(imported.Id);
+
+        Assert.IsFalse(imported.IsBuiltIn);
+        Assert.AreEqual("边牧", imported.Name);
+        Assert.AreEqual("dog", imported.Species);
+        Assert.IsNotNull(storedImagePath);
+        Assert.IsTrue(File.Exists(storedImagePath));
+
+        var reloadedService = CreateService();
+        var avatars = reloadedService.Load();
+
+        Assert.AreEqual(2, avatars.Count);
+        Assert.IsNotNull(reloadedService.GetAvatar(imported.Id));
+        Assert.IsNotNull(reloadedService.ResolveImagePath(imported.Id));
+    }
+
+    [TestMethod]
+    public void ImportImage_RejectsFileWithMismatchedImageSignature()
+    {
+        var sourcePath = Path.Combine(_testDirectory, "not-an-image.png");
+        File.WriteAllText(sourcePath, "this is not a PNG image");
+        var service = CreateService();
+        service.Load();
+
+        Assert.ThrowsException<InvalidDataException>(
+            () => service.ImportImage(sourcePath, "伪图片", "custom"));
+    }
+
+    [TestMethod]
+    public void ImportImage_RejectsUnsupportedExtension()
+    {
+        var sourcePath = Path.Combine(_testDirectory, "image.webp");
+        File.WriteAllBytes(sourcePath, Convert.FromBase64String(OnePixelPngBase64));
+        var service = CreateService();
+        service.Load();
+
+        Assert.ThrowsException<InvalidDataException>(
+            () => service.ImportImage(sourcePath, "图片", "custom"));
+    }
+
+    [TestMethod]
+    public void Delete_CannotDeleteBuiltInBichon()
+    {
+        var service = CreateService();
+        service.Load();
+
+        Assert.IsFalse(service.Delete(AvatarCatalogService.DefaultAvatarId));
+        Assert.AreEqual(1, service.GetAvatars().Count);
+    }
+
+    [TestMethod]
+    public void Delete_RemovesImportedAvatarAndKeepsBuiltInDefault()
+    {
+        var sourcePath = Path.Combine(_testDirectory, "cat.png");
+        File.WriteAllBytes(sourcePath, Convert.FromBase64String(OnePixelPngBase64));
+        var service = CreateService();
+        service.Load();
+
+        var imported = service.ImportImage(sourcePath, "猫咪", "cat");
+        var storedImagePath = service.ResolveImagePath(imported.Id);
+
+        Assert.IsTrue(service.Delete(imported.Id));
+        Assert.AreEqual(1, service.GetAvatars().Count);
+        Assert.AreEqual(AvatarCatalogService.DefaultAvatarId, service.GetAvatars()[0].Id);
+        Assert.IsFalse(File.Exists(storedImagePath));
+    }
+
+    [TestMethod]
+    public void Load_WhenCatalogIsCorrupt_RestoresDefaultAndReportsFailure()
+    {
+        var avatarDirectory = Path.Combine(_userDataDirectory, "avatars");
+        Directory.CreateDirectory(avatarDirectory);
+        File.WriteAllText(Path.Combine(avatarDirectory, "catalog.json"), "{ invalid json");
+
+        var messages = new List<string>();
+        var service = new AvatarCatalogService(_assetsDirectory, _userDataDirectory, (message, _) => messages.Add(message));
+
+        var avatars = service.Load();
+
+        Assert.AreEqual(1, avatars.Count);
+        Assert.AreEqual(AvatarCatalogService.DefaultAvatarId, avatars[0].Id);
+        Assert.AreEqual(1, messages.Count);
+        StringAssert.Contains(messages[0], "avatar catalog");
+    }
+
+    private AvatarCatalogService CreateService() =>
+        new(_assetsDirectory, _userDataDirectory);
+}
