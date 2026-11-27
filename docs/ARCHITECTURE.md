@@ -71,3 +71,15 @@ The WPF application is Windows-targeted. EnableWindowsTargeting is set so SDK-ba
 - MainWindow owns one low-frequency DispatcherTimer for state advancement. The timer and animation service are stopped/disposed on application exit.
 - Keep behavior rules in Core and rendering in App. Future animated frame sequences or 3D rigs can replace the presenter without rewriting the state machine.
 - M3 first increment is offline and does not call AI, network services, microphone or speech APIs.
+
+
+## Per-avatar persona and message presentation (M3-B)
+
+- \`AvatarProfile\` owns a separate \`PersonaProfile\`; appearance metadata (species/breed/image path), identity/personality, behavior state and rendering remain separate concerns.
+- \`PersonaProfile\` stores nicknames, self-reference, user address, up to three personality traits, speech style, response length, emoji level and up to five catchphrases.
+- \`AvatarCatalogService\` owns schema v2. On v1 load it adds safe persona defaults and writes v2 while preserving valid avatar IDs, image paths, creation times and existing files. \`PetSettings.ActiveAvatarId\` is stored separately and is not modified by the catalog migration.
+- A catalog with a schema version newer than the app's supported version is opened read-only to avoid accidental downgrade writes.
+- \`PersonaProfileValidator\` validates editor input and normalizes persisted data. The WPF \`PersonaEditorWindow\` edits both built-in and imported profiles through \`AvatarCatalogService.UpdateProfile\`.
+- \`PetBehaviorPresentationResolver\` accepts the active \`AvatarProfile\`, selects bounded local templates using state/species/persona, and rotates templates per avatar/state. It does not call an AI provider, interpret free-form user text or store conversation memory.
+- The older species-only resolver overload remains as a fallback for callers that do not have a full avatar profile.
+- Future AI integration should consume \`PersonaProfile\` as context, but must remain behind a separate provider adapter and user opt-in; persona persistence itself has no network dependency.
