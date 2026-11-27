@@ -25,6 +25,8 @@ public partial class MainWindow : Window
     private readonly PetBehaviorPresentationResolver _behaviorPresentationResolver = new();
     private readonly PetBehaviorAnimationService _behaviorAnimation;
     private readonly DispatcherTimer _behaviorTimer;
+    private readonly PetClickGestureRecognizer _clickGestureRecognizer;
+    private readonly DispatcherTimer _clickGestureTimer;
     private SettingsWindow? _settingsWindow;
     private AvatarManagerWindow? _avatarManagerWindow;
     private PetSettings _settings = new();
@@ -55,6 +57,18 @@ public partial class MainWindow : Window
             Interval = TimeSpan.FromSeconds(1)
         };
         _behaviorTimer.Tick += BehaviorTimer_Tick;
+
+        var doubleClickInterval = TimeSpan.FromMilliseconds(
+            Math.Max(1, SystemParameters.DoubleClickTime));
+        _clickGestureRecognizer = new PetClickGestureRecognizer(
+            doubleClickInterval,
+            Math.Max(1, SystemParameters.DoubleClickWidth),
+            Math.Max(1, SystemParameters.DoubleClickHeight));
+        _clickGestureTimer = new DispatcherTimer(DispatcherPriority.Input)
+        {
+            Interval = doubleClickInterval
+        };
+        _clickGestureTimer.Tick += ClickGestureTimer_Tick;
     }
 
     private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -217,6 +231,30 @@ public partial class MainWindow : Window
         }
     }
 
+    private void ClickGestureTimer_Tick(object? sender, EventArgs e)
+    {
+        if (_clickGestureRecognizer.TryCompleteSingleClick(DateTimeOffset.UtcNow))
+        {
+            _clickGestureTimer.Stop();
+            HandleSinglePetClick();
+        }
+    }
+
+    private void HandleSinglePetClick()
+    {
+        ApplyBehavior(_behaviorEngine.OnPetClicked(DateTimeOffset.UtcNow));
+        RecordInteraction("pet_clicked", "{\"clickCount\":1}");
+    }
+
+    private void FlushPendingPetClick()
+    {
+        _clickGestureTimer.Stop();
+        if (_clickGestureRecognizer.FlushPendingSingleClick())
+        {
+            HandleSinglePetClick();
+        }
+    }
+
     private void BehaviorTimer_Tick(object? sender, EventArgs e)
     {
         var previousState = _behaviorEngine.CurrentState;
@@ -308,15 +346,30 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (e.ClickCount >= 2)
+        var position = e.GetPosition(PetCanvas);
+        var result = _clickGestureRecognizer.RegisterClick(
+            DateTimeOffset.UtcNow,
+            position.X,
+            position.Y);
+
+        if (result.CompletedSingleClicks > 0)
         {
+            HandleSinglePetClick();
+        }
+
+        if (result.IsDoubleClick)
+        {
+            _clickGestureTimer.Stop();
             RecordInteraction("pet_double_clicked", "{\"action\":\"open_gift\"}");
             OpenGift("pet_double_click");
             return;
         }
 
-        ApplyBehavior(_behaviorEngine.OnPetClicked(DateTimeOffset.UtcNow));
-        RecordInteraction("pet_clicked", "{\"clickCount\":1}");
+        if (result.HasPendingSingleClick)
+        {
+            _clickGestureTimer.Stop();
+            _clickGestureTimer.Start();
+        }
     }
 
     private void GiftButton_Click(object sender, RoutedEventArgs e) =>
@@ -349,6 +402,7 @@ public partial class MainWindow : Window
             return;
         }
 
+        FlushPendingPetClick();
         _settingsWindow?.Close();
         _avatarManagerWindow?.Close();
         SaveSettings();
@@ -435,6 +489,7 @@ public partial class MainWindow : Window
             return (false, false);
         }
 
+        FlushPendingPetClick();
         _settings.ActiveAvatarId = avatar.Id;
         SetActiveCompanion(avatar);
         LoadPetImage();
@@ -445,6 +500,7 @@ public partial class MainWindow : Window
 
     private (bool Success, bool Saved) DeleteAvatar(string avatarId)
     {
+        FlushPendingPetClick();
         var wasActive = string.Equals(
             _settings.ActiveAvatarId,
             avatarId,
@@ -619,6 +675,7 @@ public partial class MainWindow : Window
             return;
         }
 
+        FlushPendingPetClick();
         _allowExit = true;
         RecordInteraction("application_exited", "{\"source\":\"explicit_exit\"}");
         _settingsWindow?.Close();
@@ -626,6 +683,8 @@ public partial class MainWindow : Window
         SaveSettings();
         _behaviorTimer.Stop();
         _behaviorTimer.Tick -= BehaviorTimer_Tick;
+        _clickGestureTimer.Stop();
+        _clickGestureTimer.Tick -= ClickGestureTimer_Tick;
         _behaviorAnimation.Dispose();
         _snowAnimation.Dispose();
         _audioService.Dispose();
