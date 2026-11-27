@@ -28,6 +28,7 @@ public partial class MainWindow : Window
     private AvatarManagerWindow? _avatarManagerWindow;
     private PetSettings _settings = new();
     private bool _allowExit;
+    private bool _petImageLoaded;
     private bool _dragCandidate;
     private bool _wasDragged;
     private WpfPoint _mouseDownPosition;
@@ -111,6 +112,7 @@ public partial class MainWindow : Window
 
         if (avatar is null)
         {
+            _petImageLoaded = false;
             PetImage.Source = null;
             PetImage.Visibility = Visibility.Collapsed;
             FallbackPetCanvas.Visibility = Visibility.Visible;
@@ -121,6 +123,7 @@ public partial class MainWindow : Window
         var imagePath = _avatarCatalogService.ResolveImagePath(avatar.Id);
         if (string.IsNullOrWhiteSpace(imagePath))
         {
+            _petImageLoaded = false;
             PetImage.Source = null;
             PetImage.Visibility = Visibility.Collapsed;
             FallbackPetCanvas.Visibility = Visibility.Visible;
@@ -141,6 +144,7 @@ public partial class MainWindow : Window
             bitmap.Freeze();
 
             PetImage.Source = bitmap;
+            _petImageLoaded = true;
             PetImage.Visibility = Visibility.Visible;
             FallbackPetCanvas.Visibility = Visibility.Collapsed;
             StatusText.Text = $"{avatar.Name}，你好呀";
@@ -148,6 +152,7 @@ public partial class MainWindow : Window
         catch (Exception exception)
         {
             AppLogger.Log($"Unable to load avatar image '{avatar.Id}'.", exception);
+            _petImageLoaded = false;
             PetImage.Source = null;
             PetImage.Visibility = Visibility.Collapsed;
             FallbackPetCanvas.Visibility = Visibility.Visible;
@@ -171,7 +176,11 @@ public partial class MainWindow : Window
         var avatar = _avatarCatalogService.GetAvatar(_settings.ActiveAvatarId);
         var presentation = _behaviorPresentationResolver.Resolve(state, avatar?.Species);
 
-        StatusText.Text = presentation.Message;
+        if (_petImageLoaded)
+        {
+            StatusText.Text = presentation.Message;
+        }
+
         _behaviorAnimation.Apply(presentation.VisualEffect);
     }
 
@@ -360,9 +369,6 @@ public partial class MainWindow : Window
         LoadPetImage();
         ApplyBehavior(_behaviorEngine.CurrentState);
         var saved = SaveSettings();
-        StatusText.Text = saved
-            ? $"{avatar.Name}已切换"
-            : $"{avatar.Name}已切换，但保存失败";
         return (true, saved);
     }
 
