@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using WpfKeyEventArgs = System.Windows.Input.KeyEventArgs;
 using System.Windows.Media;
 using BichonDesktopPet.Core.AI;
 using BichonDesktopPet.Core.Models;
@@ -50,7 +51,7 @@ public partial class ChatWindow : Window
     private async void SendButton_Click(object sender, RoutedEventArgs e) =>
         await SendCurrentMessageAsync();
 
-    private async void MessageInput_KeyDown(object sender, KeyEventArgs e)
+    private async void MessageInput_KeyDown(object sender, WpfKeyEventArgs e)
     {
         if (e.Key == Key.Enter && Keyboard.Modifiers == ModifierKeys.None)
         {
