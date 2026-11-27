@@ -74,6 +74,19 @@ public sealed class SettingsServiceTests
     }
 
     [TestMethod]
+    public void Load_WhenOlderSettingsFileHasNoAvatarId_DefaultsToBichon()
+    {
+        var settingsPath = Path.Combine(_testDirectory, "legacy-settings.json");
+        File.WriteAllText(settingsPath, "{\"AlwaysOnTop\":false}");
+        var service = new SettingsService(settingsPath);
+
+        var settings = service.Load();
+
+        Assert.IsFalse(settings.AlwaysOnTop);
+        Assert.AreEqual("bichon", settings.ActiveAvatarId);
+    }
+
+    [TestMethod]
     public void Load_WhenJsonIsCorrupt_ReturnsDefaultsAndReportsFailure()
     {
         var settingsPath = Path.Combine(_testDirectory, "settings.json");
