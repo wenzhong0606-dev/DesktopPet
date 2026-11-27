@@ -16,6 +16,12 @@ public sealed class AvatarProfile
     /// <summary>Simple species/type metadata, such as dog, cat, or custom.</summary>
     public string Species { get; set; } = "custom";
 
+    /// <summary>Optional breed or character subtype, e.g. Bichon Frise or Border Collie.</summary>
+    public string Breed { get; set; } = string.Empty;
+
+    /// <summary>Per-avatar identity and communication preferences.</summary>
+    public PersonaProfile Persona { get; set; } = new();
+
     [JsonIgnore]
     public string SpeciesDisplayName => Species switch
     {
