@@ -28,10 +28,15 @@ M3-C creates two tables:
 - \`companions\`: stable identity, current avatar link, core-personality snapshot, evolving-personality placeholder and timestamps.
 - \`interaction_events\`: bounded local event records linked to a companion.
 
-The WPF shell currently records only:
-- \`pet_clicked\`
-- \`gift_opened\`
-- \`woke_from_tray\`
+The WPF shell records:
+- \`pet_clicked\`: each single click is a separate event row.
+- \`pet_double_clicked\`: the double-click gesture; it also opens the gift.
+- \`gift_opened\`: the resulting gift action, with a source field identifying double-click or context-menu activation.
+- \`hidden_to_tray\`: explicit hide-to-tray action or a window-close gesture that is converted into hiding.
+- \`woke_from_tray\`: restoring a hidden pet from the tray.
+- \`application_exited\`: explicit application exit through the exit command.
+
+A double-click intentionally produces both \`pet_double_clicked\` and \`gift_opened\`: one records the input gesture, the other records the resulting in-app action. Closing the pet window with its close gesture hides it to the tray; it is not an application exit. Forced process termination or an operating-system kill cannot be guaranteed to produce an exit event.
 
 The event journal does not record free-form user text, screenshots, files, audio or other personal content. It is local-only. M3-C does not infer memories from these events.
 
