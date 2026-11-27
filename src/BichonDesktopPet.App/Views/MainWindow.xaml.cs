@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using BichonDesktopPet.App.Services;
 using BichonDesktopPet.Core.Models;
 using BichonDesktopPet.Core.Services;
@@ -19,6 +20,10 @@ public partial class MainWindow : Window
     private readonly AvatarCatalogService _avatarCatalogService;
     private readonly SnowAnimationService _snowAnimation;
     private readonly AudioService _audioService = new();
+    private readonly PetBehaviorEngine _behaviorEngine = new();
+    private readonly PetBehaviorPresentationResolver _behaviorPresentationResolver = new();
+    private readonly PetBehaviorAnimationService _behaviorAnimation;
+    private readonly DispatcherTimer _behaviorTimer;
     private SettingsWindow? _settingsWindow;
     private AvatarManagerWindow? _avatarManagerWindow;
     private PetSettings _settings = new();
@@ -39,6 +44,12 @@ public partial class MainWindow : Window
             userDataDirectory,
             AppLogger.Log);
         _snowAnimation = new SnowAnimationService(SnowCanvas);
+        _behaviorAnimation = new PetBehaviorAnimationService(PetRotate, PetScale, PetTranslate);
+        _behaviorTimer = new DispatcherTimer(DispatcherPriority.Background)
+        {
+            Interval = TimeSpan.FromSeconds(1)
+        };
+        _behaviorTimer.Tick += BehaviorTimer_Tick;
     }
 
     private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -88,6 +99,9 @@ public partial class MainWindow : Window
                 SaveSettings();
             }
         }
+
+        ApplyBehavior(_behaviorEngine.Start(DateTimeOffset.UtcNow));
+        _behaviorTimer.Start();
     }
 
     private void LoadPetImage()
@@ -139,6 +153,26 @@ public partial class MainWindow : Window
             FallbackPetCanvas.Visibility = Visibility.Visible;
             StatusText.Text = $"{avatar.Name}素材加载失败";
         }
+    }
+
+    private void BehaviorTimer_Tick(object? sender, EventArgs e)
+    {
+        var previousState = _behaviorEngine.CurrentState;
+        var currentState = _behaviorEngine.Advance(DateTimeOffset.UtcNow);
+
+        if (currentState != previousState)
+        {
+            ApplyBehavior(currentState);
+        }
+    }
+
+    private void ApplyBehavior(PetBehaviorState state)
+    {
+        var avatar = _avatarCatalogService.GetAvatar(_settings.ActiveAvatarId);
+        var presentation = _behaviorPresentationResolver.Resolve(state, avatar?.Species);
+
+        StatusText.Text = presentation.Message;
+        _behaviorAnimation.Apply(presentation.VisualEffect);
     }
 
     private static double Clamp(double value, double min, double max) =>
@@ -214,39 +248,21 @@ public partial class MainWindow : Window
             return;
         }
 
-        StatusText.Text = "嘿嘿，摸摸我！";
-        var animation = new DoubleAnimation
-        {
-            From = -3,
-            To = 3,
-            Duration = TimeSpan.FromMilliseconds(160),
-            AutoReverse = true,
-            RepeatBehavior = new RepeatBehavior(2)
-        };
-
-        PetRotate.BeginAnimation(System.Windows.Media.RotateTransform.AngleProperty, animation);
+        ApplyBehavior(_behaviorEngine.OnPetClicked(DateTimeOffset.UtcNow));
     }
 
     private void GiftButton_Click(object sender, RoutedEventArgs e)
     {
-        StatusText.Text = "礼物打开啦 ✨";
-        var animation = new DoubleAnimation
-        {
-            From = -5,
-            To = 5,
-            Duration = TimeSpan.FromMilliseconds(120),
-            AutoReverse = true,
-            RepeatBehavior = new RepeatBehavior(3)
-        };
-
-        PetRotate.BeginAnimation(System.Windows.Media.RotateTransform.AngleProperty, animation);
+        ApplyBehavior(_behaviorEngine.OnGiftOpened(DateTimeOffset.UtcNow));
     }
 
     public void ShowFromTray()
     {
-        if (!IsVisible)
+        var wasHidden = !IsVisible;
+        if (wasHidden)
         {
             Show();
+            ApplyBehavior(_behaviorEngine.OnWake(DateTimeOffset.UtcNow));
         }
 
         WindowState = WindowState.Normal;
@@ -342,6 +358,7 @@ public partial class MainWindow : Window
 
         _settings.ActiveAvatarId = avatar.Id;
         LoadPetImage();
+        ApplyBehavior(_behaviorEngine.CurrentState);
         var saved = SaveSettings();
         StatusText.Text = saved
             ? $"{avatar.Name}已切换"
@@ -368,6 +385,7 @@ public partial class MainWindow : Window
 
         _settings.ActiveAvatarId = AvatarCatalogService.DefaultAvatarId;
         LoadPetImage();
+        ApplyBehavior(_behaviorEngine.CurrentState);
         return (true, SaveSettings());
     }
 
@@ -509,6 +527,9 @@ public partial class MainWindow : Window
         _settingsWindow?.Close();
         _avatarManagerWindow?.Close();
         SaveSettings();
+        _behaviorTimer.Stop();
+        _behaviorTimer.Tick -= BehaviorTimer_Tick;
+        _behaviorAnimation.Dispose();
         _snowAnimation.Dispose();
         _audioService.Dispose();
         Close();
