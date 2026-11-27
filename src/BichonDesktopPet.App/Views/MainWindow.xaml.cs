@@ -470,6 +470,7 @@ public partial class MainWindow : Window
         }
 
         var cachedIp = GetCachedLocation("ip");
+        var recentCachedIp = GetRecentCachedIpLocation(now);
         if (!forceRefresh &&
             cachedIp is not null &&
             _settings.CachedLocationUpdatedAtUtc is { } ipUpdatedAt &&
@@ -482,7 +483,7 @@ public partial class MainWindow : Window
         if (localRouteWarning is not null)
         {
             StatusText.Text = $"{localRouteWarning}；为避免定位到代理出口，暂不更新自动位置。";
-            return cachedIp;
+            return recentCachedIp;
         }
 
         var ipResult = await _ipLocationService.ResolveCurrentAsync();
@@ -490,7 +491,7 @@ public partial class MainWindow : Window
             string.IsNullOrWhiteSpace(ipResult.Country))
         {
             StatusText.Text = $"{ipResult.RejectionReason ?? "无法确认网络位置"}；未采用出口城市，可在设置中手动指定关注城市。";
-            return cachedIp;
+            return recentCachedIp;
         }
 
         // IPLogs provides a coarse city/country. Resolve city coordinates separately;
@@ -499,12 +500,24 @@ public partial class MainWindow : Window
         if (geocodedIpCity is null)
         {
             StatusText.Text = "已确认网络出口可信，但无法将其城市解析为天气坐标；请手动指定关注城市。";
-            return cachedIp;
+            return recentCachedIp;
         }
 
         var trustedLocation = geocodedIpCity with { Source = "ip" };
         SaveCachedLocation(trustedLocation, query: null);
         return trustedLocation;
+    }
+
+    private CareLocation? GetRecentCachedIpLocation(DateTimeOffset now)
+    {
+        if (_settings.CachedLocationUpdatedAtUtc is not { } updatedAt ||
+            now < updatedAt ||
+            now - updatedAt > TimeSpan.FromDays(7))
+        {
+            return null;
+        }
+
+        return GetCachedLocation("ip");
     }
 
     private CareLocation? GetCachedLocation(string? requiredSource = null)
