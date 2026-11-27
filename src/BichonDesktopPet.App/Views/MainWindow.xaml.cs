@@ -16,9 +16,11 @@ namespace BichonDesktopPet.App.Views;
 public partial class MainWindow : Window
 {
     private readonly SettingsService _settingsService;
+    private readonly AvatarCatalogService _avatarCatalogService;
     private readonly SnowAnimationService _snowAnimation;
     private readonly AudioService _audioService = new();
     private SettingsWindow? _settingsWindow;
+    private AvatarManagerWindow? _avatarManagerWindow;
     private PetSettings _settings = new();
     private bool _allowExit;
     private bool _dragCandidate;
@@ -29,20 +31,42 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         _settingsService = new SettingsService(log: AppLogger.Log);
+        var userDataDirectory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "BichonDesktopPet");
+        _avatarCatalogService = new AvatarCatalogService(
+            Path.Combine(AppContext.BaseDirectory, "Assets"),
+            userDataDirectory,
+            AppLogger.Log);
         _snowAnimation = new SnowAnimationService(SnowCanvas);
     }
 
     private void Window_Loaded(object sender, RoutedEventArgs e)
     {
-        LoadPetImage();
-
         _settings = _settingsService.Load();
+        _avatarCatalogService.Load();
+
+        var activeAvatar = _avatarCatalogService.GetAvatar(_settings.ActiveAvatarId);
+        var activeAvatarNeedsReset = activeAvatar is null ||
+            (!activeAvatar.IsBuiltIn && _avatarCatalogService.ResolveImagePath(activeAvatar.Id) is null);
+
+        if (activeAvatarNeedsReset)
+        {
+            _settings.ActiveAvatarId = AvatarCatalogService.DefaultAvatarId;
+        }
+
         Topmost = _settings.AlwaysOnTop;
 
         var workArea = SystemParameters.WorkArea;
         Left = Clamp(_settings.WindowLeft ?? workArea.Right - Width - 24, workArea.Left, workArea.Right - Width);
         Top = Clamp(_settings.WindowTop ?? workArea.Bottom - Height - 24, workArea.Top, workArea.Bottom - Height);
 
+        if (activeAvatarNeedsReset)
+        {
+            SaveSettings();
+        }
+
+        LoadPetImage();
         _snowAnimation.SetEnabled(_settings.SnowEnabled);
         SetLightsEnabled(_settings.DecorativeLightsEnabled);
 
@@ -68,19 +92,26 @@ public partial class MainWindow : Window
 
     private void LoadPetImage()
     {
-        var imagePath = Path.Combine(
-            AppContext.BaseDirectory,
-            "Assets",
-            "characters",
-            "bichon",
-            "base",
-            "bichon-idle.png");
+        var avatar = _avatarCatalogService.GetAvatar(_settings.ActiveAvatarId)
+            ?? _avatarCatalogService.GetAvatar(AvatarCatalogService.DefaultAvatarId);
 
-        if (!File.Exists(imagePath))
+        if (avatar is null)
         {
-            FallbackPetCanvas.Visibility = Visibility.Visible;
+            PetImage.Source = null;
             PetImage.Visibility = Visibility.Collapsed;
-            StatusText.Text = "比熊图片素材未找到";
+            FallbackPetCanvas.Visibility = Visibility.Visible;
+            StatusText.Text = "默认角色不可用";
+            return;
+        }
+
+        var imagePath = _avatarCatalogService.ResolveImagePath(avatar.Id);
+        if (string.IsNullOrWhiteSpace(imagePath))
+        {
+            PetImage.Source = null;
+            PetImage.Visibility = Visibility.Collapsed;
+            FallbackPetCanvas.Visibility = Visibility.Visible;
+            StatusText.Text = $"{avatar.Name}图片未找到";
+            AppLogger.Log($"Avatar image file is missing for '{avatar.Id}'.");
             return;
         }
 
@@ -97,15 +128,15 @@ public partial class MainWindow : Window
             PetImage.Source = bitmap;
             PetImage.Visibility = Visibility.Visible;
             FallbackPetCanvas.Visibility = Visibility.Collapsed;
-            StatusText.Text = "汪！你好呀";
+            StatusText.Text = $"{avatar.Name}，你好呀";
         }
         catch (Exception exception)
         {
-            AppLogger.Log("Unable to load the Bichon runtime image.", exception);
+            AppLogger.Log($"Unable to load avatar image '{avatar.Id}'.", exception);
             PetImage.Source = null;
             PetImage.Visibility = Visibility.Collapsed;
             FallbackPetCanvas.Visibility = Visibility.Visible;
-            StatusText.Text = "比熊素材加载失败";
+            StatusText.Text = $"{avatar.Name}素材加载失败";
         }
     }
 
@@ -197,7 +228,7 @@ public partial class MainWindow : Window
 
     private void GiftButton_Click(object sender, RoutedEventArgs e)
     {
-        StatusText.Text = "汪！礼物打开啦 ✨";
+        StatusText.Text = "礼物打开啦 ✨";
         var animation = new DoubleAnimation
         {
             From = -5,
@@ -224,6 +255,7 @@ public partial class MainWindow : Window
     public void HideToTray()
     {
         _settingsWindow?.Close();
+        _avatarManagerWindow?.Close();
         SaveSettings();
         Hide();
     }
@@ -261,6 +293,81 @@ public partial class MainWindow : Window
 
         settingsWindow.Show();
         settingsWindow.Activate();
+    }
+
+    public void OpenAvatarManagerWindow()
+    {
+        if (_avatarManagerWindow is { IsVisible: true })
+        {
+            _avatarManagerWindow.Activate();
+            return;
+        }
+
+        if (!IsVisible)
+        {
+            ShowFromTray();
+        }
+
+        var manager = new AvatarManagerWindow(
+            _avatarCatalogService,
+            SetActiveAvatar,
+            DeleteAvatar,
+            () => _settings.ActiveAvatarId)
+        {
+            Owner = this
+        };
+
+        _avatarManagerWindow = manager;
+        manager.Closed += (_, _) =>
+        {
+            if (ReferenceEquals(_avatarManagerWindow, manager))
+            {
+                _avatarManagerWindow = null;
+            }
+        };
+
+        manager.Show();
+        manager.Activate();
+    }
+
+    private (bool Success, bool Saved) SetActiveAvatar(string avatarId)
+    {
+        var avatar = _avatarCatalogService.GetAvatar(avatarId);
+        if (avatar is null ||
+            (!avatar.IsBuiltIn && _avatarCatalogService.ResolveImagePath(avatarId) is null))
+        {
+            return (false, false);
+        }
+
+        _settings.ActiveAvatarId = avatar.Id;
+        LoadPetImage();
+        var saved = SaveSettings();
+        StatusText.Text = saved
+            ? $"{avatar.Name}已切换"
+            : $"{avatar.Name}已切换，但保存失败";
+        return (true, saved);
+    }
+
+    private (bool Success, bool Saved) DeleteAvatar(string avatarId)
+    {
+        var wasActive = string.Equals(
+            _settings.ActiveAvatarId,
+            avatarId,
+            StringComparison.OrdinalIgnoreCase);
+
+        if (!_avatarCatalogService.Delete(avatarId))
+        {
+            return (false, false);
+        }
+
+        if (!wasActive)
+        {
+            return (true, true);
+        }
+
+        _settings.ActiveAvatarId = AvatarCatalogService.DefaultAvatarId;
+        LoadPetImage();
+        return (true, SaveSettings());
     }
 
     private (PetSettings Settings, bool Saved) ApplySettings(PetSettings requested)
@@ -317,6 +424,7 @@ public partial class MainWindow : Window
     {
         WindowLeft = source.WindowLeft,
         WindowTop = source.WindowTop,
+        ActiveAvatarId = source.ActiveAvatarId,
         AlwaysOnTop = source.AlwaysOnTop,
         SnowEnabled = source.SnowEnabled,
         DecorativeLightsEnabled = source.DecorativeLightsEnabled,
@@ -374,6 +482,7 @@ public partial class MainWindow : Window
     }
 
     private void Settings_Click(object sender, RoutedEventArgs e) => OpenSettingsWindow();
+    private void Avatars_Click(object sender, RoutedEventArgs e) => OpenAvatarManagerWindow();
     private void ToggleSnow_Click(object sender, RoutedEventArgs e) => ToggleSnow();
     private void ToggleLights_Click(object sender, RoutedEventArgs e) => ToggleLights();
     private void ToggleMusic_Click(object sender, RoutedEventArgs e) => ToggleMusic();
@@ -388,6 +497,7 @@ public partial class MainWindow : Window
         {
             e.Cancel = true;
             _settingsWindow?.Close();
+            _avatarManagerWindow?.Close();
             Hide();
         }
     }
@@ -396,6 +506,7 @@ public partial class MainWindow : Window
     {
         _allowExit = true;
         _settingsWindow?.Close();
+        _avatarManagerWindow?.Close();
         SaveSettings();
         _snowAnimation.Dispose();
         _audioService.Dispose();
