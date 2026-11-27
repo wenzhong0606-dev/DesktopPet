@@ -14,6 +14,7 @@ The user has confirmed that image-based desktop pet display is complete. The cur
 - Initial window: 280 × 360 device-independent pixels (DIP).
 - Window: transparent, borderless, non-resizable, topmost by default, hidden from the taskbar.
 - Character display: load `Assets/characters/bichon/base/bichon-idle.png` from the application output directory.
+- Runtime PNG: 420 × 540, RGBA, 132,158 bytes; SHA-256 `326d10ace28d53e8a4289b9f103c648ecb79d6b1b32e4a8f76d715793b97d210`.
 - Fallback: retain the temporary vector character if the PNG is absent or cannot be decoded.
 - Settings: local JSON under the LocalAppData BichonDesktopPet settings folder.
 - Music: optional and disabled by default.
@@ -32,8 +33,7 @@ The user has confirmed that image-based desktop pet display is complete. The cur
 - Add an explicit hide action to the tray menu.
 - Add a lightweight settings window for existing settings (topmost, snow, decorative lights, music) and reset position.
 - Improve settings persistence diagnostics and application exception logging.
-- Recheck the committed PNG's dimensions and SHA-256; current Git tree size is 132,158 bytes, while the older manifest expected 45,559 bytes.
-- Run Release build, tests, and Windows visual/interaction smoke tests on the user's machine.
+- Run Release build, tests, and Windows visual/interaction smoke tests on the user's machine. The PNG's dimensions and SHA-256 have now been inspected from the committed binary; visual display still needs Windows verification.
 
 ## Milestones
 
