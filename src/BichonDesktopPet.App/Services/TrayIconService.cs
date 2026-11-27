@@ -12,14 +12,17 @@ public sealed class TrayIconService : IDisposable
     {
         var menu = new Forms.ContextMenuStrip();
 
-        var showItem = new Forms.ToolStripMenuItem("显示比熊");
+        var showItem = new Forms.ToolStripMenuItem("显示桌宠");
         showItem.Click += (_, _) => window.Dispatcher.BeginInvoke(new Action(window.ShowFromTray));
 
-        var hideItem = new Forms.ToolStripMenuItem("隐藏比熊");
+        var hideItem = new Forms.ToolStripMenuItem("隐藏桌宠");
         hideItem.Click += (_, _) => window.Dispatcher.BeginInvoke(new Action(window.HideToTray));
 
         var settingsItem = new Forms.ToolStripMenuItem("设置...");
         settingsItem.Click += (_, _) => window.Dispatcher.BeginInvoke(new Action(window.OpenSettingsWindow));
+
+        var avatarsItem = new Forms.ToolStripMenuItem("角色管理...");
+        avatarsItem.Click += (_, _) => window.Dispatcher.BeginInvoke(new Action(window.OpenAvatarManagerWindow));
 
         var snowItem = new Forms.ToolStripMenuItem("切换雪花");
         snowItem.Click += (_, _) => window.Dispatcher.BeginInvoke(new Action(window.ToggleSnow));
@@ -38,6 +41,7 @@ public sealed class TrayIconService : IDisposable
             hideItem,
             new Forms.ToolStripSeparator(),
             settingsItem,
+            avatarsItem,
             new Forms.ToolStripSeparator(),
             snowItem,
             lightsItem,
@@ -48,7 +52,7 @@ public sealed class TrayIconService : IDisposable
 
         _notifyIcon = new Forms.NotifyIcon
         {
-            Text = "比熊桌宠",
+            Text = "桌面伙伴",
             Icon = SystemIcons.Application,
             ContextMenuStrip = menu,
             Visible = true
