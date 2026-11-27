@@ -74,3 +74,58 @@ Windows CI passed on commit `5db5f4dd135f9226665f4defc187c8fe5767ff1d`: Release 
 - No AI, voice, 3D, rigging or network integration.
 
 After local acceptance, the next M3 increment can add configurable, low-frequency idle variations and optional frame-sequence playback once suitable assets are available.
+
+
+## M3-B — per-avatar identity and personality
+
+M3-B extends the behavior layer with a separate persona profile for each avatar. The avatar remains an image/appearance record; its persona describes who the companion is and how it expresses itself.
+
+### Persona fields
+
+| Field | Meaning | Constraints |
+|---|---|---|
+| Name | Display name of this avatar | 1–40 characters |
+| Species | Broad character type | Existing metadata, up to 24 characters |
+| Breed | Breed or subtype | Optional, up to 40 characters |
+| Nicknames | Alternative names for this pet | Up to 5, each up to 20 characters |
+| SelfReference | How the pet refers to itself | 1–20 characters |
+| UserAddress | How the pet addresses the user | 1–20 characters |
+| PersonalityTraits | Free-form personality descriptors | Up to 3, each up to 16 characters |
+| SpeechStyle | cute, gentle, cool, tsundere, playful, natural | One supported value |
+| ResponseLength | short or medium | One supported value |
+| EmojiLevel | low, medium or high | One supported value |
+| Catchphrases | Optional happy/excited phrases | Up to 5, each up to 40 characters |
+
+### Catalog migration
+
+The avatar catalog is now schema version 2. Loading a valid schema v1 catalog:
+
+- Preserves valid avatar IDs, names, species, image paths and creation timestamps.
+- Keeps imported image files in their existing LocalAppData folders.
+- Adds safe default persona data to every avatar.
+- Keeps the existing \`settings.json\` and \`ActiveAvatarId\` untouched.
+- Writes the migrated catalog atomically using the existing temporary-file replacement pattern.
+
+If the catalog is from a newer schema version than this app supports, the service avoids writing it to prevent downgrading newer user data.
+
+### Local dynamic message templates
+
+The behavior resolver now receives the active avatar profile rather than only its species. It uses the persona's self-reference, user address, personality traits, speech style, nicknames, catchphrases, response length and emoji level to select and format messages.
+
+Template selection rotates per avatar and behavior state, so repeated reactions use alternative phrases before cycling back. Species remains a source of interjection/fallback wording, not a substitute for individual personality.
+
+This is still a bounded, deterministic local template system. It is not AI, does not understand arbitrary user input and does not save conversation memory. AI-generated dialogue remains M4.
+
+### M3-B Windows acceptance checklist
+
+- [ ] Existing v1 catalog migrates to v2 without losing custom avatars or image files.
+- [ ] Existing selected-avatar setting remains unchanged after migration.
+- [ ] Built-in Bichon and imported avatars can be edited independently.
+- [ ] Name, breed, nicknames, self-reference and user address save and reload.
+- [ ] Personality traits, speech style, response length, emoji level and catchphrases save and reload.
+- [ ] More than three traits, too many nicknames/catchphrases, or overlong fields are rejected with a visible validation message.
+- [ ] A Bichon configured as lively/affectionate differs from a cat configured as cool/independent.
+- [ ] Repeated clicks cycle through different messages before repeating.
+- [ ] M3-A behavior and M1/M2 functions still work.
+- [ ] No network request or AI configuration is required.
+
