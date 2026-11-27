@@ -46,7 +46,7 @@ public sealed class PetBehaviorPresentationResolverTests
     }
 
     [TestMethod]
-    public void PersonaHappy_UsesPetNameAndUserAddress()
+    public void PersonaGreeting_UsesPrimaryPetNicknameAndUserAddress()
     {
         var avatar = new AvatarProfile
         {
@@ -62,7 +62,7 @@ public sealed class PetBehaviorPresentationResolverTests
             }
         };
 
-        var presentation = _resolver.Resolve(PetBehaviorState.Happy, avatar);
+        var presentation = _resolver.Resolve(PetBehaviorState.Greeting, avatar);
 
         StringAssert.Contains(presentation.Message, "主人");
         StringAssert.Contains(presentation.Message, "豆包");

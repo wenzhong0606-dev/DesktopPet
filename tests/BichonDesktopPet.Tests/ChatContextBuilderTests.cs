@@ -47,7 +47,7 @@ public sealed class ChatContextBuilderTests
         Assert.IsFalse(messages[0].Content.Contains("private-stable-id", StringComparison.Ordinal));
         Assert.IsFalse(messages[0].Content.Contains("Happy", StringComparison.Ordinal));
         Assert.IsFalse(messages[0].Content.Contains("汪汪！", StringComparison.Ordinal));
-        Assert.IsFalse(messages[0].Content.Contains("小豆", StringComparison.Ordinal));
+        StringAssert.Contains(messages[0].Content, "其他昵称别名：小豆");
         Assert.AreEqual("user", messages[1].Role);
         Assert.AreEqual("你好", messages[1].Content);
     }
@@ -61,8 +61,8 @@ public sealed class ChatContextBuilderTests
             .ToArray();
 
         var messages = ChatContextBuilder.BuildMessages(
-            new CompanionIdentity { DisplayName = "管理名称" },
-            new AvatarProfile { Name = "图片管理标签" },
+            new CompanionIdentity { DisplayName = "PRIVATE-COMPANION-DISPLAY" },
+            new AvatarProfile { Name = "PRIVATE-AVATAR-MANAGEMENT" },
             PetBehaviorState.Idle, history, historyLimit: 3);
 
         Assert.AreEqual(4, messages.Count);
@@ -70,8 +70,8 @@ public sealed class ChatContextBuilderTests
         Assert.AreEqual("message-14", messages[2].Content);
         Assert.AreEqual(2000, messages[3].Content.Length);
         Assert.IsTrue(messages.All(message => message.Role != "tool"));
-        Assert.IsFalse(messages[0].Content.Contains("管理名称"));
-        Assert.IsFalse(messages[0].Content.Contains("图片管理标签"));
+        Assert.IsFalse(messages[0].Content.Contains("PRIVATE-COMPANION-DISPLAY", StringComparison.Ordinal));
+        Assert.IsFalse(messages[0].Content.Contains("PRIVATE-AVATAR-MANAGEMENT", StringComparison.Ordinal));
     }
 
     [TestMethod]

@@ -26,7 +26,7 @@ M3-B remains local and deterministic. It does not add AI, free-form language und
 | EmojiLevel | low / medium / high | Supported value only |
 | Catchphrases | Custom phrases used for happy/excited states | 0–5 items; 1–40 chars each |
 
-The existing \`AvatarProfile.Name\` remains the primary display name. A nickname is an additional name, while \`SelfReference\` controls the first-person reference used in generated messages.
+\`AvatarProfile.Name\` is only a management label used to distinguish roles in the role manager. It is never used as the pet's conversational name. The first \`PersonaProfile.Nicknames\` entry is the pet's primary name; later entries are optional aliases. \`SelfReference\` independently controls first-person wording.
 
 ## WPF workflow
 
