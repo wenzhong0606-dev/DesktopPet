@@ -102,7 +102,7 @@ public sealed class PetBehaviorPresentationResolver
 
         if (persona.SpeechStyle == "cool" || isIndependent)
         {
-            return state switch
+            List<string> templates = state switch
             {
                 PetBehaviorState.Idle =>
                 [
@@ -136,11 +136,13 @@ public sealed class PetBehaviorPresentationResolver
                 ],
                 _ => ["我在。"]
             };
+            AddSharedPersonaTemplates(templates, state, persona);
+            return templates;
         }
 
         if (persona.SpeechStyle == "tsundere")
         {
-            return state switch
+            List<string> templates = state switch
             {
                 PetBehaviorState.Idle =>
                 [
@@ -174,11 +176,13 @@ public sealed class PetBehaviorPresentationResolver
                 ],
                 _ => ["哼。"]
             };
+            AddSharedPersonaTemplates(templates, state, persona);
+            return templates;
         }
 
         if (persona.SpeechStyle == "gentle" || isShy)
         {
-            return state switch
+            List<string> templates = state switch
             {
                 PetBehaviorState.Idle =>
                 [
@@ -212,6 +216,8 @@ public sealed class PetBehaviorPresentationResolver
                 ],
                 _ => ["我在这里。"]
             };
+            AddSharedPersonaTemplates(templates, state, persona);
+            return templates;
         }
 
         var interjection = species switch
@@ -267,15 +273,7 @@ public sealed class PetBehaviorPresentationResolver
             templates.Add($"嘿！{address}，我们再玩一次！");
         }
 
-        if (persona.Nicknames.Count > 0 && state == PetBehaviorState.Greeting)
-        {
-            templates.Add($"你也可以叫我{persona.Nicknames[0]}，{address}！");
-        }
-
-        if (persona.Catchphrases.Count > 0 && state is PetBehaviorState.Happy or PetBehaviorState.Excited)
-        {
-            templates.AddRange(persona.Catchphrases);
-        }
+        AddSharedPersonaTemplates(templates, state, persona);
 
         if (persona.SpeechStyle == "playful" && state is PetBehaviorState.Happy or PetBehaviorState.Excited)
         {
@@ -283,6 +281,25 @@ public sealed class PetBehaviorPresentationResolver
         }
 
         return templates;
+    }
+
+    private static void AddSharedPersonaTemplates(
+        List<string> templates,
+        PetBehaviorState state,
+        PersonaProfile persona)
+    {
+        if (state == PetBehaviorState.Greeting)
+        {
+            foreach (var nickname in persona.Nicknames)
+            {
+                templates.Add($"你也可以叫我{nickname}，{{user}}！");
+            }
+        }
+
+        if (state is PetBehaviorState.Happy or PetBehaviorState.Excited)
+        {
+            templates.AddRange(persona.Catchphrases);
+        }
     }
 
     private string NextTemplate(string key, IReadOnlyList<string> templates)
