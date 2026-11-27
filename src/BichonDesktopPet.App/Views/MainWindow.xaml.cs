@@ -174,7 +174,7 @@ public partial class MainWindow : Window
     private void ApplyBehavior(PetBehaviorState state)
     {
         var avatar = _avatarCatalogService.GetAvatar(_settings.ActiveAvatarId);
-        var presentation = _behaviorPresentationResolver.Resolve(state, avatar?.Species);
+        var presentation = _behaviorPresentationResolver.Resolve(state, avatar);
 
         if (_petImageLoaded)
         {
