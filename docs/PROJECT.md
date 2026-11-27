@@ -99,9 +99,11 @@ The first vertical slice is committed to \`main\`:
 - M3-A behavior states/effects and M1/M2 desktop functions remain intact.
 - No AI, voice, 3D, network access or cloud storage is introduced.
 
-## M3-C — companion identity and Qwen provider foundation (implementation committed; Windows CI verification pending)
+## M3-C — companion identity and Qwen provider foundation (Windows CI passed; local acceptance pending)
 
 **Goal:** begin separating the persistent companion individual from the avatar currently used to display it, and prepare the first AI provider without making the desktop pet dependent on network access.
+
+Windows Release CI passed on commit `527edd58cec592d7c3a43775c587d151c26a1c44`: build with 0 warnings and 0 errors; 61/61 automated tests passed ([run #224](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45960178698)). Local Windows acceptance remains pending.
 
 Implementation:
 
@@ -118,7 +120,7 @@ Implementation:
 
 ### M3-C acceptance
 
-- Release build and all automated tests pass on Windows CI.
+- Windows Release build and all 61 automated tests pass with 0 warnings and 0 errors.
 - Existing settings, avatar catalog, avatar IDs and imported images remain untouched.
 - On first run, each existing avatar receives one stable companion ID in the separate SQLite database.
 - Restarting the app preserves companion IDs and local interaction events.
