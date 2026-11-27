@@ -126,5 +126,6 @@ public sealed class ChatWelcomeMessageBuilderTests
         };
 
         Assert.AreEqual("豆包", ChatWelcomeMessageBuilder.GetPrimaryNickname(avatar));
+        Assert.AreEqual("宠物昵称：豆包", avatar.PrimaryNicknameDisplay);
     }
 }

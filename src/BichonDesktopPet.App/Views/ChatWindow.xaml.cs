@@ -304,7 +304,7 @@ public partial class ChatWindow : Window
                 {
                     Messages = messages,
                     MaxTokens = 512,
-                    Temperature = 0.7
+                    Temperature = 0.4
                 },
                 cancellation.Token);
 

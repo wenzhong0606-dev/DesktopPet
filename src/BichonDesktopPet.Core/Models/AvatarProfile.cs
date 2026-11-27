@@ -24,6 +24,16 @@ public sealed class AvatarProfile
     public PersonaProfile Persona { get; set; } = new();
 
     [JsonIgnore]
+    public string PrimaryNicknameDisplay
+    {
+        get
+        {
+            var nickname = Persona?.Nicknames is { Count: > 0 } ? Persona.Nicknames[0] : string.Empty;
+            return string.IsNullOrWhiteSpace(nickname) ? "尚未设置宠物昵称" : $"宠物昵称：{nickname}";
+        }
+    }
+
+    [JsonIgnore]
     public string SpeciesDisplayName => Species switch
     {
         "dog" => "狗狗",
