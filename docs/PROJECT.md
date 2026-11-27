@@ -42,7 +42,7 @@ Only Bichon artwork is bundled. Other roles are added by local import.
 
 ## M3 — lightweight behavior system (first increment; local acceptance pending)
 
-The first implementation is committed to \`main\`. Windows CI passed on commit `e78c94d706d123c1a5d999e494e6f3ca184380d0`: Release build with 0 warnings and 0 errors, 30/30 tests passed ([run #111](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45946216141)).
+The first implementation is committed to \`main\`. Windows CI passed on commit `5db5f4dd135f9226665f4defc187c8fe5767ff1d`: Release build with 0 warnings and 0 errors, 30/30 tests passed ([run #124](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45946659068)).
 
 The implementation includes:
 
