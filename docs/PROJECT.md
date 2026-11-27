@@ -99,6 +99,39 @@ The first vertical slice is committed to \`main\`:
 - M3-A behavior states/effects and M1/M2 desktop functions remain intact.
 - No AI, voice, 3D, network access or cloud storage is introduced.
 
+## M3-C — companion identity and Qwen provider foundation (implementation committed; Windows CI verification pending)
+
+**Goal:** begin separating the persistent companion individual from the avatar currently used to display it, and prepare the first AI provider without making the desktop pet dependent on network access.
+
+Implementation:
+
+- Add \`CompanionIdentity\` with a stable ID, current avatar link, display name, initial-persona snapshot and an evolving-personality placeholder.
+- Store companion identities in \`%LOCALAPPDATA%\\BichonDesktopPet\\companions.db\`, separate from the existing avatar catalog and settings JSON.
+- Create a local interaction journal for pet clicks, gift interactions and tray wake events. Raw user conversation text is not recorded.
+- Archive companion identity/history when an avatar is deleted instead of automatically deleting its accumulated history.
+- Add the provider-neutral \`IAiChatProvider\` contract and a non-streaming Qwen Chat Completions implementation.
+- Default provider configuration is Qwen, model \`qwen-plus\`, endpoint \`https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions\`.
+- Read the API key from \`Qwen__ApiKey\` or the optional local file \`%LOCALAPPDATA%\\BichonDesktopPet\\appsettings.Local.json\`; environment variables override file values.
+- Keep the provider initialized but unused by the UI. No AI request is sent at startup; no API key is required for existing offline features.
+
+**Important limitations:** this is not yet a chat experience. \`EvolvingPersonalityJson\` remains an empty placeholder; interaction events are not yet converted into memories; no semantic retrieval, automatic memory extraction or autonomous personality growth is implemented.
+
+### M3-C acceptance
+
+- Release build and all automated tests pass on Windows CI.
+- Existing settings, avatar catalog, avatar IDs and imported images remain untouched.
+- On first run, each existing avatar receives one stable companion ID in the separate SQLite database.
+- Restarting the app preserves companion IDs and local interaction events.
+- Deleting an imported avatar archives its companion record and keeps the interaction journal.
+- The app starts and all offline features work when no Qwen API key is configured.
+- The exact Qwen defaults are \`qwen-plus\` and the configured DashScope compatible endpoint.
+- The API key is loaded locally and never committed or written to logs.
+- No network request is sent during startup.
+
+### Next increment
+
+M4-A will add an explicit text conversation UI and a compact context builder. M4-B will add memory formation/retrieval and gradual personality development. These features must use the stable companion ID and remain independent of the Qwen provider.
+
 ## Local storage
 
 - Settings: \`%LOCALAPPDATA%\\BichonDesktopPet\\settings.json\`
@@ -110,12 +143,13 @@ The first vertical slice is committed to \`main\`:
 - M0: image-based desktop pet display — accepted.
 - M1: reliable daily-use image desktop pet — user acceptance passed.
 - M2: multiple image avatars and local avatar management — user acceptance passed.
-- M3: rule-based behavior and lightweight image effects plus per-avatar persona profiles — Windows CI passed; local acceptance pending.
-- M4: AI text interaction and constrained action mapping.
+- M3: local behavior, per-avatar persona profiles, persistent companion identity, local interaction journal and Qwen provider foundation — M3-C Windows CI/local acceptance pending.
+- M4-A: explicit AI text interaction and compact context construction using Qwen `qwen-plus` by default.
+- M4-B: local memory formation/retrieval and gradual, evidence-based personality development.
 - M5: push-to-talk voice interaction and speech output.
 - M6: single-character real-time 3D technical validation.
 - M7: user-imported GLB/glTF static avatar support.
 - M8: rig profiles and character-specific animation expansion.
 - M9: optional character sharing/ecosystem, only after earlier stages are validated.
 
-See [PRODUCT_DEFINITION_AND_MVP_ROADMAP_V1.md](PRODUCT_DEFINITION_AND_MVP_ROADMAP_V1.md), [M2_AVATAR_MANAGEMENT.md](M2_AVATAR_MANAGEMENT.md), [M3_BEHAVIOR_SYSTEM.md](M3_BEHAVIOR_SYSTEM.md) and [M3B_PERSONA_SYSTEM.md](M3B_PERSONA_SYSTEM.md).
+See [PRODUCT_DEFINITION_AND_MVP_ROADMAP_V1.md](PRODUCT_DEFINITION_AND_MVP_ROADMAP_V1.md), [M2_AVATAR_MANAGEMENT.md](M2_AVATAR_MANAGEMENT.md), [M3_BEHAVIOR_SYSTEM.md](M3_BEHAVIOR_SYSTEM.md) and [M3B_PERSONA_SYSTEM.md](M3B_PERSONA_SYSTEM.md), [M3C_COMPANION_FOUNDATION.md](M3C_COMPANION_FOUNDATION.md) and [QWEN_CONFIGURATION.md](QWEN_CONFIGURATION.md).
