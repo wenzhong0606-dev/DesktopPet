@@ -172,7 +172,10 @@ public partial class AvatarManagerWindow : Window
         if (editor.ShowDialog() == true)
         {
             RefreshAvatars(selected.Id);
-            StatusText.Text = $"「{selected.Name}」的身份与个性资料已保存。";
+            var updatedAvatar = _catalog.GetAvatar(selected.Id);
+            StatusText.Text = updatedAvatar is null
+                ? "角色资料已保存。"
+                : $"「{updatedAvatar.Name}」的身份与个性资料已保存。";
         }
     }
 
