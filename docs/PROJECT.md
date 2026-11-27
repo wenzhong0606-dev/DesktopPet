@@ -2,75 +2,75 @@
 
 ## Product direction
 
-The product is **AI Desktop Companion**, a Windows desktop companion platform. The repository and executable retain the engineering name `BichonDesktopPet` for now; no rename is needed during the MVP phase.
+The product is **AI Desktop Companion**, a Windows desktop companion platform. The repository and executable retain the engineering name \`BichonDesktopPet\` for now; no rename is needed during the MVP phase.
 
-The Bichon Frise is the first sample avatar. The long-term platform may support different animals, stylized human characters, and user-imported legal assets. Different character types will have different rigs, action capabilities, and behavior profiles. This direction does not expand the current milestone scope.
+The Bichon Frise is the first built-in avatar. The long-term platform may support different animals, stylized human characters, and user-imported legal assets. Different character types will eventually have different rigs, action capabilities, and behavior profiles.
 
-## Current product baseline (M0)
-
-The user has confirmed that image-based desktop pet display is complete. The current implementation uses .NET 10 and WPF.
+## Platform baseline
 
 - Target OS: Windows 10/11 x64.
-- Initial window: 280 × 360 device-independent pixels (DIP).
-- Window: transparent, borderless, non-resizable, topmost by default, hidden from the taskbar.
-- Character display: load `Assets/characters/bichon/base/bichon-idle.png` from the application output directory.
-- Runtime PNG: 420 × 540, RGBA, 132,158 bytes; SHA-256 `326d10ace28d53e8a4289b9f103c648ecb79d6b1b32e4a8f76d715793b97d210`.
-- Fallback: retain the temporary vector character if the PNG is absent or cannot be decoded.
-- Settings: local JSON under the LocalAppData BichonDesktopPet settings folder.
-- Music: optional and disabled by default.
+- Technology: .NET 10 / WPF.
+- Desktop-pet window: transparent, borderless, 280 × 360 DIP, topmost by default.
+- Character presentation: local PNG images with a vector fallback.
+- User settings and avatar catalog: local JSON under LocalAppData.
+- No network connection is required for M0–M2 image-based operation.
 
-## Existing interactions confirmed in main
+## M0 and M1 — accepted baseline
 
-The user confirmed that the previous M1 baseline works normally on their Windows computer. The existing implementation includes:
+The user confirmed that M1 acceptance passed after the settings-window layout fix. The accepted baseline includes:
 
-- Drag the pet window with the left mouse button.
-- Click the character to trigger a small reaction.
-- Double-click the character or choose “拆开礼物” from the context menu for the gift reaction.
-- Toggle snow and decorative lights from the context menu or system tray.
-- Restore and hide the pet from the system tray.
-- Hide the pet from the context menu; the process remains running.
-- Closing the window hides it without terminating the process; exit is available from the tray menu.
+- Bichon PNG display and vector fallback.
+- Dragging and window-position persistence.
+- Click and gift reactions.
+- Snow and decorative lights.
+- System tray show/hide/exit controls.
+- Settings window with always-on-top, snow, lights and optional music controls.
+- Scrollable settings content with a fixed completion button and resizable window.
+- Local JSON settings persistence.
+- Local diagnostic logging and defensive recovery.
+- Windows Release CI and automated settings tests.
 
-## Current M1 implementation
+The latest settings-window layout fix passed Windows CI: [run #65](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45942365232). The user subsequently confirmed local acceptance.
 
-The following M1 additions are present in `main`:
+## M2 — multiple image avatars (implementation in progress)
 
-- Dedicated settings window opened from the pet context menu or system tray.
-- Always-on-top, snow, decorative lights and optional music controls.
-- Music control is disabled with an explanatory message when the audio file is absent.
-- Reset pet position to the default lower-right work-area location.
-- Changes apply immediately and persist to the existing local JSON settings file.
-- Settings persistence moved into a Core service with an injectable path and diagnostic callback, enabling isolated tests.
-- Local application log at `%LOCALAPPDATA%\BichonDesktopPet\logs\app.log`.
-- Logging for settings read/write failures, UI dispatcher exceptions, application-domain exceptions, unobserved task exceptions, startup failure and image-load failure.
-- Automated tests for settings round-trip, missing-file defaults, corrupt-file fallback and save-failure diagnostics.
+The first M2 increment is committed to \`main\`:
 
-### Automated verification
+- \`AvatarProfile\`: stable ID, display name, species/type, image path, built-in flag and creation time.
+- \`AvatarCatalogService\`: versioned JSON catalog, built-in Bichon seeding, image import, deletion, path validation and local storage.
+- \`AvatarManagerWindow\`: import, list, switch, delete and restore-default UI.
+- Main-window and system-tray entry points for role management.
+- \`PetSettings.ActiveAvatarId\`: remembers the selected role.
+- Imported images are copied into the current user's LocalAppData folder; repository artwork is not modified.
+- Supported imports: PNG, JPG, JPEG and BMP; maximum file size 20 MB.
+- Import validates extension, file signature and WPF image decoding.
+- Imported roles cannot delete the built-in Bichon.
 
-Windows CI passed on commit `a6dbd3ea9bda607d2d19b224d4975e9647cec205`:
+The repository currently bundles only the Bichon artwork. A Border Collie or cat image is not bundled yet; the user can import their own image assets.
 
-- .NET 10 restore succeeded.
-- Release build succeeded with 0 warnings and 0 errors.
-- All 7 automated tests passed.
-- [Windows CI run #58](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45934852652).
+### M2 local storage
 
-The user has confirmed the previous M1 baseline and tray hide/show behavior locally. The new settings window and diagnostic log still need interactive verification on the user's Windows desktop.
+- Settings: \`%LOCALAPPDATA%\\BichonDesktopPet\\settings.json\`
+- Catalog: \`%LOCALAPPDATA%\\BichonDesktopPet\\avatars\\catalog.json\`
+- Imported image: \`%LOCALAPPDATA%\\BichonDesktopPet\\avatars\\{avatar-id}\\avatar.{extension}\`
 
-## Remaining M1 verification
+### M2 acceptance still required
 
-- Pull the latest `main` and run the Release build/test locally.
-- Open Settings from both the pet context menu and tray menu.
-- Toggle each setting and verify immediate behavior and persistence after restart.
-- Confirm the music control is unavailable with a clear explanation when no audio file exists.
-- Reset position and verify it is persisted.
-- Confirm diagnostic log creation and inspect a controlled settings failure.
-- Test window position restoration on multiple displays and DPI settings.
+- Windows CI Release build and tests pass.
+- Open role manager from the pet context menu and system tray.
+- Import a valid PNG/JPG/BMP image and see it in the local role list.
+- Switch from Bichon to the imported role and back.
+- Restart and confirm the selected role is restored.
+- Delete an imported role; confirm the built-in Bichon cannot be deleted.
+- Delete the currently active custom role and confirm automatic fallback to Bichon.
+- Reject unsupported, oversized, signature-mismatched or undecodable files.
+- Confirm the existing M1 interactions remain functional.
 
 ## Milestones
 
-- M0: image-based desktop pet display — user-confirmed baseline.
-- M1: reliable daily-use image desktop pet — implementation and automated CI verification complete; local verification of the new settings/logging UI pending.
-- M2: multiple image avatars and local avatar management.
+- M0: image-based desktop pet display — accepted.
+- M1: reliable daily-use image desktop pet — user acceptance passed.
+- M2: multiple image avatars and local avatar management — implementation in progress.
 - M3: lightweight rule-based behavior system.
 - M4: AI text interaction and constrained action mapping.
 - M5: push-to-talk voice interaction and speech output.
@@ -79,4 +79,4 @@ The user has confirmed the previous M1 baseline and tray hide/show behavior loca
 - M8: rig profiles and character-specific animation expansion.
 - M9: optional character sharing/ecosystem, only after earlier stages are validated.
 
-See [PRODUCT_DEFINITION_AND_MVP_ROADMAP_V1.md](PRODUCT_DEFINITION_AND_MVP_ROADMAP_V1.md) for the full product definition and release gates.
+See [PRODUCT_DEFINITION_AND_MVP_ROADMAP_V1.md](PRODUCT_DEFINITION_AND_MVP_ROADMAP_V1.md) and [M2_AVATAR_MANAGEMENT.md](M2_AVATAR_MANAGEMENT.md) for scope and acceptance criteria.
