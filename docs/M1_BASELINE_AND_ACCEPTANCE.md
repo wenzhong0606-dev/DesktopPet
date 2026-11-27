@@ -75,7 +75,7 @@
 - [x] GitHub Actions Windows CI 自动化测试通过（7/7）。
 - [ ] 用户本机 Release Build/Test 复核。
 
-CI 记录：[Windows CI run #58](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45934852652)，commit `a6dbd3ea9bda607d2d19b224d4975e9647cec205`。
+CI 记录：[Windows CI run #65](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45942365232)，设置窗口滚动修复 commit `baa37eeea53bb0bdbfa31c4b794b24193360f6c1`。Release 构建通过；原始设置服务测试记录见 [run #58](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45934852652)。
 
 ## 5. 验收命令
 
