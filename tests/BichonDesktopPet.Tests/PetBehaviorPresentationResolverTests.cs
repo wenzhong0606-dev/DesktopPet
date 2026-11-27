@@ -158,6 +158,36 @@ public sealed class PetBehaviorPresentationResolverTests
     }
 
     [TestMethod]
+    public void NicknamesAndCatchphrases_AreAvailableForEverySpeechStyle()
+    {
+        var avatar = new AvatarProfile
+        {
+            Id = "cool-persona",
+            Name = "煤球",
+            Species = "cat",
+            Persona = new PersonaProfile
+            {
+                Nicknames = ["小煤球"],
+                SpeechStyle = "cool",
+                Catchphrases = ["煤球今天心情不错。"]
+            }
+        };
+
+        var greeting = _resolver.Resolve(PetBehaviorState.Greeting, avatar);
+        Assert.IsTrue(greeting.Message.Contains("小煤球", StringComparison.Ordinal));
+
+        var happyMessages = new[]
+        {
+            _resolver.Resolve(PetBehaviorState.Happy, avatar).Message,
+            _resolver.Resolve(PetBehaviorState.Happy, avatar).Message,
+            _resolver.Resolve(PetBehaviorState.Happy, avatar).Message,
+            _resolver.Resolve(PetBehaviorState.Happy, avatar).Message
+        };
+
+        CollectionAssert.Contains(happyMessages, "煤球今天心情不错。");
+    }
+
+    [TestMethod]
     public void EveryState_ResolvesToAVisualEffect()
     {
         foreach (var state in Enum.GetValues<PetBehaviorState>())
