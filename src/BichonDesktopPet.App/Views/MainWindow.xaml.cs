@@ -503,9 +503,41 @@ public partial class MainWindow : Window
             return recentCachedIp;
         }
 
+        if (!IsIpLocationTimeZoneConsistent(geocodedIpCity))
+        {
+            StatusText.Text = "自动 IP 城市的时区与 Windows 本机时区差异较大，可能存在 VPN/代理；未采用出口城市。";
+            return recentCachedIp;
+        }
+
         var trustedLocation = geocodedIpCity with { Source = "ip" };
         SaveCachedLocation(trustedLocation, query: null);
         return trustedLocation;
+    }
+
+    private static bool IsIpLocationTimeZoneConsistent(CareLocation location)
+    {
+        if (string.IsNullOrWhiteSpace(location.TimeZoneId) ||
+            string.Equals(location.TimeZoneId, "auto", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        try
+        {
+            var cityTimeZone = TimeZoneInfo.FindSystemTimeZoneById(location.TimeZoneId);
+            var now = DateTimeOffset.UtcNow;
+            var systemOffset = TimeZoneInfo.Local.GetUtcOffset(now);
+            var cityOffset = cityTimeZone.GetUtcOffset(now);
+            return LocationTrustPolicy.IsTimeZoneConsistent(systemOffset, cityOffset);
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            return true;
+        }
+        catch (InvalidTimeZoneException)
+        {
+            return true;
+        }
     }
 
     private CareLocation? GetRecentCachedIpLocation(DateTimeOffset now)

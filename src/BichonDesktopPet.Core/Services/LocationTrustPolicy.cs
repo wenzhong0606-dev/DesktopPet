@@ -24,4 +24,11 @@ public static class LocationTrustPolicy
             isHosting != true &&
             isSatellite != true;
     }
+
+    /// <summary>
+    /// A large offset mismatch between Windows and an IP-derived city is a soft signal
+    /// that the network exit may not represent the user's actual location.
+    /// </summary>
+    public static bool IsTimeZoneConsistent(TimeSpan systemOffset, TimeSpan cityOffset) =>
+        System.Math.Abs((systemOffset - cityOffset).TotalMinutes) < 90;
 }

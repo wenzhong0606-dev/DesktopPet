@@ -1,3 +1,4 @@
+using System;
 using BichonDesktopPet.Core.Services;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -26,6 +27,14 @@ public sealed class LocationTrustPolicyTests
     {
         Assert.IsFalse(LocationTrustPolicy.IsTrusted(
             score, verdict, isVpn, isProxy, isTor, isRelay, isHosting, isSatellite));
+    }
+
+    [TestMethod]
+    public void IsTimeZoneConsistent_RejectsLargeOffsetsButAllowsNearbyZones()
+    {
+        Assert.IsTrue(LocationTrustPolicy.IsTimeZoneConsistent(TimeSpan.FromHours(8), TimeSpan.FromHours(9)));
+        Assert.IsFalse(LocationTrustPolicy.IsTimeZoneConsistent(TimeSpan.FromHours(8), TimeSpan.FromHours(-8)));
+        Assert.IsFalse(LocationTrustPolicy.IsTimeZoneConsistent(TimeSpan.FromHours(8), TimeSpan.FromHours(10)));
     }
 
     [TestMethod]
