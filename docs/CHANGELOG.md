@@ -5,8 +5,9 @@
 - Define AI Desktop Companion as a multi-avatar Windows desktop companion platform; Bichon remains the first sample avatar.
 - Add the product definition, staged MVP roadmap, and M1 baseline/acceptance checklist.
 - Confirm from the current main branch that PNG loading, dragging, click/gift reactions, snow, lights, tray integration, and local JSON settings already exist.
-- Correct the runtime asset status: `bichon-idle.png` is present in the repository; its committed file size differs from the older prepared derivative record and needs local hash verification.
+- Verify the committed runtime PNG as 420 × 540 RGBA, 132,158 bytes, SHA-256 `326d10ace28d53e8a4289b9f103c648ecb79d6b1b32e4a8f76d715793b97d210`.
 - Keep M1 limited to daily-use image desktop pet improvements. AI, voice, 3D, and user model import remain future milestones.
+- Record that Windows runtime visual validation and local Release build/test are still pending.
 
 ## Unreleased
 
