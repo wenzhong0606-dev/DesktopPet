@@ -445,6 +445,15 @@ public partial class MainWindow : Window
             return (false, false);
         }
 
+        try
+        {
+            _companionIdentityStore.ArchiveByAvatarId(avatarId);
+        }
+        catch (Exception exception)
+        {
+            AppLogger.Log("Unable to archive the removed companion identity; its local record was retained.", exception);
+        }
+
         if (!wasActive)
         {
             return (true, true);
