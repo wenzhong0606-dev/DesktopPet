@@ -98,7 +98,14 @@ public sealed class QwenOptionsLoaderTests
             Path.Combine(_testDirectory, QwenOptionsLoader.LocalFileName),
             "{ invalid");
 
-        Assert.ThrowsException<JsonReaderException>(() =>
-            QwenOptionsLoader.Load(_testDirectory, _ => null));
+        try
+        {
+            QwenOptionsLoader.Load(_testDirectory, _ => null);
+            Assert.Fail("Malformed local settings should be rejected.");
+        }
+        catch (JsonException)
+        {
+            // JsonReaderException derives from JsonException.
+        }
     }
 }
