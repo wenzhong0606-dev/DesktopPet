@@ -99,7 +99,7 @@ The WPF application is Windows-targeted. EnableWindowsTargeting is set so SDK-ba
 - \`IAiChatProvider\` is the provider-neutral text generation boundary.
 - \`QwenChatCompletionProvider\` calls the DashScope OpenAI-compatible Chat Completions endpoint using model \`qwen-plus\`.
 - \`QwenOptionsLoader\` reads the local settings file under LocalAppData and lets \`Qwen__ApiKey\`, \`Qwen__Endpoint\` and \`Qwen__Model\` environment variables override file values.
-- The application creates the provider at startup and exposes it as \`App.AiChatProvider\`. The provider is not called by the current UI; no network request occurs on startup.
+- The application creates the provider at startup and exposes it as \`App.AiChatProvider\`. M4-A's explicit chat window calls it only after a user sends a message; startup never sends a network request.
 - Missing or invalid local configuration does not prevent the offline desktop pet from starting. API keys are not logged.
 - Version one supports only system/user/assistant messages, non-streaming responses and usage extraction. It does not implement tool calls, automatic retries, conversation history, memory retrieval or streaming.
 - Qwen is the default provider, but companion identity, local storage and behavior code depend on the provider-neutral contract.

@@ -114,7 +114,7 @@ Implementation:
 - Add the provider-neutral \`IAiChatProvider\` contract and a non-streaming Qwen Chat Completions implementation.
 - Default provider configuration is Qwen, model \`qwen-plus\`, endpoint \`https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions\`.
 - Read the API key from \`Qwen__ApiKey\` or the optional local file \`%LOCALAPPDATA%\\BichonDesktopPet\\appsettings.Local.json\`; environment variables override file values.
-- Keep the provider initialized but unused by the UI. No AI request is sent at startup; no API key is required for existing offline features.
+- M3-C initialized the provider without invoking it. M4-A now calls it only after the user explicitly sends a message; startup still sends no AI request, and no API key is required for existing offline features.
 
 **Important limitations:** this is not yet a chat experience. \`EvolvingPersonalityJson\` remains an empty placeholder; interaction events are not yet converted into memories; no semantic retrieval, automatic memory extraction or autonomous personality growth is implemented.
 

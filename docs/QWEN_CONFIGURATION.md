@@ -61,4 +61,4 @@ Environment variables override the corresponding values in the local settings fi
 - The key is held in memory for the provider lifetime and is not written to application logs.
 - Requests use HTTPS.
 - If the key is absent, AI is marked as not configured; the desktop pet still runs offline.
-- M3-C only prepares the provider. It does not send a request on startup or provide the chat UI yet. M4-A will connect explicit user conversations to the provider.
+- M3-C introduced the provider without invoking it. M4-A now provides an explicit chat window and sends requests only after the user submits a message. Application startup never sends an AI request.
