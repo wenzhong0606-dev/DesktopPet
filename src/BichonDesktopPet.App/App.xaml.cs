@@ -43,7 +43,7 @@ public partial class App : WpfApplication
         catch (Exception exception)
         {
             AppLogger.Log("Application startup failed.", exception);
-            MessageBox.Show(
+            System.Windows.MessageBox.Show(
                 "比熊桌宠启动失败。诊断信息已写入本地日志目录。",
                 "比熊桌宠",
                 MessageBoxButton.OK,
