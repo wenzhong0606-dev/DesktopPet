@@ -261,7 +261,8 @@ public sealed class AvatarCatalogServiceTests
         Assert.IsNotNull(restored);
         Assert.AreEqual("豆包", restored.Name);
         Assert.AreEqual("比熊", restored.Breed);
-        Assert.AreEqual("豆包", restored.Persona.SelfReference);
+        Assert.AreEqual("dog", restored.Species);
+        Assert.AreEqual("比熊", restored.Persona.SelfReference);
         CollectionAssert.AreEqual(new[] { "小豆", "豆豆" }, restored.Persona.Nicknames);
         CollectionAssert.AreEqual(new[] { "活泼", "黏人", "好奇" }, restored.Persona.PersonalityTraits);
         Assert.AreEqual("playful", restored.Persona.SpeechStyle);
@@ -270,6 +271,25 @@ public sealed class AvatarCatalogServiceTests
         CollectionAssert.AreEqual(new[] { "汪！豆包来啦！" }, restored.Persona.Catchphrases);
         Assert.AreEqual(updated.ImagePath, restored.ImagePath);
         Assert.IsTrue(restored.IsBuiltIn);
+    }
+
+    [TestMethod]
+    public void UpdateProfile_CannotChangeBuiltInBichonSpeciesOrBreed()
+    {
+        var service = CreateService();
+        service.Load();
+
+        var updated = service.UpdateProfile(
+            AvatarCatalogService.DefaultAvatarId,
+            "豆包",
+            "cat",
+            "布偶猫",
+            new PersonaProfile());
+
+        Assert.AreEqual("豆包", updated.Name);
+        Assert.AreEqual("dog", updated.Species);
+        Assert.AreEqual("比熊", updated.Breed);
+        Assert.IsTrue(updated.IsBuiltIn);
     }
 
     [TestMethod]
