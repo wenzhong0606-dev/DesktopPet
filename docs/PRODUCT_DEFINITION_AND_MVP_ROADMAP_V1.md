@@ -370,14 +370,14 @@ VRM、FBX、OBJ 等格式按需求逐步增加；必要时通过 Blender 转换�
 
 ## 10. 当前下一步
 
-M0、M1 和 M2 已由用户确认完成。M3-A/M3-B 已实现并通过 Windows CI；当前执行 M3-C 的独立个体与 Qwen Provider 基础。M4-A 才会真正启用 AI 对话，M4-B 再实现自然记忆和成长。
+M0、M1 和 M2 已由用户确认完成。M3-A/M3-B 已实现并通过 Windows CI；M3-C 已通过 Windows Release CI（61/61 测试，0 警告/错误），等待用户本机验收。M4-A 才会真正启用 AI 对话，M4-B 再实现自然记忆和成长。 [M3-C run #224](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45960178698)
 
-M3-C 当前工作顺序：
+M3-C 已完成代码实现和 Windows CI 验证；当前等待用户本机验收。验收内容如下：
 
 1. 建立与 AvatarProfile 分离的稳定 CompanionIdentity。
 2. 建立 SQLite 本地身份存储和最小互动事件日志。
 3. 建立 Qwen `qwen-plus` 的 Provider 接口、配置读取和请求/响应适配。
-4. 通过 Windows Release CI 和自动化测试，确认无 Key 时离线桌宠不受影响。
+4. Windows Release CI 已通过：0 警告、0 错误、61/61 自动化测试。
 5. 用户本机验证 SQLite 文件生成、角色身份稳定、Qwen 本地配置加载和现有 M1/M2/M3 功能无回归。
 
 M3-C 不发送 AI 请求、不提供聊天 UI、不提取长期记忆、不改变成长人格。M4-A 才启用 AI 文字交流，M4-B 再实现长期记忆与自然成长。
