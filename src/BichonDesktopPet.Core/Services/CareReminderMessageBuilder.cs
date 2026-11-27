@@ -32,7 +32,7 @@ public static class CareReminderMessageBuilder
             _ => alert.Summary
         };
 
-        return persona?.SpeechStyle switch
+        var message = persona?.SpeechStyle switch
         {
             "cool" => $"{address}，天气提示：{suggestion}",
             "tsundere" => $"{address}，{suggestion}，别等不舒服了才想起来。",
@@ -40,5 +40,10 @@ public static class CareReminderMessageBuilder
             "gentle" => $"{address}，提醒你一下：{suggestion}",
             _ => $"{address}，{suggestion}"
         };
+
+        var locationSource = string.Equals(location.Source, "ip", System.StringComparison.Ordinal)
+            ? "DB-IP https://db-ip.com/"
+            : "GeoNames https://www.geonames.org/";
+        return $"{message}（天气：Open-Meteo https://open-meteo.com/；位置：{locationSource}；数据许可：CC BY 4.0 https://creativecommons.org/licenses/by/4.0/）";
     }
 }

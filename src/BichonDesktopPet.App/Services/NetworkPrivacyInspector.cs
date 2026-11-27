@@ -15,7 +15,7 @@ public sealed class NetworkPrivacyInspector
     [
         "wireguard", "wintun", "openvpn", "tap-windows", "nordlynx", "nordvpn",
         "expressvpn", "surfshark", "protonvpn", "mullvad", "tailscale", "zerotier",
-        "cloudflare warp", "warp", "globalprotect", "anyconnect", "forticlient",
+        "cloudflare warp", "warp", "globalprotect", "anyconnect", "forticlient", "ikev2", "sstp", "l2tp", "pptp",
         "pulse secure", "ivanti", "zscaler", "netskope", "private internet access"
     ];
 
@@ -45,7 +45,7 @@ public sealed class NetworkPrivacyInspector
                 }
 
                 var description = $"{adapter.Name} {adapter.Description}";
-                if (adapter.NetworkInterfaceType is NetworkInterfaceType.Tunnel or NetworkInterfaceType.Ppp ||
+                if (adapter.NetworkInterfaceType == NetworkInterfaceType.Tunnel ||
                     AdapterMarkers.Any(marker => description.Contains(marker, StringComparison.OrdinalIgnoreCase)))
                 {
                     return "检测到可能的 VPN 或隧道网络接口";

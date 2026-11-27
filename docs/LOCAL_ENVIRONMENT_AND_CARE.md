@@ -33,24 +33,24 @@
 
 本地安全检查：
 - Windows 系统代理若会影响 IPLogs 请求，则跳过自动 IP 定位。
-- 检查已启用的 Tunnel/PPP 或名称包含常见 VPN/隧道标记的网络接口；发现疑似隧道时跳过自动 IP 定位。
+- 检查已启用的 Tunnel 网络接口或名称包含常见 VPN/隧道标记的网络接口；发现疑似隧道时跳过自动 IP 定位。
 - 本地检查是保守启发式，可能误判企业网络或特殊适配器。
 
 IPLogs 远端检查：
-- 仅在用户开启天气提醒且勾选自动 IP 城市定位后调用 \`POST https://iplogs.com/v1/check\`，省略 \`ip\` 字段以检查请求来源出口。
-- 仅当 verdict 为 \`clean\`、score 小于 0.30、\`is_vpn=false\`，且没有 proxy/Tor/relay/hosting/satellite 标记时采用其城市坐标。
+- 仅在用户开启天气提醒且勾选自动 IP 城市定位后调用 \`GET https://iplogs.com/v1/check\`，检查当前请求来源出口；该接口无需在 URL 或请求体中传入 IP。
+- 仅当 verdict 为 \`clean\`、score 小于 0.30、\`is_vpn\` 明确为 false，且响应中任何 proxy/Tor/relay/hosting/satellite 标记均未为 true 时接受其城市/国家；随后由 Open-Meteo Geocoding 将该城市解析为天气坐标。IPLogs 不提供可依赖的城市经纬度字段。
 - 任何可疑、缺失或不完整结果均 fail closed：不采用出口位置。
 - 不尝试通过 VPN 隧道反查原始公网 IP。无法可靠地从 VPN 出口推断真实位置。
 
 数据处理：
 - 设置中默认关闭自动 IP 定位。启用前明确告知当前公网 IP 会发送给 IPLogs。
-- IPLogs 的公开 FAQ 声明访问日志保留 30 天。参考：[IPLogs API 文档](https://github.com/ip-logs/iplogs-api)、[IPLogs FAQ](https://iplogs.com/faq)。
+- IPLogs 的公开 FAQ 声明访问日志保留 30 天；其 API 条款说明地理位置字段来源于 DB-IP，采用 CC BY 4.0。参考：[IPLogs API 文档](https://iplogs.com/docs)、[IPLogs FAQ](https://iplogs.com/faq)、[IPLogs 条款](https://iplogs.com/terms)。
 - 本机只保存城市、国家、城市级经纬度、时区/来源和更新时间；不保存原始公网 IP。
 - IP 城市是近似位置，不是 GPS 或家庭地址。当前版本没有接入 Windows 精确位置 API。
 
 ### 天气与主动关怀
 
-- 手动城市通过 Open-Meteo Geocoding API 解析；IP 可信城市直接使用其粗略坐标。
+- 手动城市和经 IPLogs 验证可信的城市/国家都通过 Open-Meteo Geocoding API 解析为城市级坐标。
 - 天气预报由 Open-Meteo Forecast API 提供逐小时温度、体感温度和降水概率。
 - 只有用户开启天气关怀后才会发起城市解析/天气请求；城市坐标和网络请求会被 Open-Meteo 接收。
 - 规则阈值：
@@ -58,7 +58,7 @@ IPLogs 远端检查：
   - 带伞：未来 3 小时内任一小时降水概率达到 70%。
   - 防暑：当前体感温度达到 32°C，或未来 6 小时体感温度达到 35°C。
 - 每类天气提醒分别持久化 6 小时冷却时间；天气每小时刷新。数据过期、字段缺失或服务不可用时不生成提醒。
-- Open-Meteo 的免费 API 使用条款区分非商业和商业使用，并要求数据署名。当前集成面向个人/非商业使用；商业发行前必须重新核实并取得合适许可。参考：[Open-Meteo Geocoding](https://open-meteo.com/en/docs/geocoding-api)、[Open-Meteo Forecast](https://open-meteo.com/en/docs)。
+- Open-Meteo 的免费 API 仅供非商业用途，天气数据采用 CC BY 4.0 并要求署名。当前集成面向个人/非商业使用；商业发行前必须改用获得商业许可的服务。天气提醒附带 Open-Meteo、DB-IP/GeoNames 和 CC BY 4.0 来源链接。参考：[Open-Meteo Geocoding](https://open-meteo.com/en/docs/geocoding-api)、[Open-Meteo Forecast](https://open-meteo.com/en/docs)、[Open-Meteo 条款](https://open-meteo.com/en/terms)。
 
 ## 设置默认值
 

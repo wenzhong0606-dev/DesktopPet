@@ -34,5 +34,6 @@ public sealed class LocationTrustPolicyTests
         Assert.IsFalse(LocationTrustPolicy.IsTrusted(null, "clean", false, false, false, false, false, false));
         Assert.IsFalse(LocationTrustPolicy.IsTrusted(0.05, null, false, false, false, false, false, false));
         Assert.IsFalse(LocationTrustPolicy.IsTrusted(0.05, "clean", null, false, false, false, false, false));
+        Assert.IsTrue(LocationTrustPolicy.IsTrusted(0.05, "clean", false, null, null, null, null, null));
     }
 }

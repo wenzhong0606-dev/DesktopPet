@@ -1,22 +1,23 @@
 using System;
 using System.Net.Http;
-using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using BichonDesktopPet.Core.Models;
 using BichonDesktopPet.Core.Services;
 
 namespace BichonDesktopPet.App.Services;
 
-public sealed record IpLocationResult(CareLocation? Location, string? RejectionReason)
+public sealed record IpLocationResult(string? City, string? Country, string? RejectionReason)
 {
-    public bool IsTrusted => Location is not null;
+    public bool IsTrusted =>
+        !string.IsNullOrWhiteSpace(City) &&
+        !string.IsNullOrWhiteSpace(Country) &&
+        RejectionReason is null;
 }
 
 /// <summary>
-/// Uses IPLogs' caller-check endpoint. The user's public IP is visible to that provider,
-/// but is never copied into local settings, logs or chat history.
+/// Checks the current network exit with IPLogs. The user's public IP is visible to that
+/// provider, but is never copied into local settings, logs or chat history.
 /// </summary>
 public sealed class IpLocationService
 {
@@ -28,10 +29,7 @@ public sealed class IpLocationService
 
     public async Task<IpLocationResult> ResolveCurrentAsync(CancellationToken cancellationToken = default)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Post, Endpoint)
-        {
-            Content = new StringContent("{}", Encoding.UTF8, "application/json")
-        };
+        using var request = new HttpRequestMessage(HttpMethod.Get, Endpoint);
         using var response = await _httpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
 
@@ -50,50 +48,40 @@ public sealed class IpLocationService
 
         if (!LocationTrustPolicy.IsTrusted(score, verdict, isVpn, isProxy, isTor, isRelay, isHosting, isSatellite))
         {
-            return new IpLocationResult(null, "当前网络出口被识别为 VPN、代理、中继、数据中心或可信度不足；未采用出口位置。");
+            return new IpLocationResult(null, null,
+                "当前网络出口被识别为 VPN、代理、中继、数据中心或可信度不足；未采用出口位置。");
         }
 
-        if (!root.TryGetProperty("ip_info", out var ipInfo) || ipInfo.ValueKind != JsonValueKind.Object)
+        JsonElement ipInfo = default;
+        var hasIpInfo = root.TryGetProperty("ip_info", out ipInfo) && ipInfo.ValueKind == JsonValueKind.Object;
+        var city = ReadString(root, "city") ?? (hasIpInfo ? ReadString(ipInfo, "city") : null);
+        var country = ReadString(root, "country") ?? (hasIpInfo ? ReadString(ipInfo, "country") : null);
+
+        if (string.IsNullOrWhiteSpace(city) || string.IsNullOrWhiteSpace(country))
         {
-            return new IpLocationResult(null, "位置服务没有返回可用的城市信息。");
+            return new IpLocationResult(null, null, "IP 位置服务没有返回可用的城市/国家信息。");
         }
 
-        var city = ReadString(ipInfo, "city");
-        var country = ReadString(ipInfo, "country");
-        var latitude = ReadDouble(ipInfo, "lat");
-        var longitude = ReadDouble(ipInfo, "lon");
-        if (string.IsNullOrWhiteSpace(city) || string.IsNullOrWhiteSpace(country) ||
-            latitude is null || longitude is null ||
-            latitude is < -90 or > 90 || longitude is < -180 or > 180)
-        {
-            return new IpLocationResult(null, "IP 位置结果缺少有效城市坐标。");
-        }
-
-        var location = new CareLocation(
-            $"{city}, {country}",
-            city,
-            country,
-            latitude.Value,
-            longitude.Value,
-            "auto",
-            "ip",
-            DateTimeOffset.UtcNow);
-
-        return new IpLocationResult(location, null);
+        return new IpLocationResult(city, country, null);
     }
 
     private static string? ReadString(JsonElement element, string property) =>
-        element.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.String
+        element.ValueKind == JsonValueKind.Object &&
+        element.TryGetProperty(property, out var value) &&
+        value.ValueKind == JsonValueKind.String
             ? value.GetString()
             : null;
 
     private static double? ReadDouble(JsonElement element, string property) =>
-        element.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.Number &&
+        element.ValueKind == JsonValueKind.Object &&
+        element.TryGetProperty(property, out var value) &&
+        value.ValueKind == JsonValueKind.Number &&
         value.TryGetDouble(out var number)
             ? number
             : null;
 
     private static bool? ReadBoolean(JsonElement element, string property) =>
+        element.ValueKind == JsonValueKind.Object &&
         element.TryGetProperty(property, out var value) &&
         (value.ValueKind == JsonValueKind.True || value.ValueKind == JsonValueKind.False)
             ? value.GetBoolean()

@@ -110,7 +110,7 @@
                     Checked="SettingChanged"
                     Unchecked="SettingChanged" />
 
-          <TextBlock Text="启用天气提醒后才会进行定位。开启后会将当前公网 IP 发送给 IPLogs，用于城市定位和 VPN/代理/中继检测。检测到匿名网络时不会采用出口城市；IPLogs 声明访问日志保留 30 天。"
+          <TextBlock Text="启用天气提醒后才会进行定位。开启后会将当前公网 IP 发送给 IPLogs，用于城市定位和 VPN/代理/中继检测。检测到匿名网络时不会采用出口城市；IPLogs 声明访问日志保留 30 天，地理信息来源 DB-IP（https://db-ip.com/，CC BY 4.0）。"
                      TextWrapping="Wrap"
                      FontSize="11"
                      Foreground="#FF8B7770"
@@ -146,7 +146,7 @@
                     Checked="SettingChanged"
                     Unchecked="SettingChanged" />
 
-          <TextBlock Text="天气提醒需要手动关注城市或启用 IP 自动定位。天气查询使用 Open-Meteo；城市坐标和网络请求会发送给天气服务。数据来源：Open-Meteo。"
+          <TextBlock Text="天气提醒需要手动关注城市或启用 IP 自动定位。天气查询使用 Open-Meteo；城市坐标和网络请求会发送给天气服务。天气来源：https://open-meteo.com/；城市地理编码来源 GeoNames（https://www.geonames.org/）；均采用 CC BY 4.0。"
                      TextWrapping="Wrap"
                      FontSize="11"
                      Foreground="#FF8B7770"

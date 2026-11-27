@@ -67,7 +67,7 @@ public partial class MainWindow : Window
         var companionDatabasePath = Path.Combine(userDataDirectory, "companions.db");
         _companionIdentityStore = new CompanionIdentityStore(companionDatabasePath);
         _chatHistoryStore = new ChatHistoryStore(companionDatabasePath);
-        _careHttpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
+        _careHttpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(35) };
         _ipLocationService = new IpLocationService(_careHttpClient);
         _weatherService = new OpenMeteoWeatherService(_careHttpClient);
         _snowAnimation = new SnowAnimationService(SnowCanvas);
@@ -486,14 +486,25 @@ public partial class MainWindow : Window
         }
 
         var ipResult = await _ipLocationService.ResolveCurrentAsync();
-        if (!ipResult.IsTrusted || ipResult.Location is null)
+        if (!ipResult.IsTrusted || string.IsNullOrWhiteSpace(ipResult.City) ||
+            string.IsNullOrWhiteSpace(ipResult.Country))
         {
             StatusText.Text = $"{ipResult.RejectionReason ?? "无法确认网络位置"}；未采用出口城市，可在设置中手动指定关注城市。";
             return cachedIp;
         }
 
-        SaveCachedLocation(ipResult.Location, query: null);
-        return ipResult.Location;
+        // IPLogs provides a coarse city/country. Resolve city coordinates separately;
+        // never infer coordinates from a VPN exit or persist the raw public IP.
+        var geocodedIpCity = await _weatherService.ResolveCityAsync($"{ipResult.City}, {ipResult.Country}");
+        if (geocodedIpCity is null)
+        {
+            StatusText.Text = "已确认网络出口可信，但无法将其城市解析为天气坐标；请手动指定关注城市。";
+            return cachedIp;
+        }
+
+        var trustedLocation = geocodedIpCity with { Source = "ip" };
+        SaveCachedLocation(trustedLocation, query: null);
+        return trustedLocation;
     }
 
     private CareLocation? GetCachedLocation(string? requiredSource = null)
