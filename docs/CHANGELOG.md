@@ -8,9 +8,11 @@
 - Add a reset-to-default-position action.
 - Move settings persistence into a Core service with injectable path and diagnostic callback.
 - Save settings through a temporary file and replace the previous JSON file after serialization.
+- Return persistence success/failure to the UI so save failures are not presented as successful saves.
 - Add local application logging for settings failures, startup failures, image-load failures, and unhandled UI/application/task exceptions.
 - Add tests for settings round-trip, missing-file defaults, corrupt JSON fallback and save-failure logging.
-- Record that the user confirmed the previous M1 desktop-pet and tray baseline works locally; the new settings window and diagnostics still require Windows verification.
+- Pass Windows CI Release build with 0 warnings and 0 errors; all 7 tests pass on commit `a6dbd3ea9bda607d2d19b224d4975e9647cec205` ([run #58](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45934852652)).
+- Record that the user confirmed the previous M1 desktop-pet and tray baseline works locally; the new settings window and diagnostics still require local interactive verification.
 
 ## 2026-11-27 — M1 implementation progress
 
