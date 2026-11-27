@@ -103,6 +103,22 @@ public sealed class AvatarCatalogServiceTests
     }
 
     [TestMethod]
+    public void ImportImage_RejectsFilesLargerThanTwentyMegabytes()
+    {
+        var sourcePath = Path.Combine(_testDirectory, "oversized.png");
+        using (var stream = File.Create(sourcePath))
+        {
+            stream.SetLength(AvatarCatalogService.MaximumImageBytes + 1);
+        }
+
+        var service = CreateService();
+        service.Load();
+
+        Assert.ThrowsException<InvalidDataException>(
+            () => service.ImportImage(sourcePath, "超大图片", "custom"));
+    }
+
+    [TestMethod]
     public void Delete_CannotDeleteBuiltInBichon()
     {
         var service = CreateService();
