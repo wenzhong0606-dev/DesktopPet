@@ -62,7 +62,7 @@ public partial class MainWindow : Window
         {
             FallbackPetCanvas.Visibility = Visibility.Visible;
             PetImage.Visibility = Visibility.Collapsed;
-            StatusText.Text = "3D比熊素材待上传";
+            StatusText.Text = "比熊图片素材未找到";
             return;
         }
 
