@@ -18,6 +18,9 @@ public sealed class TrayIconService : IDisposable
         var hideItem = new Forms.ToolStripMenuItem("隐藏比熊");
         hideItem.Click += (_, _) => window.Dispatcher.BeginInvoke(new Action(window.HideToTray));
 
+        var settingsItem = new Forms.ToolStripMenuItem("设置...");
+        settingsItem.Click += (_, _) => window.Dispatcher.BeginInvoke(new Action(window.OpenSettingsWindow));
+
         var snowItem = new Forms.ToolStripMenuItem("切换雪花");
         snowItem.Click += (_, _) => window.Dispatcher.BeginInvoke(new Action(window.ToggleSnow));
 
@@ -33,6 +36,8 @@ public sealed class TrayIconService : IDisposable
         menu.Items.AddRange([
             showItem,
             hideItem,
+            new Forms.ToolStripSeparator(),
+            settingsItem,
             new Forms.ToolStripSeparator(),
             snowItem,
             lightsItem,
