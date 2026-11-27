@@ -73,7 +73,7 @@ This is **not AI**. It does not interpret arbitrary user input, remember prior c
 - Persona-aware tone, self-reference and user-address output.
 - Message rotation, response length, emoji level and catchphrase selection.
 
-Windows Release CI passed on code commit `59435ebe78bfe809b6874efc65bd889a9a8ce69a`: Release build with 0 warnings and 0 errors; all 45 automated tests passed ([run #160](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45949927255)). Local Windows interaction and migration acceptance remains pending.
+Windows Release CI passed on code commit `5e48d94de4654ebae49017f08a2c4fddb0d93912`: Release build with 0 warnings and 0 errors; all 46 automated tests passed ([run #170](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45950396978)). Local Windows interaction and migration acceptance remains pending.
 
 ## Windows local acceptance checklist
 
