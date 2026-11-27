@@ -24,14 +24,15 @@
     <Grid.ContextMenu>
       <ContextMenu>
         <MenuItem Header="设置..." Click="Settings_Click" />
+        <MenuItem Header="角色管理..." Click="Avatars_Click" />
         <Separator />
         <MenuItem Header="显示 / 隐藏雪花" Click="ToggleSnow_Click" />
         <MenuItem Header="显示 / 隐藏装饰灯" Click="ToggleLights_Click" />
         <MenuItem Header="拆开礼物" Click="GiftButton_Click" />
         <MenuItem Header="背景音乐（默认关闭）" Click="ToggleMusic_Click" />
-        <MenuItem Header="隐藏比熊" Click="Hide_Click" />
+        <MenuItem Header="隐藏桌宠" Click="Hide_Click" />
         <Separator />
-        <MenuItem Header="退出比熊桌宠" Click="Exit_Click" />
+        <MenuItem Header="退出桌宠" Click="Exit_Click" />
       </ContextMenu>
     </Grid.ContextMenu>
 
@@ -127,7 +128,7 @@
               BorderThickness="1"
               IsHitTestVisible="False">
         <TextBlock x:Name="StatusText"
-                   Text="汪！你好呀"
+                   Text="你好呀"
                    TextAlignment="Center"
                    VerticalAlignment="Center"
                    Foreground="#FF765C55"
