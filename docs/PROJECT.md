@@ -40,7 +40,7 @@ The user explicitly confirmed M2 acceptance. Windows CI for the M2 baseline pass
 
 Only Bichon artwork is bundled. Other roles are added by local import.
 
-## M3 — lightweight behavior system (first increment; local acceptance pending)
+## M3-A — lightweight behavior system (local acceptance pending)
 
 The first implementation is committed to \`main\`. Windows CI passed on commit `5db5f4dd135f9226665f4defc187c8fe5767ff1d`: Release build with 0 warnings and 0 errors, 30/30 tests passed ([run #124](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45946659068)).
 
@@ -70,6 +70,34 @@ The implementation includes:
 - Imported dog/cat/rabbit roles display the corresponding status wording.
 - M1/M2 functions remain intact: drag, snow, lights, settings, tray, avatar import/switch/delete and persistence.
 - No sustained CPU usage or animation continues after application exit.
+
+## M3-B — per-avatar identity and persona system (implementation committed; CI/local acceptance pending)
+
+The first vertical slice is committed to \`main\`:
+
+- Add a separate \`PersonaProfile\` attached to each \`AvatarProfile\`, rather than mixing personality fields into the behavior engine.
+- Add optional \`Breed\` metadata while keeping \`Species\` as the broader type.
+- Upgrade the local avatar catalog from schema v1 to v2. Existing avatar IDs, image paths, image files, names, species and creation timestamps are preserved; existing settings and selected-avatar ID are not rewritten by the migration.
+- Migrate missing persona data to safe defaults. Preserve customized built-in Bichon identity/persona on subsequent loads.
+- Protect future catalog versions from being overwritten: a catalog created by a newer schema is opened read-only by this version.
+- Add a WPF editor reachable from the role manager for built-in and imported avatars.
+- Configure pet nicknames, self-reference, user address, up to three free-form personality traits, speech style, response length, emoji level and up to five catchphrases.
+- Validate profile lengths/counts and persist changes atomically through the existing catalog save path.
+- Connect MainWindow to the active avatar's persona. The local resolver rotates through bounded templates per avatar/state and adjusts tone using speech style, personality traits, nicknames, catchphrases, response length and emoji preference.
+- Keep the existing species-only resolver overload as a compatibility fallback.
+
+**Scope boundary:** this is deterministic local template selection, not AI conversation. It does not understand arbitrary user text, retain dialogue memory, or make network requests.
+
+### M3-B acceptance still required
+
+- Windows Release build and all automated tests pass.
+- Existing v1 catalog migrates to v2 without losing avatar IDs, source images, image paths or selected-avatar settings.
+- Built-in and imported avatars can each save and reload their own persona.
+- Nicknames, self-reference, user address, traits, speech style, response length, emoji level and catchphrases validate and persist.
+- More than three traits or invalid field lengths are rejected without corrupting the previous profile.
+- Different avatars produce distinct messages; repeated same-state reactions rotate through alternatives before repeating.
+- M3-A behavior states/effects and M1/M2 desktop functions remain intact.
+- No AI, voice, 3D, network access or cloud storage is introduced.
 
 ## Local storage
 
