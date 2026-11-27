@@ -115,7 +115,7 @@ public sealed class QwenChatCompletionProvider : IAiChatProvider
         var responseBody = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
         if (!response.IsSuccessStatusCode)
         {
-            throw CreateProviderError(response.StatusCode, responseBody);
+            throw CreateProviderError(response.StatusCode, responseBody, _options.ApiKey);
         }
 
         try
@@ -164,7 +164,7 @@ public sealed class QwenChatCompletionProvider : IAiChatProvider
         }
     }
 
-    private static AiProviderException CreateProviderError(HttpStatusCode statusCode, string responseBody)
+    private static AiProviderException CreateProviderError(HttpStatusCode statusCode, string responseBody, string apiKey)
     {
         var detail = "No error details were returned.";
         try
@@ -182,6 +182,11 @@ public sealed class QwenChatCompletionProvider : IAiChatProvider
         catch (JsonException)
         {
             // Do not echo arbitrary response bodies into logs or user-facing errors.
+        }
+
+        if (!string.IsNullOrEmpty(apiKey))
+        {
+            detail = detail.Replace(apiKey, "[redacted]", StringComparison.Ordinal);
         }
 
         if (detail.Length > 300)
