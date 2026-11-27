@@ -6,7 +6,7 @@
 - Use the primary nickname in chat title, welcome greeting, behavior greeting templates and AI identity context; never substitute the role-management label.
 - Replace nested-card chat styling with a restrained desktop conversation workspace using neutral surfaces, thin rules, whitespace and subtle message treatment.
 - Refresh role management and persona editing with the same low-chrome visual system and explicit management-name/nickname labels.
-- Remove internal behavior state and catchphrases from Qwen context. Prioritize accurate, relevant answers and prohibit action, facial-expression and stage-direction narration.
+- Remove internal behavior state and catchphrases from Qwen context. Prioritize accurate, relevant answers and prohibit action, facial-expression and stage-direction narration; conservatively sanitize common bracketed action asides before display/persistence.
 - Add regression tests for nickname precedence, management-label isolation, factual-answer priorities and stage-direction constraints.
 
 

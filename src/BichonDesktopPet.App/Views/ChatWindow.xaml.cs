@@ -308,15 +308,21 @@ public partial class ChatWindow : Window
                 },
                 cancellation.Token);
 
+            var assistantContent = ChatReplySanitizer.Sanitize(result.Content);
+            if (string.IsNullOrWhiteSpace(assistantContent))
+            {
+                assistantContent = "我刚才没有给出有效的文字回答，可以换个方式问我吗？";
+            }
+
             try
             {
                 var assistantMessage = _historyStore.SaveMessage(
                     _companion.Id,
                     sessionId,
                     "assistant",
-                    result.Content);
+                    assistantContent);
                 _messages.Add(assistantMessage);
-                AppendContextMessage(new AiChatMessage("assistant", result.Content));
+                AppendContextMessage(new AiChatMessage("assistant", assistantContent));
                 RefreshSessionSelector(sessionId, selectLatestWhenMissing: false);
                 ConnectionStatusText.Text = $"{_provider.ProviderName} · {result.Model} · 回复已保存到本机；请求内容由 Qwen 云端处理。";
             }
@@ -327,10 +333,10 @@ public partial class ChatWindow : Window
                     Id = -1,
                     SessionId = sessionId,
                     Role = "assistant",
-                    Content = result.Content,
+                    Content = assistantContent,
                     CreatedAtUtc = DateTimeOffset.UtcNow
                 });
-                AppendContextMessage(new AiChatMessage("assistant", result.Content));
+                AppendContextMessage(new AiChatMessage("assistant", assistantContent));
                 ConnectionStatusText.Text = "已收到 AI 回复，但保存到本机失败；请检查磁盘空间或数据库权限。";
             }
 
