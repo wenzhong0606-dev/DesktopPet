@@ -205,7 +205,7 @@ public sealed class AvatarCatalogServiceTests
         File.WriteAllText(catalogPath, JsonSerializer.Serialize(legacyCatalog));
 
         var settingsPath = Path.Combine(_userDataDirectory, "settings.json");
-        const string settingsJson = "{\\"ActiveAvatarId\\":\\"preserve-this-selection\\"}";
+        const string settingsJson = "{\"ActiveAvatarId\":\"preserve-this-selection\"}";
         Directory.CreateDirectory(_userDataDirectory);
         File.WriteAllText(settingsPath, settingsJson);
 
