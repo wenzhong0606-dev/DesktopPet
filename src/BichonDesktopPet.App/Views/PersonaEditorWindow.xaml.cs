@@ -77,7 +77,7 @@ public partial class PersonaEditorWindow : Window
         }
     }
 
-    private static string SelectedTag(ComboBox comboBox, string fallback) =>
+    private static string SelectedTag(System.Windows.Controls.ComboBox comboBox, string fallback) =>
         comboBox.SelectedValue?.ToString() ?? fallback;
 
     private static List<string> SplitValues(string? value, params char[] separators) =>
