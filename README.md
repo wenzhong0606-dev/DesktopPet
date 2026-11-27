@@ -18,7 +18,7 @@ AI Desktop Companion is a Windows desktop companion platform developed in small,
 - WPF (Windows desktop)
 - Platform-independent Core library
 - Local JSON settings/avatar catalog and a SQLite companion identity store
-- Local image import; no account, network upload, or cloud sync required
+- Local image import; core desktop-pet features work offline without an account. Explicit AI chat sends the submitted message and bounded context to the configured Qwen endpoint.
 
 ## Current implementation
 
@@ -42,6 +42,9 @@ M3-C adds:
 - Removed avatars are archived so their companion identity and interaction history are not automatically destroyed.
 - A replaceable `IAiChatProvider` contract and Qwen Chat Completions client using the exact model name `qwen-plus`.
 - Qwen configuration from local app settings or environment variables; the API key is not committed to Git.
+
+M4-A adds:
+
 - An explicit WPF chat window, opened from the pet context menu or system tray; no AI request is sent at application startup.
 - Chat sessions and messages are stored locally in `companions.db`, isolated by companion identity. Reopening chat restores the latest session.
 - Message history loads 30 rows at a time with SQLite keyset pagination; older pages are loaded on demand and the WPF list virtualizes item containers.
@@ -87,7 +90,7 @@ dotnet run --project src/BichonDesktopPet.App/BichonDesktopPet.App.csproj
 - Settings: \`%LOCALAPPDATA%\\BichonDesktopPet\\settings.json\`
 - Diagnostic log: \`%LOCALAPPDATA%\\BichonDesktopPet\\logs\\app.log\`
 - Avatar catalog: \`%LOCALAPPDATA%\\BichonDesktopPet\\avatars\\catalog.json\`
-- Companion identities and interaction journal: \`%LOCALAPPDATA%\\BichonDesktopPet\\companions.db\`
+- Companion identities, interaction journal and paginated chat history: \`%LOCALAPPDATA%\\BichonDesktopPet\\companions.db\`
 - Local Qwen settings: \`%LOCALAPPDATA%\\BichonDesktopPet\\appsettings.Local.json\` (optional; ignored by Git)
 - Imported images: \`%LOCALAPPDATA%\\BichonDesktopPet\\avatars\\{avatar-id}\\avatar.{png|jpg|jpeg|bmp}\`
 

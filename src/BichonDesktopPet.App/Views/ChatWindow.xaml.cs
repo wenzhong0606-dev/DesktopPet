@@ -261,7 +261,15 @@ public partial class ChatWindow : Window
         {
             if (createdSession && _activeSessionId is not null)
             {
-                _historyStore.DeleteSession(_companion.Id, _activeSessionId);
+                try
+                {
+                    _historyStore.DeleteSession(_companion.Id, _activeSessionId);
+                }
+                catch (Exception)
+                {
+                    // Preserve the original save failure for the user-facing message.
+                }
+
                 _activeSessionId = null;
             }
 

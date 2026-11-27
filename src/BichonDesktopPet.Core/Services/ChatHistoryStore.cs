@@ -110,7 +110,8 @@ public sealed class ChatHistoryStore
         ValidateIdentifier(companionId, nameof(companionId));
 
         var id = Guid.NewGuid().ToString("N");
-        var timestamp = FormatUtc(now ?? DateTimeOffset.UtcNow);
+        var timestampValue = now ?? DateTimeOffset.UtcNow;
+        var timestamp = FormatUtc(timestampValue);
 
         using var connection = OpenConnection();
         using var command = connection.CreateCommand();
@@ -132,8 +133,8 @@ public sealed class ChatHistoryStore
             Id = id,
             CompanionId = companionId,
             Title = NewSessionTitle,
-            CreatedAtUtc = now ?? DateTimeOffset.UtcNow,
-            UpdatedAtUtc = now ?? DateTimeOffset.UtcNow,
+            CreatedAtUtc = timestampValue,
+            UpdatedAtUtc = timestampValue,
             MessageCount = 0
         };
     }

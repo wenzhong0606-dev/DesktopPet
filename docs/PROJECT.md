@@ -132,11 +132,12 @@ Implementation:
 
 ### Next increment
 
-M4-A will add an explicit text conversation UI and a compact context builder. M4-B will add memory formation/retrieval and gradual personality development. These features must use the stable companion ID and remain independent of the Qwen provider.
+M4-A now includes the explicit text conversation UI, bounded context builder and local paginated chat history. Remaining M4-A work is driven by Windows user acceptance and conversation UX hardening. M4-B will add memory formation/retrieval and gradual personality development using the stable companion ID, independently of the Qwen provider.
 
 ## Local storage
 
 - Settings: \`%LOCALAPPDATA%\\BichonDesktopPet\\settings.json\`
+- Companion identities, interaction journal and paginated chat history: %LOCALAPPDATA%\\BichonDesktopPet\\companions.db
 - Avatar catalog: \`%LOCALAPPDATA%\\BichonDesktopPet\\avatars\\catalog.json\`
 - Imported image: \`%LOCALAPPDATA%\\BichonDesktopPet\\avatars\\{avatar-id}\\avatar.{extension}\`
 
@@ -161,7 +162,7 @@ See [PRODUCT_DEFINITION_AND_MVP_ROADMAP_V1.md](PRODUCT_DEFINITION_AND_MVP_ROADMA
 
 M3 已于 2026-11-27 经用户确认全部验收通过并正式关闭。当前研发阶段为 M4-A。
 
-M4-A 首个垂直切片（实现中）：
+M4-A 首个垂直切片（已实现；Windows CI 通过，待用户本机验收）：
 - 从桌宠右键菜单和系统托盘菜单显式打开独立聊天窗口。
 - 复用现有 `IAiChatProvider` / Qwen `qwen-plus`，不在启动时发送请求。
 - 将当前角色 PersonaProfile、伙伴身份显示名和当前行为状态构建为 system context。
@@ -174,4 +175,4 @@ M4-A 首个垂直切片（实现中）：
 - 未配置 API Key 时，聊天入口明确提示配置要求并禁用发送；所有原有离线桌宠功能继续可用。
 - 请求超时、取消、网络错误和 Provider 错误均提供用户可见反馈。
 
-此切片仍不包含流式输出、记忆检索、自动记忆提取、人格成长、语音或 AI 工具调用。聊天记录仅保存在本机 SQLite，不会随历史记录功能自动上传；用户主动发送消息时仍会按 Qwen 请求需要发送当前消息和有限上下文。需经 Windows CI 与用户本机验收后，才可标记 M4-A 后续增量完成。
+此切片仍不包含流式输出、记忆检索、自动记忆提取、人格成长、语音或 AI 工具调用。聊天记录仅保存在本机 SQLite，不会随历史记录功能自动上传；用户主动发送消息时仍会按 Qwen 请求需要发送当前消息和有限上下文。Windows CI 已通过（77/77 测试，0 警告、0 错误）；仍需用户本机验收后才能关闭本次增量。

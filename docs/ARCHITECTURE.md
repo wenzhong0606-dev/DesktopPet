@@ -25,7 +25,7 @@
 - Keep the window lightweight and avoid one timer per particle.
 - Keep all animation updates on the WPF dispatcher.
 - Bound particle counts and release timers/media resources on exit.
-- Keep user settings and companion data local; do not add telemetry. M3-C prepares a Qwen provider but does not send network requests until a future explicit chat interaction.
+- Keep user settings, companion identities and chat history local; do not add telemetry. M4-A sends a request to Qwen only after the user explicitly submits a message. Local history browsing never sends network requests.
 - Keep original artwork separate from optimized runtime assets.
 - Do not commit generated binaries, build outputs, or user-specific settings.
 - Avoid adding third-party runtime dependencies unless a concrete requirement justifies it.
@@ -101,7 +101,7 @@ The WPF application is Windows-targeted. EnableWindowsTargeting is set so SDK-ba
 - \`QwenOptionsLoader\` reads the local settings file under LocalAppData and lets \`Qwen__ApiKey\`, \`Qwen__Endpoint\` and \`Qwen__Model\` environment variables override file values.
 - The application creates the provider at startup and exposes it as \`App.AiChatProvider\`. M4-A's explicit chat window calls it only after a user sends a message; startup never sends a network request.
 - Missing or invalid local configuration does not prevent the offline desktop pet from starting. API keys are not logged.
-- Version one supports only system/user/assistant messages, non-streaming responses and usage extraction. It does not implement tool calls, automatic retries, semantic memory retrieval or streaming.
+- Version one supports only system/user/assistant messages, non-streaming responses and usage extraction. Conversation persistence and pagination are implemented by the separate local ChatHistoryStore, not by the provider adapter. Tool calls, automatic retries, semantic memory retrieval and streaming remain out of scope.
 - Qwen is the default provider, but companion identity, local storage and behavior code depend on the provider-neutral contract.
 
 
@@ -119,4 +119,4 @@ The WPF application is Windows-targeted. EnableWindowsTargeting is set so SDK-ba
 - User messages are committed locally before an outbound Qwen request; successful assistant responses are persisted after receipt. Closing/reopening the window does not remove saved history.
 - When Qwen is not configured, the chat UI explains the local configuration requirement and disables sending. Existing desktop-pet features remain offline and available.
 - Requests are asynchronous, single-flight and bounded by a 50-second cancellation timeout. The UI handles cancellation, provider failures and network failures without logging conversation content.
-- M4-A first slice does not implement streaming, durable chat history, retrieval, memory extraction, personality growth, voice, tool calls or arbitrary system actions.
+- M4-A first slice does not implement streaming, semantic memory retrieval, automatic memory extraction, personality growth, voice, tool calls or arbitrary system actions.

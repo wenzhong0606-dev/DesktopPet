@@ -550,10 +550,21 @@ public partial class MainWindow : Window
             return;
         }
 
-        var chat = new ChatWindow(provider, companion, avatar, () => _behaviorEngine.CurrentState, _chatHistoryStore)
+        ChatWindow chat;
+        try
         {
-            Owner = this
-        };
+            chat = new ChatWindow(provider, companion, avatar, () => _behaviorEngine.CurrentState, _chatHistoryStore)
+            {
+                Owner = this
+            };
+        }
+        catch (Exception exception)
+        {
+            AppLogger.Log("Unable to open the chat window or load local chat history.", exception);
+            System.Windows.MessageBox.Show("聊天窗口打开失败，请检查本地聊天数据库和应用日志。", "桌面伙伴", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
         _chatWindow = chat;
         chat.Closed += (_, _) =>
         {
