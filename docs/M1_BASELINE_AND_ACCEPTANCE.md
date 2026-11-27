@@ -4,7 +4,7 @@
 - 分支：main
 - 当前工程：.NET 10 WPF
 - 用户已确认：上一轮图片桌宠基础功能及托盘显示/隐藏在本机 Windows 正常运行。
-- 当前新增设置窗口、日志与测试：已提交代码，尚待本机 Windows 构建和运行验收。
+- 当前新增设置窗口、日志与测试：已提交；Windows CI 已通过，仍待用户本机交互验收。
 
 ## 1. 当前仓库结构
 
@@ -70,7 +70,11 @@
 - [x] 设置文件不存在时返回默认值测试。
 - [x] JSON 损坏回退默认值并触发诊断回调测试。
 - [x] 保存失败触发诊断回调测试。
-- [ ] Windows CI 与本机 Release Build/Test 通过。
+- [x] GitHub Actions Windows CI Release Build 通过（0 warnings / 0 errors）。
+- [x] GitHub Actions Windows CI 自动化测试通过（7/7）。
+- [ ] 用户本机 Release Build/Test 复核。
+
+CI 记录：[Windows CI run #58](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45934852652)，commit `a6dbd3ea9bda607d2d19b224d4975e9647cec205`。
 
 ## 5. 验收命令
 
