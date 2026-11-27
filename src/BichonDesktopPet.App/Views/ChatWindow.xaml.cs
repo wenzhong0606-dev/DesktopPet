@@ -50,10 +50,9 @@ public partial class ChatWindow : Window
         _historyStore = historyStore ?? throw new ArgumentNullException(nameof(historyStore));
 
         MessageList.ItemsSource = _messages;
-        CompanionNameText.Text = string.IsNullOrWhiteSpace(avatar.Name)
-            ? companion.DisplayName
-            : avatar.Name;
-        Title = $"{CompanionNameText.Text} · 聊天";
+        var petNickname = ChatWelcomeMessageBuilder.GetPrimaryNickname(avatar);
+        CompanionNameText.Text = string.IsNullOrWhiteSpace(petNickname) ? "伙伴对话" : petNickname;
+        Title = string.IsNullOrWhiteSpace(petNickname) ? "和伙伴聊天" : $"与{petNickname}聊天";
 
         ConnectionStatusText.Text = provider.IsConfigured
             ? "聊天记录保存在本机；发送消息时，消息、角色人格和近期上下文会发送至 Qwen 云端处理。请勿输入敏感信息。"

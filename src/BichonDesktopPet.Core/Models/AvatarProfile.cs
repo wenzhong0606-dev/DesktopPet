@@ -11,6 +11,7 @@ public sealed class AvatarProfile
 {
     public string Id { get; set; } = string.Empty;
 
+    /// <summary>Management label used to distinguish avatars in the role list; never the pet's conversational name.</summary>
     public string Name { get; set; } = string.Empty;
 
     /// <summary>Simple species/type metadata, such as dog, cat, or custom.</summary>

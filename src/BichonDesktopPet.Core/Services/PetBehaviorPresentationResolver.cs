@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using BichonDesktopPet.Core.Models;
 
 namespace BichonDesktopPet.Core.Services;
@@ -37,6 +38,12 @@ public sealed class PetBehaviorPresentationResolver
         species = string.IsNullOrWhiteSpace(species) ? "custom" : species.ToLowerInvariant();
         var persona = PersonaProfileValidator.NormalizeOrDefault(avatar?.Persona);
         var templates = BuildTemplates(state, species, persona);
+        var primaryNickname = persona.Nicknames.FirstOrDefault();
+        if (state == PetBehaviorState.Greeting && !string.IsNullOrWhiteSpace(primaryNickname))
+        {
+            templates.Insert(0, $"我是{primaryNickname}，{{user}}回来啦。");
+        }
+
         var key = $"{avatar?.Id ?? "unknown"}:{state}";
         var message = NextTemplate(key, templates)
             .Replace("{self}", persona.SelfReference, StringComparison.Ordinal)
@@ -312,7 +319,8 @@ public sealed class PetBehaviorPresentationResolver
     {
         if (state == PetBehaviorState.Greeting)
         {
-            foreach (var nickname in persona.Nicknames)
+            // The first nickname is the pet's actual name. Only subsequent entries are aliases.
+            foreach (var nickname in persona.Nicknames.Skip(1))
             {
                 templates.Add($"对了，{{user}}，你也可以叫我{nickname}。");
             }

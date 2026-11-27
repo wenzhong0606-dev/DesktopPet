@@ -122,3 +122,10 @@ The WPF application is Windows-targeted. EnableWindowsTargeting is set so SDK-ba
 - When Qwen is not configured, the chat UI explains the local configuration requirement and disables sending. Existing desktop-pet features remain offline and available.
 - Requests are asynchronous, single-flight and bounded by a 50-second cancellation timeout. The UI handles cancellation, provider failures and network failures without logging conversation content.
 - M4-A first slice does not implement streaming, semantic memory retrieval, automatic memory extraction, personality growth, voice, tool calls or arbitrary system actions.
+
+
+### Conversation identity and response constraints
+
+- `AvatarProfile.Name` is a management-only label. The first `PersonaProfile.Nicknames` entry is the primary pet name; subsequent entries are aliases. Chat title, local welcome and AI context use the primary nickname only, never the management label.
+- `ChatContextBuilder` prioritizes factual correctness and direct task completion over persona performance. It excludes internal animation state and catchphrases, and instructs the model to avoid stage directions, physical actions, facial expressions and emotional narration. Persona traits affect wording only, never factual content.
+- The chat window and avatar/persona management windows share a restrained desktop visual language: neutral surfaces, thin rules, generous whitespace and minimal corner treatment rather than nested cards or conventional oversized chat bubbles.

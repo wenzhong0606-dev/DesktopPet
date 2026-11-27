@@ -50,9 +50,14 @@ public partial class AvatarManagerWindow : Window
             avatars.FirstOrDefault();
 
         var activeAvatar = avatars.FirstOrDefault(avatar => avatar.Id == activeId);
+        var activeNickname = activeAvatar is null
+            ? null
+            : PersonaProfileValidator.NormalizeOrDefault(activeAvatar.Persona).Nicknames.FirstOrDefault();
         CurrentAvatarText.Text = activeAvatar is null
             ? "当前角色：未选择"
-            : $"当前角色：{activeAvatar.Name}";
+            : string.IsNullOrWhiteSpace(activeNickname)
+                ? $"当前角色：{activeAvatar.Name}（尚未设置宠物昵称）"
+                : $"当前宠物：{activeNickname} · 管理标签：{activeAvatar.Name}";
 
         UpdateButtons();
     }
@@ -175,7 +180,7 @@ public partial class AvatarManagerWindow : Window
             var updatedAvatar = _catalog.GetAvatar(selected.Id);
             StatusText.Text = updatedAvatar is null
                 ? "角色资料已保存。"
-                : $"「{updatedAvatar.Name}」的身份与个性资料已保存。";
+                : $"「{updatedAvatar.Name}」的管理资料与宠物昵称已保存。";
         }
     }
 

@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-11-27 — Pet nickname semantics, response quality and restrained desktop UI
+
+- Treat `AvatarProfile.Name` strictly as a role-management label; the first `PersonaProfile.Nicknames` entry is the primary pet name and remaining entries are aliases.
+- Use the primary nickname in chat title, welcome greeting, behavior greeting templates and AI identity context; never substitute the role-management label.
+- Replace nested-card chat styling with a restrained desktop conversation workspace using neutral surfaces, thin rules, whitespace and subtle message treatment.
+- Refresh role management and persona editing with the same low-chrome visual system and explicit management-name/nickname labels.
+- Remove internal behavior state and catchphrases from Qwen context. Prioritize accurate, relevant answers and prohibit action, facial-expression and stage-direction narration.
+- Add regression tests for nickname precedence, management-label isolation, factual-answer priorities and stage-direction constraints.
+
+
 ## 2026-11-27 — M4-A modern chat presentation and persona-aware welcome
 
 - Refresh the WPF chat window with a modern, lightweight IM layout, clearer companion identity, session actions, aligned message bubbles and a dedicated composer.

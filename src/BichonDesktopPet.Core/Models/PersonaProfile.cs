@@ -6,7 +6,7 @@ namespace BichonDesktopPet.Core.Models;
 /// </summary>
 public sealed class PersonaProfile
 {
-    /// <summary>Optional alternative names users may use for this pet.</summary>
+    /// <summary>Pet names in priority order: the first is the primary conversational name; later entries are aliases.</summary>
     public List<string> Nicknames { get; set; } = [];
 
     /// <summary>How the pet refers to itself in generated messages.</summary>

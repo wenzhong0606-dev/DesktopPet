@@ -1,311 +1,124 @@
 <Window x:Class="BichonDesktopPet.App.Views.ChatWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="和伙伴聊天"
-        Width="760"
-        Height="820"
-        MinWidth="560"
-        MinHeight="640"
-        Background="#FFF3F5F9"
-        FontFamily="Segoe UI"
-        TextOptions.TextFormattingMode="Display"
-        WindowStartupLocation="CenterOwner"
-        ResizeMode="CanResize"
-        ShowInTaskbar="True">
+        Title="和伙伴聊天" Width="760" Height="820" MinWidth="560" MinHeight="640"
+        Background="#FFF7F6F2" FontFamily="Segoe UI"
+        TextOptions.TextFormattingMode="Display" WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize" ShowInTaskbar="True">
   <Window.Resources>
-    <SolidColorBrush x:Key="InkBrush" Color="#FF252B3A" />
-    <SolidColorBrush x:Key="MutedBrush" Color="#FF8991A3" />
-    <SolidColorBrush x:Key="LineBrush" Color="#FFE8EBF2" />
-
-    <Style x:Key="ActionButtonStyle" TargetType="{x:Type Button}">
-      <Setter Property="Padding" Value="12,9" />
-      <Setter Property="Background" Value="#FFF7F8FC" />
-      <Setter Property="BorderBrush" Value="#FFE7EAF2" />
+    <SolidColorBrush x:Key="InkBrush" Color="#FF303630" />
+    <SolidColorBrush x:Key="MutedBrush" Color="#FF858A82" />
+    <SolidColorBrush x:Key="LineBrush" Color="#FFE4E2DA" />
+    <Style x:Key="ToolbarButtonStyle" TargetType="{x:Type Button}">
+      <Setter Property="Padding" Value="12,8" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="Transparent" />
       <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="Foreground" Value="#FF4A5264" />
+      <Setter Property="Foreground" Value="#FF626A61" />
       <Setter Property="FontSize" Value="12" />
-      <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="Cursor" Value="Hand" />
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="{x:Type Button}">
-            <Border x:Name="ButtonSurface"
-                    Background="{TemplateBinding Background}"
+            <Border x:Name="Surface" Background="{TemplateBinding Background}"
                     BorderBrush="{TemplateBinding BorderBrush}"
-                    BorderThickness="{TemplateBinding BorderThickness}"
-                    CornerRadius="12"
-                    SnapsToDevicePixels="True">
-              <ContentPresenter Margin="{TemplateBinding Padding}"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                RecognizesAccessKey="True" />
+                    BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6">
+              <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="Center" VerticalAlignment="Center" />
             </Border>
             <ControlTemplate.Triggers>
               <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="ButtonSurface" Property="Background" Value="#FFEEF1F8" />
-                <Setter TargetName="ButtonSurface" Property="BorderBrush" Value="#FFD9DEEA" />
+                <Setter TargetName="Surface" Property="Background" Value="#FFECEDE7" />
+                <Setter TargetName="Surface" Property="BorderBrush" Value="#FFE0E1D9" />
               </Trigger>
-              <Trigger Property="IsPressed" Value="True">
-                <Setter TargetName="ButtonSurface" Property="Opacity" Value="0.78" />
-              </Trigger>
-              <Trigger Property="IsEnabled" Value="False">
-                <Setter TargetName="ButtonSurface" Property="Opacity" Value="0.45" />
-              </Trigger>
+              <Trigger Property="IsPressed" Value="True"><Setter TargetName="Surface" Property="Opacity" Value="0.75" /></Trigger>
+              <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Surface" Property="Opacity" Value="0.4" /></Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
         </Setter.Value>
       </Setter>
     </Style>
-
-    <Style x:Key="AccentButtonStyle"
-           TargetType="{x:Type Button}"
-           BasedOn="{StaticResource ActionButtonStyle}">
-      <Setter Property="Background" Value="#FF635FE8" />
-      <Setter Property="BorderBrush" Value="#FF635FE8" />
+    <Style x:Key="PrimaryButtonStyle" TargetType="{x:Type Button}" BasedOn="{StaticResource ToolbarButtonStyle}">
+      <Setter Property="Background" Value="#FF526458" />
+      <Setter Property="BorderBrush" Value="#FF526458" />
       <Setter Property="Foreground" Value="#FFFFFFFF" />
-      <Setter Property="Padding" Value="20,11" />
-      <Setter Property="FontSize" Value="13" />
+      <Setter Property="Padding" Value="20,10" />
+      <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="{x:Type Button}">
-            <Border x:Name="ButtonSurface"
-                    Background="{TemplateBinding Background}"
+            <Border x:Name="Surface" Background="{TemplateBinding Background}"
                     BorderBrush="{TemplateBinding BorderBrush}"
-                    BorderThickness="{TemplateBinding BorderThickness}"
-                    CornerRadius="14"
-                    SnapsToDevicePixels="True">
-              <ContentPresenter Margin="{TemplateBinding Padding}"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                RecognizesAccessKey="True" />
+                    BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6">
+              <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="Center" VerticalAlignment="Center" />
             </Border>
             <ControlTemplate.Triggers>
-              <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="ButtonSurface" Property="Background" Value="#FF514DCE" />
-                <Setter TargetName="ButtonSurface" Property="BorderBrush" Value="#FF514DCE" />
-              </Trigger>
-              <Trigger Property="IsPressed" Value="True">
-                <Setter TargetName="ButtonSurface" Property="Opacity" Value="0.82" />
-              </Trigger>
-              <Trigger Property="IsEnabled" Value="False">
-                <Setter TargetName="ButtonSurface" Property="Opacity" Value="0.42" />
-              </Trigger>
+              <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Surface" Property="Background" Value="#FF425448" /></Trigger>
+              <Trigger Property="IsPressed" Value="True"><Setter TargetName="Surface" Property="Opacity" Value="0.8" /></Trigger>
+              <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Surface" Property="Opacity" Value="0.4" /></Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
         </Setter.Value>
       </Setter>
     </Style>
-
-    <Style x:Key="QuietButtonStyle"
-           TargetType="{x:Type Button}"
-           BasedOn="{StaticResource ActionButtonStyle}">
-      <Setter Property="Background" Value="Transparent" />
-      <Setter Property="BorderBrush" Value="Transparent" />
-      <Setter Property="Foreground" Value="#FF7A8293" />
-      <Setter Property="Padding" Value="10,8" />
-      <Setter Property="FontWeight" Value="Normal" />
-    </Style>
-
     <Style TargetType="{x:Type ComboBox}">
-      <Setter Property="Height" Value="42" />
-      <Setter Property="Padding" Value="12,6" />
-      <Setter Property="FontSize" Value="12" />
-      <Setter Property="Foreground" Value="#FF3F4658" />
-      <Setter Property="Background" Value="#FFF8F9FC" />
-      <Setter Property="BorderBrush" Value="#FFE7EAF2" />
-      <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="Height" Value="36" /><Setter Property="Padding" Value="10,5" />
+      <Setter Property="FontSize" Value="12" /><Setter Property="Foreground" Value="#FF3F463F" />
+      <Setter Property="Background" Value="#FFFBFAF7" /><Setter Property="BorderBrush" Value="#FFE1DFD7" />
+      <Setter Property="BorderThickness" Value="1" /><Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
   </Window.Resources>
-
-  <Grid Margin="22">
-    <Grid.RowDefinitions>
-      <RowDefinition Height="Auto" />
-      <RowDefinition Height="Auto" />
-      <RowDefinition Height="*" />
-      <RowDefinition Height="Auto" />
-    </Grid.RowDefinitions>
-
-    <!-- Companion identity and connection state -->
-    <Border Grid.Row="0"
-            Margin="0,0,0,14"
-            Padding="18"
-            Background="#FFFFFFFF"
-            BorderBrush="#FFE8EBF2"
-            BorderThickness="1"
-            CornerRadius="22">
-      <Grid>
-        <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="54" />
-          <ColumnDefinition Width="*" />
-          <ColumnDefinition Width="250" />
-        </Grid.ColumnDefinitions>
-        <Border Width="46"
-                Height="46"
-                CornerRadius="16"
-                Background="#FFF0EEFF"
-                VerticalAlignment="Center">
-          <TextBlock Text="✦"
-                     FontSize="24"
-                     Foreground="#FF635FE8"
-                     HorizontalAlignment="Center"
-                     VerticalAlignment="Center" />
-        </Border>
-        <StackPanel Grid.Column="1"
-                    VerticalAlignment="Center"
-                    Margin="12,0,10,0">
-          <TextBlock x:Name="CompanionNameText"
-                     FontSize="21"
-                     FontWeight="SemiBold"
-                     Foreground="{StaticResource InkBrush}" />
-          <TextBlock Text="专属聊天空间"
-                     Margin="0,3,0,0"
-                     FontSize="11"
-                     Foreground="{StaticResource MutedBrush}" />
-        </StackPanel>
-        <Border Grid.Column="2"
-                Padding="12,9"
-                Background="#FFF7F8FC"
-                BorderBrush="#FFEDF0F5"
-                BorderThickness="1"
-                CornerRadius="13"
-                VerticalAlignment="Center">
-          <TextBlock x:Name="ConnectionStatusText"
-                     FontSize="10.5"
-                     LineHeight="16"
-                     Foreground="#FF697286"
-                     TextWrapping="Wrap" />
-        </Border>
-      </Grid>
-    </Border>
-
-    <!-- Session navigation and actions -->
-    <Grid Grid.Row="1" Margin="0,0,0,13">
-      <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="*" />
-        <ColumnDefinition Width="Auto" />
-        <ColumnDefinition Width="Auto" />
-        <ColumnDefinition Width="Auto" />
-      </Grid.ColumnDefinitions>
-      <ComboBox x:Name="SessionSelector"
-                Grid.Column="0"
-                MinWidth="120"
-                Margin="0,0,8,0"
-                DisplayMemberPath="DisplayTitle"
-                ToolTip="切换历史会话"
-                SelectionChanged="SessionSelector_SelectionChanged" />
-      <Button x:Name="NewChatButton"
-              Grid.Column="1"
-              Margin="0,0,7,0"
-              Style="{StaticResource ActionButtonStyle}"
-              Content="＋ 新对话"
-              Click="NewChatButton_Click" />
-      <Button x:Name="DeleteSessionButton"
-              Grid.Column="2"
-              Margin="0,0,7,0"
-              Style="{StaticResource ActionButtonStyle}"
-              Content="删除"
-              ToolTip="删除当前会话"
-              Click="DeleteSessionButton_Click" />
-      <Button x:Name="ClearHistoryButton"
-              Grid.Column="3"
-              Style="{StaticResource QuietButtonStyle}"
-              Content="清空"
-              ToolTip="清空当前角色的全部聊天记录"
-              Click="ClearHistoryButton_Click" />
+  <Grid Margin="26">
+    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+    <Grid Grid.Row="0" Margin="0,0,0,18">
+      <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="270" /></Grid.ColumnDefinitions>
+      <StackPanel VerticalAlignment="Center">
+        <TextBlock x:Name="CompanionNameText" FontSize="23" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" />
+        <TextBlock Text="日常对话" Margin="0,4,0,0" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+      </StackPanel>
+      <TextBlock x:Name="ConnectionStatusText" Grid.Column="1" VerticalAlignment="Center"
+                 HorizontalAlignment="Right" MaxWidth="260" FontSize="10.5" LineHeight="15"
+                 Foreground="#FF7D837A" TextWrapping="Wrap" TextAlignment="Right" />
     </Grid>
-
-    <!-- Conversation surface -->
-    <Border Grid.Row="2"
-            Padding="18,15"
-            Background="#FFFFFFFF"
-            BorderBrush="#FFE8EBF2"
-            BorderThickness="1"
-            CornerRadius="22">
+    <Grid Grid.Row="1" Margin="0,0,0,12">
+      <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+      <ComboBox x:Name="SessionSelector" Grid.Column="0" MinWidth="120" Margin="0,0,8,0"
+                DisplayMemberPath="DisplayTitle" ToolTip="切换历史会话"
+                SelectionChanged="SessionSelector_SelectionChanged" />
+      <Button x:Name="NewChatButton" Grid.Column="1" Margin="0,0,4,0" Style="{StaticResource ToolbarButtonStyle}" Content="＋ 新对话" Click="NewChatButton_Click" />
+      <Button x:Name="DeleteSessionButton" Grid.Column="2" Margin="0,0,4,0" Style="{StaticResource ToolbarButtonStyle}" Content="删除会话" ToolTip="删除当前会话" Click="DeleteSessionButton_Click" />
+      <Button x:Name="ClearHistoryButton" Grid.Column="3" Style="{StaticResource ToolbarButtonStyle}" Content="清空记录" ToolTip="清空当前角色的全部聊天记录" Click="ClearHistoryButton_Click" />
+    </Grid>
+    <Border Grid.Row="2" Padding="20,14" Background="#FFFBFAF7"
+            BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,1" CornerRadius="0">
       <Grid>
-        <Grid.RowDefinitions>
-          <RowDefinition Height="Auto" />
-          <RowDefinition Height="Auto" />
-          <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-        <Grid Grid.Row="0" Margin="2,0,2,8">
-          <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="Auto" />
-          </Grid.ColumnDefinitions>
-          <StackPanel>
-            <TextBlock Text="聊天记录"
-                       FontSize="14"
-                       FontWeight="SemiBold"
-                       Foreground="{StaticResource InkBrush}" />
-            <TextBlock Text="最近的消息显示在下方"
-                       Margin="0,3,0,0"
-                       FontSize="10.5"
-                       Foreground="{StaticResource MutedBrush}" />
-          </StackPanel>
-          <TextBlock Grid.Column="1"
-                     Text="LOCAL HISTORY"
-                     VerticalAlignment="Center"
-                     FontSize="9"
-                     FontWeight="SemiBold"
-                     Foreground="#FFA1A8B6" />
+        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+        <Grid Grid.Row="0" Margin="0,0,0,8">
+          <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+          <TextBlock Text="对话" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" />
+          <TextBlock Grid.Column="1" Text="本机保存" VerticalAlignment="Center" FontSize="10" Foreground="#FF92978F" />
         </Grid>
-        <Button x:Name="LoadOlderButton"
-                Grid.Row="1"
-                HorizontalAlignment="Center"
-                Margin="0,2,0,10"
-                Padding="14,7"
-                Style="{StaticResource ActionButtonStyle}"
-                Content="↑  加载更早消息"
-                Visibility="Collapsed"
-                Click="LoadOlderButton_Click" />
-        <ListBox x:Name="MessageList"
-                 Grid.Row="2"
-                 Background="Transparent"
-                 BorderThickness="0"
-                 SelectionMode="Single"
-                 ScrollViewer.VerticalScrollBarVisibility="Auto"
-                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                 ScrollViewer.CanContentScroll="True"
-                 VirtualizingPanel.IsVirtualizing="True"
-                 VirtualizingPanel.VirtualizationMode="Recycling">
-          <ListBox.ItemsPanel>
-            <ItemsPanelTemplate>
-              <VirtualizingStackPanel />
-            </ItemsPanelTemplate>
-          </ListBox.ItemsPanel>
+        <Button x:Name="LoadOlderButton" Grid.Row="1" HorizontalAlignment="Center" Margin="0,2,0,10"
+                Padding="12,6" Style="{StaticResource ToolbarButtonStyle}" Content="加载更早消息"
+                Visibility="Collapsed" Click="LoadOlderButton_Click" />
+        <ListBox x:Name="MessageList" Grid.Row="2" Background="Transparent" BorderThickness="0"
+                 SelectionMode="Single" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.CanContentScroll="True"
+                 VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling">
+          <ListBox.ItemsPanel><ItemsPanelTemplate><VirtualizingStackPanel /></ItemsPanelTemplate></ListBox.ItemsPanel>
           <ListBox.ItemContainerStyle>
             <Style TargetType="{x:Type ListBoxItem}">
-              <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-              <Setter Property="Padding" Value="0" />
-              <Setter Property="Margin" Value="0,0,0,3" />
-              <Setter Property="BorderThickness" Value="0" />
-              <Setter Property="Background" Value="Transparent" />
-              <Setter Property="Focusable" Value="False" />
+              <Setter Property="HorizontalContentAlignment" Value="Stretch" /><Setter Property="Padding" Value="0" />
+              <Setter Property="Margin" Value="0,0,0,4" /><Setter Property="BorderThickness" Value="0" />
+              <Setter Property="Background" Value="Transparent" /><Setter Property="Focusable" Value="False" />
             </Style>
           </ListBox.ItemContainerStyle>
           <ListBox.ItemTemplate>
             <DataTemplate>
-              <Grid Margin="0,0,0,11">
-                <StackPanel x:Name="MessageColumn"
-                            HorizontalAlignment="Left"
-                            MaxWidth="540">
-                  <TextBlock x:Name="SenderLabel"
-                             Text="伙伴"
-                             Margin="4,0,4,5"
-                             FontSize="10"
-                             Foreground="#FF9299A9" />
-                  <Border x:Name="Bubble"
-                          Background="#FFF3F5FA"
-                          BorderBrush="#FFEDF0F5"
-                          BorderThickness="1"
-                          CornerRadius="17,17,17,5"
-                          Padding="15,11">
-                    <TextBlock Text="{Binding Content}"
-                               TextWrapping="Wrap"
-                               Foreground="#FF303748"
-                               FontSize="13.5"
-                               LineHeight="21" />
+              <Grid Margin="0,0,0,14">
+                <StackPanel x:Name="MessageColumn" HorizontalAlignment="Left" MaxWidth="570">
+                  <TextBlock x:Name="SenderLabel" Text="伙伴" Margin="0,0,0,5" FontSize="10" Foreground="#FF858B82" />
+                  <Border x:Name="MessageSurface" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="0">
+                    <TextBlock Text="{Binding Content}" TextWrapping="Wrap" Foreground="#FF343A34" FontSize="13.5" LineHeight="22" />
                   </Border>
                 </StackPanel>
               </Grid>
@@ -314,9 +127,8 @@
                   <Setter TargetName="MessageColumn" Property="HorizontalAlignment" Value="Right" />
                   <Setter TargetName="SenderLabel" Property="Text" Value="我" />
                   <Setter TargetName="SenderLabel" Property="HorizontalAlignment" Value="Right" />
-                  <Setter TargetName="Bubble" Property="Background" Value="#FFF0EEFF" />
-                  <Setter TargetName="Bubble" Property="BorderBrush" Value="#FFE4E1FF" />
-                  <Setter TargetName="Bubble" Property="CornerRadius" Value="17,17,5,17" />
+                  <Setter TargetName="MessageSurface" Property="Background" Value="#FFF0EFEA" />
+                  <Setter TargetName="MessageSurface" Property="Padding" Value="12,8" />
                 </DataTrigger>
               </DataTemplate.Triggers>
             </DataTemplate>
@@ -324,71 +136,35 @@
         </ListBox>
       </Grid>
     </Border>
-
-    <!-- Composer -->
-    <StackPanel Grid.Row="3" Margin="0,13,0,0">
-      <Border Padding="12"
-              Background="#FFFFFFFF"
-              BorderBrush="#FFE5E8F0"
-              BorderThickness="1"
-              CornerRadius="20">
+    <StackPanel Grid.Row="3" Margin="0,14,0,0">
+      <Border Padding="10" Background="#FFFBFAF7" BorderBrush="#FFE1DFD7" BorderThickness="1" CornerRadius="6">
         <Grid>
-          <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="Auto" />
-          </Grid.ColumnDefinitions>
+          <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
           <Grid Grid.Column="0" Margin="3,1,10,1">
-            <TextBox x:Name="MessageInput"
-                     MinHeight="48"
-                     MaxHeight="112"
-                     Padding="2,8"
-                     Background="Transparent"
-                     BorderThickness="0"
-                     Foreground="#FF303748"
-                     CaretBrush="#FF635FE8"
-                     FontSize="13.5"
-                     AcceptsReturn="True"
-                     TextWrapping="Wrap"
-                     VerticalScrollBarVisibility="Auto"
-                     VerticalContentAlignment="Center"
-                     KeyDown="MessageInput_KeyDown" />
-            <TextBlock Text="写下想说的话…"
-                       Margin="3,0,0,0"
-                       VerticalAlignment="Center"
-                       IsHitTestVisible="False"
-                       FontSize="13"
-                       Foreground="#FFADB3C0">
+            <TextBox x:Name="MessageInput" MinHeight="48" MaxHeight="112" Padding="2,8"
+                     Background="Transparent" BorderThickness="0" Foreground="#FF343A34" CaretBrush="#FF526458"
+                     FontSize="13.5" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                     VerticalContentAlignment="Center" KeyDown="MessageInput_KeyDown" />
+            <TextBlock Text="写下想说的话…" Margin="3,0,0,0" VerticalAlignment="Center"
+                       IsHitTestVisible="False" FontSize="13" Foreground="#FF9A9E96">
               <TextBlock.Style>
                 <Style TargetType="{x:Type TextBlock}">
                   <Setter Property="Visibility" Value="Collapsed" />
                   <Style.Triggers>
-                    <DataTrigger Binding="{Binding Text, ElementName=MessageInput}" Value="">
-                      <Setter Property="Visibility" Value="Visible" />
-                    </DataTrigger>
+                    <DataTrigger Binding="{Binding Text, ElementName=MessageInput}" Value=""><Setter Property="Visibility" Value="Visible" /></DataTrigger>
                     <DataTrigger Binding="{Binding IsEnabled, ElementName=MessageInput}" Value="False">
-                      <Setter Property="Text" Value="配置 Qwen API Key 后即可发送消息" />
-                      <Setter Property="Visibility" Value="Visible" />
+                      <Setter Property="Text" Value="配置 Qwen API Key 后即可发送消息" /><Setter Property="Visibility" Value="Visible" />
                     </DataTrigger>
                   </Style.Triggers>
                 </Style>
               </TextBlock.Style>
             </TextBlock>
           </Grid>
-          <Button x:Name="SendButton"
-                  Grid.Column="1"
-                  Width="94"
-                  Height="46"
-                  VerticalAlignment="Bottom"
-                  Style="{StaticResource AccentButtonStyle}"
-                  Content="发送  ➤"
-                  IsDefault="True"
-                  Click="SendButton_Click" />
+          <Button x:Name="SendButton" Grid.Column="1" Width="82" Height="40" VerticalAlignment="Bottom"
+                  Style="{StaticResource PrimaryButtonStyle}" Content="发送" IsDefault="True" Click="SendButton_Click" />
         </Grid>
       </Border>
-      <TextBlock Text="Enter 发送  ·  Shift + Enter 换行"
-                 Margin="8,7,0,0"
-                 FontSize="10"
-                 Foreground="#FFA0A7B5" />
+      <TextBlock Text="Enter 发送  ·  Shift + Enter 换行" Margin="4,7,0,0" FontSize="10" Foreground="#FF92978F" />
     </StackPanel>
   </Grid>
 </Window>

@@ -55,7 +55,8 @@ public sealed class PetBehaviorPresentationResolverTests
             Species = "dog",
             Persona = new PersonaProfile
             {
-                SelfReference = "豆包",
+                Nicknames = ["豆包"],
+                SelfReference = "我",
                 UserAddress = "主人",
                 SpeechStyle = "cute"
             }
@@ -188,7 +189,7 @@ public sealed class PetBehaviorPresentationResolverTests
             Species = "cat",
             Persona = new PersonaProfile
             {
-                Nicknames = ["小煤球"],
+                Nicknames = ["煤球", "小煤球"],
                 SpeechStyle = "cool",
                 Catchphrases = ["煤球今天心情不错。"]
             }
@@ -199,8 +200,11 @@ public sealed class PetBehaviorPresentationResolverTests
             _resolver.Resolve(PetBehaviorState.Greeting, avatar).Message,
             _resolver.Resolve(PetBehaviorState.Greeting, avatar).Message,
             _resolver.Resolve(PetBehaviorState.Greeting, avatar).Message,
+            _resolver.Resolve(PetBehaviorState.Greeting, avatar).Message,
+            _resolver.Resolve(PetBehaviorState.Greeting, avatar).Message,
             _resolver.Resolve(PetBehaviorState.Greeting, avatar).Message
         };
+        Assert.IsTrue(greetings.Any(message => message.Contains("我是煤球", StringComparison.Ordinal)));
         Assert.IsTrue(greetings.Any(message => message.Contains("小煤球", StringComparison.Ordinal)));
 
         var happyMessages = new[]
