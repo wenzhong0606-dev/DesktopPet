@@ -4,7 +4,7 @@
 
 AI Desktop Companion is a Windows desktop companion platform in gradual development. The Bichon Frise is the first sample character, not the only character the future platform may support. The long-term direction includes multiple animals, human-style avatars, user-imported models, character-specific behavior, and optional AI conversation.
 
-> Current product baseline: M0 image-based desktop pet display. The WPF image-loading implementation and `assets/characters/bichon/base/bichon-idle.png` are present on `main`. The committed PNG is 132,158 bytes according to the Git tree. The earlier asset manifest expected 45,559 bytes, so the committed binary's SHA-256 and visual appearance must be rechecked locally before calling the asset-integrity check complete.
+> Current product baseline: M0 image-based desktop pet display. The WPF image-loading implementation and `assets/characters/bichon/base/bichon-idle.png` are present on `main`. The committed PNG has been inspected from the repository binary: 420 × 540 pixels, RGBA, 132,158 bytes, SHA-256 `326d10ace28d53e8a4289b9f103c648ecb79d6b1b32e4a8f76d715793b97d210`. Windows runtime visual verification is still pending.
 
 ## Current technology
 
