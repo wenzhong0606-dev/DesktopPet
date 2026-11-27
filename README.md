@@ -9,7 +9,7 @@ AI Desktop Companion is a Windows desktop companion platform developed in small,
 - **M0 — Image display:** complete.
 - **M1 — Daily-use desktop pet:** user acceptance passed.
 - **M2 — Multiple image avatars:** user acceptance passed.
-- **M3 — Lightweight behavior system:** M3-A passed Windows Release CI (30/30 tests); M3-B persona system is implemented and awaiting CI/local acceptance.
+- **M3 — Lightweight behavior system:** M3-A passed Windows Release CI (30/30 tests); M3-B passed Windows Release CI (45/45 tests, 0 warnings/errors); local acceptance is pending. [M3-B CI run #160](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45949927255)
 
 ## Technology
 
@@ -25,13 +25,20 @@ The WPF app retains the transparent 280 × 360 DIP desktop-pet window, Bichon PN
 
 M2 provides:
 
-- A versioned local avatar catalog (schema v2) with stable avatar IDs and per-avatar persona profiles.
+- A versioned local avatar catalog with stable avatar IDs.
 - The built-in Bichon as the protected default role.
 - A role manager accessible from the pet context menu and system tray.
 - Import of PNG, JPG, JPEG and BMP images (maximum 20 MB per image).
-- Editable display name, species, optional breed, nicknames, self-reference, user address, personality traits, speech style, response length, emoji level and catchphrases.
+- Editable display name and simple species metadata.
 - Switching, deleting imported roles, restoring the Bichon default and persistence across restarts.
 - Local-only imported image storage and image validation.
+
+M3-B adds:
+
+- A separate `PersonaProfile` for each avatar, plus optional breed/subtype metadata.
+- A WPF editor for names, nicknames, self-reference, user address, up to three traits, speech style, response length, emoji level and catchphrases.
+- Avatar catalog schema v2 with non-destructive v1 migration; selected-avatar settings and imported image files remain untouched.
+- Deterministic persona-aware message templates with per-avatar/state rotation. This is not AI conversation.
 
 M3 first increment provides:
 
