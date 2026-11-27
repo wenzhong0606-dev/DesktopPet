@@ -37,6 +37,7 @@ public sealed class SettingsServiceTests
         {
             WindowLeft = 123.5,
             WindowTop = 456.5,
+            ActiveAvatarId = "test-avatar",
             AlwaysOnTop = false,
             SnowEnabled = false,
             DecorativeLightsEnabled = true,
@@ -51,6 +52,7 @@ public sealed class SettingsServiceTests
         Assert.IsTrue(File.Exists(settingsPath));
         Assert.AreEqual(expected.WindowLeft, actual.WindowLeft);
         Assert.AreEqual(expected.WindowTop, actual.WindowTop);
+        Assert.AreEqual(expected.ActiveAvatarId, actual.ActiveAvatarId);
         Assert.AreEqual(expected.AlwaysOnTop, actual.AlwaysOnTop);
         Assert.AreEqual(expected.SnowEnabled, actual.SnowEnabled);
         Assert.AreEqual(expected.DecorativeLightsEnabled, actual.DecorativeLightsEnabled);
