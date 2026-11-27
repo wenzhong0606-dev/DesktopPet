@@ -32,6 +32,7 @@ public static class ChatContextBuilder
         }
 
         _ = currentState; // Retained for API compatibility; animation state is not conversational context.
+        var clockContext = new SystemClockService().BuildPromptContext();
 
         var persona = PersonaProfileValidator.NormalizeOrDefault(avatar.Persona);
         var primaryNickname = persona.Nicknames.FirstOrDefault();
@@ -73,6 +74,9 @@ public static class ChatContextBuilder
             2. 事实准确、逻辑清楚、与问题相关，比角色扮演、卖萌或维持气氛更重要。
             3. 不要把普通问题改写成宠物互动，不要用寒暄、口头禅或无关的角色台词代替答案。
             4. 不确定时明确说明不确定和原因；信息不足时只询问最关键的缺失信息，不得编造事实、经历或数据。
+
+            【本机时间】
+            {clockContext}
 
             【宠物身份】
             宠物常用名字：{identityDescription}

@@ -145,7 +145,7 @@
                      Background="Transparent" BorderThickness="0" Foreground="#FF343A34" CaretBrush="#FF526458"
                      FontSize="13.5" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
                      VerticalContentAlignment="Center" KeyDown="MessageInput_KeyDown" />
-            <TextBlock Text="写下想说的话…" Margin="3,0,0,0" VerticalAlignment="Center"
+            <TextBlock Text="写下想说的话；时间问题可离线回答" Margin="3,0,0,0" VerticalAlignment="Center"
                        IsHitTestVisible="False" FontSize="13" Foreground="#FF9A9E96">
               <TextBlock.Style>
                 <Style TargetType="{x:Type TextBlock}">

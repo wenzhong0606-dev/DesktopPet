@@ -66,6 +66,13 @@ public sealed class TrayIconService : IDisposable
             window.Dispatcher.BeginInvoke(new Action(window.ShowFromTray));
     }
 
+    public void ShowNotification(string title, string message)
+    {
+        _notifyIcon.BalloonTipTitle = title;
+        _notifyIcon.BalloonTipText = message.Length > 240 ? message[..240] : message;
+        _notifyIcon.ShowBalloonTip(5000);
+    }
+
     public void Dispose()
     {
         _notifyIcon.Visible = false;

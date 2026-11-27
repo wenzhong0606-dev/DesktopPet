@@ -42,6 +42,7 @@ public sealed class SettingsServiceTests
             SnowEnabled = false,
             DecorativeLightsEnabled = true,
             MusicEnabled = false,
+            ActivityAwarenessEnabled = false,
             WindowWidth = 280,
             WindowHeight = 360
         };
@@ -57,6 +58,7 @@ public sealed class SettingsServiceTests
         Assert.AreEqual(expected.SnowEnabled, actual.SnowEnabled);
         Assert.AreEqual(expected.DecorativeLightsEnabled, actual.DecorativeLightsEnabled);
         Assert.AreEqual(expected.MusicEnabled, actual.MusicEnabled);
+        Assert.AreEqual(expected.ActivityAwarenessEnabled, actual.ActivityAwarenessEnabled);
     }
 
     [TestMethod]
@@ -71,6 +73,7 @@ public sealed class SettingsServiceTests
         Assert.IsTrue(settings.SnowEnabled);
         Assert.IsTrue(settings.DecorativeLightsEnabled);
         Assert.IsFalse(settings.MusicEnabled);
+        Assert.IsTrue(settings.ActivityAwarenessEnabled);
     }
 
     [TestMethod]

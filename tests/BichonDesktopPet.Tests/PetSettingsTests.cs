@@ -29,6 +29,7 @@ public sealed class PetSettingsTests
         var settings = new PetSettings();
 
         Assert.IsFalse(settings.MusicEnabled);
+        Assert.IsTrue(settings.ActivityAwarenessEnabled);
     }
 
     [TestMethod]

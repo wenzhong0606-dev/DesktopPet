@@ -41,6 +41,8 @@ public sealed class ChatContextBuilderTests
         StringAssert.Contains(messages[0].Content, "主人");
         StringAssert.Contains(messages[0].Content, "好奇、温柔");
         StringAssert.Contains(messages[0].Content, "事实准确");
+        StringAssert.Contains(messages[0].Content, "本机当前日期时间");
+        StringAssert.Contains(messages[0].Content, "时区");
         StringAssert.Contains(messages[0].Content, "禁止舞台指示");
         Assert.IsFalse(messages[0].Content.Contains("图片角色标签", StringComparison.Ordinal));
         Assert.IsFalse(messages[0].Content.Contains("身份管理名", StringComparison.Ordinal));

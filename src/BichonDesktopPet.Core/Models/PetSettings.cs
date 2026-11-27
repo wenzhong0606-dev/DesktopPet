@@ -18,6 +18,9 @@ public sealed class PetSettings
     /// <summary>Music is deliberately disabled by default.</summary>
     public bool MusicEnabled { get; set; }
 
+    /// <summary>Observe local input-idle duration and offer break reminders; no input content is collected.</summary>
+    public bool ActivityAwarenessEnabled { get; set; } = true;
+
     public double WindowWidth { get; set; } = 280;
     public double WindowHeight { get; set; } = 360;
 }

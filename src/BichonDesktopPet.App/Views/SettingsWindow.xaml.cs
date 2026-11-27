@@ -50,6 +50,7 @@ public partial class SettingsWindow : Window
         proposed.SnowEnabled = SnowCheckBox.IsChecked == true;
         proposed.DecorativeLightsEnabled = LightsCheckBox.IsChecked == true;
         proposed.MusicEnabled = _musicAvailable && MusicCheckBox.IsChecked == true;
+        proposed.ActivityAwarenessEnabled = ActivityAwarenessCheckBox.IsChecked == true;
 
         var result = _applySettings(proposed);
         _currentSettings = result.Settings;
@@ -84,6 +85,7 @@ public partial class SettingsWindow : Window
             SnowCheckBox.IsChecked = _currentSettings.SnowEnabled;
             LightsCheckBox.IsChecked = _currentSettings.DecorativeLightsEnabled;
             MusicCheckBox.IsChecked = _currentSettings.MusicEnabled && _musicAvailable;
+            ActivityAwarenessCheckBox.IsChecked = _currentSettings.ActivityAwarenessEnabled;
         }
         finally
         {
@@ -100,6 +102,7 @@ public partial class SettingsWindow : Window
         SnowEnabled = source.SnowEnabled,
         DecorativeLightsEnabled = source.DecorativeLightsEnabled,
         MusicEnabled = source.MusicEnabled,
+        ActivityAwarenessEnabled = source.ActivityAwarenessEnabled,
         WindowWidth = source.WindowWidth,
         WindowHeight = source.WindowHeight
     };

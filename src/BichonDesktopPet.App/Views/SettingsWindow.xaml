@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="比熊桌宠设置"
         Width="440"
-        Height="580"
+        Height="680"
         MinWidth="420"
         MinHeight="440"
         WindowStartupLocation="CenterOwner"
@@ -71,6 +71,28 @@
                     Margin="0,0,0,22"
                     Checked="SettingChanged"
                     Unchecked="SettingChanged" />
+
+          <Separator Background="#FFF0E7E1" Margin="0,0,0,16" />
+
+          <TextBlock Text="智能关怀"
+                     FontSize="14"
+                     FontWeight="SemiBold"
+                     Foreground="#FF604840"
+                     Margin="0,0,0,10" />
+
+          <CheckBox x:Name="ActivityAwarenessCheckBox"
+                    Content="本地使用节奏感知与休息提醒"
+                    FontSize="13"
+                    Foreground="#FF49352F"
+                    Margin="0,0,0,6"
+                    Checked="SettingChanged"
+                    Unchecked="SettingChanged" />
+
+          <TextBlock Text="仅读取系统最近输入的空闲时长；不记录键盘内容、鼠标轨迹、应用名称或访问记录。连续活跃约一小时后温和提醒。"
+                     TextWrapping="Wrap"
+                     FontSize="11"
+                     Foreground="#FF8B7770"
+                     Margin="0,0,0,18" />
 
           <Separator Background="#FFF0E7E1" Margin="0,0,0,16" />
 

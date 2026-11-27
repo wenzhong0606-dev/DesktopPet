@@ -17,6 +17,9 @@ public partial class App : WpfApplication
 
     public IAiChatProvider? AiChatProvider { get; private set; }
 
+    public void ShowTrayNotification(string title, string message) =>
+        _trayIconService?.ShowNotification(title, message);
+
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);

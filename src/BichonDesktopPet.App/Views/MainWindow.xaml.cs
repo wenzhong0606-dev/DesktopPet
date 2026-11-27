@@ -24,6 +24,9 @@ public partial class MainWindow : Window
     private readonly SnowAnimationService _snowAnimation;
     private readonly AudioService _audioService = new();
     private readonly PetBehaviorEngine _behaviorEngine = new();
+    private readonly ActivityRhythmEngine _activityRhythmEngine = new();
+    private readonly WindowsActivityMonitor _activityMonitor = new();
+    private DateTimeOffset _lastActivitySampleAt = DateTimeOffset.MinValue;
     private readonly PetBehaviorPresentationResolver _behaviorPresentationResolver = new();
     private readonly PetBehaviorAnimationService _behaviorAnimation;
     private readonly DispatcherTimer _behaviorTimer;
@@ -283,6 +286,41 @@ public partial class MainWindow : Window
         if (currentState != previousState)
         {
             ApplyBehavior(currentState);
+        }
+
+        if (!_settings.ActivityAwarenessEnabled)
+        {
+            _activityRhythmEngine.Reset();
+            return;
+        }
+
+        var localNow = DateTimeOffset.Now;
+        if (localNow - _lastActivitySampleAt < TimeSpan.FromSeconds(30))
+        {
+            return;
+        }
+
+        _lastActivitySampleAt = localNow;
+        var idleDuration = _activityMonitor.GetIdleDuration();
+        if (idleDuration is not { } idle)
+        {
+            return;
+        }
+
+        var reminder = _activityRhythmEngine.Observe(localNow, idle);
+        if (reminder?.Type == CareReminderType.TakeBreak)
+        {
+            var avatar = _avatarCatalogService.GetAvatar(_settings.ActiveAvatarId);
+            ShowCareReminder(CareReminderMessageBuilder.BuildBreakReminder(avatar));
+        }
+    }
+
+    private void ShowCareReminder(string message)
+    {
+        StatusText.Text = message;
+        if (!IsActive)
+        {
+            (System.Windows.Application.Current as App)?.ShowTrayNotification("桌面伙伴 · 休息提醒", message);
         }
     }
 
@@ -651,6 +689,7 @@ public partial class MainWindow : Window
         _settings.SnowEnabled = requested.SnowEnabled;
         _settings.DecorativeLightsEnabled = requested.DecorativeLightsEnabled;
         _settings.MusicEnabled = requested.MusicEnabled;
+        _settings.ActivityAwarenessEnabled = requested.ActivityAwarenessEnabled;
 
         Topmost = _settings.AlwaysOnTop;
         _snowAnimation.SetEnabled(_settings.SnowEnabled);
@@ -703,7 +742,8 @@ public partial class MainWindow : Window
         DecorativeLightsEnabled = source.DecorativeLightsEnabled,
         MusicEnabled = source.MusicEnabled,
         WindowWidth = source.WindowWidth,
-        WindowHeight = source.WindowHeight
+        WindowHeight = source.WindowHeight,
+        ActivityAwarenessEnabled = source.ActivityAwarenessEnabled
     };
 
     public void ToggleSnow()
@@ -793,6 +833,7 @@ public partial class MainWindow : Window
         _behaviorTimer.Tick -= BehaviorTimer_Tick;
         _clickGestureTimer.Stop();
         _clickGestureTimer.Tick -= ClickGestureTimer_Tick;
+        _activityRhythmEngine.Reset();
         _behaviorAnimation.Dispose();
         _snowAnimation.Dispose();
         _audioService.Dispose();

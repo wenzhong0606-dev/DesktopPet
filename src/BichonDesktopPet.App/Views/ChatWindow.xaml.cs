@@ -225,7 +225,7 @@ public partial class ChatWindow : Window
 
     private async Task SendCurrentMessageAsync()
     {
-        if (_isSending || !_provider.IsConfigured)
+        if (_isSending)
         {
             return;
         }
@@ -239,6 +239,13 @@ public partial class ChatWindow : Window
         if (content.Length > 2000)
         {
             ConnectionStatusText.Text = "单条消息最多输入 2000 个字符。";
+            return;
+        }
+
+        var isLocalTimeQuery = LocalTimeQueryHandler.TryHandle(content, out var localTimeAnswer);
+        if (!_provider.IsConfigured && !isLocalTimeQuery)
+        {
+            ConnectionStatusText.Text = "尚未配置 Qwen API Key；本机时间问题可离线回答，其他 AI 对话需要先配置密钥。";
             return;
         }
 
@@ -288,6 +295,39 @@ public partial class ChatWindow : Window
         RefreshSessionSelector(_activeSessionId, selectLatestWhenMissing: false);
         ScrollToLatest();
         SetSending(true);
+
+        if (isLocalTimeQuery)
+        {
+            try
+            {
+                var assistantMessage = _historyStore.SaveMessage(
+                    _companion.Id,
+                    sessionId,
+                    "assistant",
+                    localTimeAnswer);
+                _messages.Add(assistantMessage);
+                AppendContextMessage(new AiChatMessage("assistant", localTimeAnswer));
+                ConnectionStatusText.Text = "本机系统时间 · 本地回答；本次消息未发送到云端。";
+            }
+            catch (Exception)
+            {
+                _messages.Add(new ChatHistoryMessage
+                {
+                    Id = -1,
+                    SessionId = sessionId,
+                    Role = "assistant",
+                    Content = localTimeAnswer,
+                    CreatedAtUtc = DateTimeOffset.UtcNow
+                });
+                AppendContextMessage(new AiChatMessage("assistant", localTimeAnswer));
+                ConnectionStatusText.Text = "已读取本机时间，但回复写入聊天记录失败。";
+            }
+
+            RefreshSessionSelector(sessionId, selectLatestWhenMissing: false);
+            ScrollToLatest();
+            SetSending(false);
+            return;
+        }
 
         var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(50));
         _requestCancellation = cancellation;
@@ -484,8 +524,8 @@ public partial class ChatWindow : Window
     private void SetSending(bool sending)
     {
         _isSending = sending;
-        SendButton.IsEnabled = !sending && _provider.IsConfigured;
-        MessageInput.IsEnabled = !sending && _provider.IsConfigured;
+        SendButton.IsEnabled = !sending;
+        MessageInput.IsEnabled = !sending;
         SendButton.Content = sending ? "发送中…" : "发送";
         UpdateHistoryButtons();
 
