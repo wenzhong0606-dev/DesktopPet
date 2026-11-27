@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-27 — M4-A modern chat presentation and persona-aware welcome
+
+- Refresh the WPF chat window with a modern, lightweight IM layout, clearer companion identity, session actions, aligned message bubbles and a dedicated composer.
+- Retain keyset-paginated local history, 30-message pages, recycling list virtualization and keyboard send behavior.
+- Replace the fixed welcome text with a Core welcome-message builder driven by the active avatar's display name, self-reference, user address, speech style, personality traits, nicknames, catchphrases, response length and emoji preference.
+- Keep the welcome greeting local and transient: it is not persisted, sent to Qwen or included in the AI conversation context.
+- Add unit tests for all six speech styles, personalized names/address/self-reference, optional persona details and fallback behavior.
+
 ## 2026-11-27 — M4-A local chat history and pagination
 
 - Add `ChatHistoryStore` with additive SQLite `chat_sessions` and `chat_messages` tables in the existing companions database.

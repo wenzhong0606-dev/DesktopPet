@@ -50,6 +50,8 @@ M4-A adds:
 - Message history loads 30 rows at a time with SQLite keyset pagination; older pages are loaded on demand and the WPF list virtualizes item containers.
 - Session switching, per-session deletion and clearing the current companion's history are supported.
 - Only the latest 12 messages are included in each AI context; viewing older pages does not enlarge the prompt.
+- The chat window uses a modern lightweight IM layout with aligned role-specific message bubbles and a dedicated message composer.
+- Empty-session welcome messages are generated locally from the active avatar's persona, including self-reference, user address, speech style, traits, nicknames, catchphrases and emoji preferences. Welcome text is not persisted or sent to Qwen.
 - Messages and selected persona/context are sent to Qwen only when the user sends a message; history storage itself is local.
 
 M3-B adds:

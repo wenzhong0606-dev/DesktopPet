@@ -53,6 +53,7 @@ public partial class ChatWindow : Window
         CompanionNameText.Text = string.IsNullOrWhiteSpace(avatar.Name)
             ? companion.DisplayName
             : avatar.Name;
+        Title = $"{CompanionNameText.Text} · 聊天";
 
         ConnectionStatusText.Text = provider.IsConfigured
             ? "聊天记录保存在本机；发送消息时，消息、角色人格和近期上下文会发送至 Qwen 云端处理。请勿输入敏感信息。"
@@ -451,7 +452,7 @@ public partial class ChatWindow : Window
         {
             Id = 0,
             Role = "assistant",
-            Content = $"你好，我是{CompanionNameText.Text}。新的聊天会话会自动保存在本机。",
+            Content = ChatWelcomeMessageBuilder.Build(_companion, _avatar),
             CreatedAtUtc = DateTimeOffset.UtcNow
         });
     }
