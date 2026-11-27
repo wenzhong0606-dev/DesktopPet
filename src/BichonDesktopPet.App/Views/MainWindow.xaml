@@ -27,6 +27,7 @@
         <MenuItem Header="显示 / 隐藏装饰灯" Click="ToggleLights_Click" />
         <MenuItem Header="拆开礼物" Click="GiftButton_Click" />
         <MenuItem Header="背景音乐（默认关闭）" Click="ToggleMusic_Click" />
+        <MenuItem Header="隐藏比熊" Click="Hide_Click" />
         <Separator />
         <MenuItem Header="退出比熊桌宠" Click="Exit_Click" />
       </ContextMenu>
