@@ -102,7 +102,7 @@ public sealed class PetBehaviorPresentationResolver
 
         if (persona.SpeechStyle == "cool" || isIndependent)
         {
-            List<string> templates = state switch
+            List<string> styleTemplates = state switch
             {
                 PetBehaviorState.Idle =>
                 [
@@ -136,13 +136,13 @@ public sealed class PetBehaviorPresentationResolver
                 ],
                 _ => ["我在。"]
             };
-            AddSharedPersonaTemplates(templates, state, persona);
-            return templates;
+            AddSharedPersonaTemplates(styleTemplates, state, persona);
+            return styleTemplates;
         }
 
         if (persona.SpeechStyle == "tsundere")
         {
-            List<string> templates = state switch
+            List<string> styleTemplates = state switch
             {
                 PetBehaviorState.Idle =>
                 [
@@ -176,13 +176,13 @@ public sealed class PetBehaviorPresentationResolver
                 ],
                 _ => ["哼。"]
             };
-            AddSharedPersonaTemplates(templates, state, persona);
-            return templates;
+            AddSharedPersonaTemplates(styleTemplates, state, persona);
+            return styleTemplates;
         }
 
         if (persona.SpeechStyle == "gentle" || isShy)
         {
-            List<string> templates = state switch
+            List<string> styleTemplates = state switch
             {
                 PetBehaviorState.Idle =>
                 [
@@ -216,8 +216,8 @@ public sealed class PetBehaviorPresentationResolver
                 ],
                 _ => ["我在这里。"]
             };
-            AddSharedPersonaTemplates(templates, state, persona);
-            return templates;
+            AddSharedPersonaTemplates(styleTemplates, state, persona);
+            return styleTemplates;
         }
 
         var interjection = species switch
