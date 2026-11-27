@@ -1,5 +1,5 @@
 {
-  "assetStatus": "repository-uploaded-awaiting-integrity-and-visual-verification",
+  "assetStatus": "repository-uploaded-integrity-verified-awaiting-windows-visual-check",
   "source": {
     "fileName": "圣诞草莓裙比熊萌宠.png",
     "storage": "user-library",
@@ -14,18 +14,21 @@
   "runtime": {
     "repositoryPath": "assets/characters/bichon/base/bichon-idle.png",
     "applicationOutputPath": "Assets/characters/bichon/base/bichon-idle.png",
+    "width": 420,
+    "height": 540,
     "format": "PNG",
-    "repositorySizeBytes": 132158,
+    "bitDepth": 8,
+    "colorType": "RGBA",
+    "hasAlpha": true,
+    "sizeBytes": 132158,
+    "sha256": "326d10ace28d53e8a4289b9f103c648ecb79d6b1b32e4a8f76d715793b97d210",
     "gitBlobSha": "11bc5493f21febd72706948f1dbfc848fcd9f9ae",
-    "preparedDerivativeRecord": {
-      "expectedWidth": 420,
-      "expectedHeight": 540,
-      "expectedSizeBytes": 45559,
-      "expectedSha256": "049ab8ebe317a4934d60546da4646076053a59af689d3bca6313a6cf3dbf3b3c",
-      "resampling": "Lanczos",
-      "optimization": "128-color indexed PNG with transparency"
-    },
-    "integrityVerification": "pending-local-sha256-and-dimension-check",
+    "integrityVerification": "verified-by-decoding-committed-github-binary",
     "visualVerification": "pending-windows-runtime-check"
+  },
+  "historicalPreparedDerivative": {
+    "expectedSizeBytes": 45559,
+    "expectedSha256": "049ab8ebe317a4934d60546da4646076053a59af689d3bca6313a6cf3dbf3b3c",
+    "note": "This older prepared derivative record does not match the currently committed runtime PNG."
   }
 }
