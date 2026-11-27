@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-27 — Settings window layout fix
+
+- Make the settings content area vertically scrollable so all options and the reset-position action remain reachable on shorter displays and at higher DPI scaling.
+- Keep the completion button in a fixed footer outside the scroll area.
+- Increase the default settings-window size and allow resizing, with a minimum size to preserve the layout.
+
 ## 2026-11-27 — M1 settings and diagnostics
 
 - Add a dedicated settings window, accessible from the pet context menu and system tray.
