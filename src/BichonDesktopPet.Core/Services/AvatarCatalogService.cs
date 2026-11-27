@@ -97,7 +97,7 @@ public sealed class AvatarCatalogService
                 null);
         }
 
-        _avatars = Normalize(sourceProfiles);
+        _avatars = Normalize(sourceProfiles, schemaVersion);
 
         if (!_isReadOnly && (!hasDefault || schemaVersion < CurrentSchemaVersion || needsSave))
         {
@@ -269,6 +269,12 @@ public sealed class AvatarCatalogService
             throw new ArgumentException("品种/子类型不能超过 40 个字符。", nameof(breed));
         }
 
+        if (_avatars[index].IsBuiltIn)
+        {
+            normalizedSpecies = _avatars[index].Species;
+            normalizedBreed = _avatars[index].Breed;
+        }
+
         if (!PersonaProfileValidator.TryNormalize(persona, out var normalizedPersona, out var personaError))
         {
             throw new ArgumentException(personaError, nameof(persona));
@@ -329,7 +335,7 @@ public sealed class AvatarCatalogService
         return true;
     }
 
-    private List<AvatarProfile> Normalize(List<AvatarProfile> sourceProfiles)
+    private List<AvatarProfile> Normalize(List<AvatarProfile> sourceProfiles, int schemaVersion)
     {
         var normalized = new List<AvatarProfile>();
         var sourceDefault = sourceProfiles.FirstOrDefault(profile =>
@@ -351,7 +357,8 @@ public sealed class AvatarCatalogService
             }
 
             var breed = sourceDefault.Breed?.Trim() ?? string.Empty;
-            if (breed.Length is > 0 and <= 40)
+            if (breed.Length <= 40 &&
+                (schemaVersion >= CurrentSchemaVersion || !string.IsNullOrWhiteSpace(breed)))
             {
                 defaultAvatar.Breed = breed;
             }
