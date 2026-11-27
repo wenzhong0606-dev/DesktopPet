@@ -8,7 +8,8 @@ AI Desktop Companion is a Windows desktop companion platform developed in small,
 
 - **M0 — Image display:** complete.
 - **M1 — Daily-use desktop pet:** user acceptance passed.
-- **M2 — Multiple image avatars:** first implementation committed; Windows CI passed (Release build, 0 warnings/errors, 17/17 tests); local avatar-manager acceptance is pending.
+- **M2 — Multiple image avatars:** user acceptance passed.
+- **M3 — Lightweight behavior system:** first implementation committed; Windows CI and local interaction acceptance are in progress.
 
 ## Technology
 
@@ -20,36 +21,43 @@ AI Desktop Companion is a Windows desktop companion platform developed in small,
 
 ## Current implementation
 
-The WPF app retains the transparent 280 × 360 DIP desktop-pet window, Bichon PNG display, vector fallback, dragging, position persistence, click and gift reactions, snow, decorative lights, system tray, settings window, diagnostics, and optional local audio integration.
+The WPF app retains the transparent 280 × 360 DIP desktop-pet window, Bichon PNG display, vector fallback, dragging, position persistence, system tray, settings, snow, decorative lights and optional local audio integration.
 
-M2 adds:
+M2 provides:
 
 - A versioned local avatar catalog with stable avatar IDs.
 - The built-in Bichon as the protected default role.
 - A role manager accessible from the pet context menu and system tray.
 - Import of PNG, JPG, JPEG and BMP images (maximum 20 MB per image).
 - Editable display name and simple species metadata.
-- Switching between roles, deleting imported roles, and restoring the Bichon default.
-- Persistence of the selected avatar ID across application restarts.
-- Copying imported images into LocalAppData; source files are not modified.
-- Image signature checks and WPF decode validation before import.
+- Switching, deleting imported roles, restoring the Bichon default and persistence across restarts.
+- Local-only imported image storage and image validation.
 
-Only the Bichon artwork is bundled at this point. No Border Collie or cat artwork is being presented as a built-in asset; users can import images they have permission to use.
+M3 first increment provides:
+
+- A platform-independent behavior state engine: Idle, Greeting, Happy, Excited and Sleepy.
+- Rule-based transitions for startup/wake, clicks, gift interactions, rapid repeated clicks and inactivity.
+- Species-aware status messages for dog, cat and rabbit roles.
+- A separate presentation resolver mapping behavior states to WPF image effects.
+- Subtle whole-image breathing, bounce, wiggle and sleepy sway effects.
+- Unit tests for state transitions and presentation mapping.
+
+Only the Bichon artwork is bundled. Users can import other images they own or have permission to use. M3 currently animates the whole static image; it does not claim skeletal movement, tail wagging or limb animation.
 
 ## Build and test (Windows)
 
-\`\`\`powershell
+~~~powershell
 git pull origin main
 dotnet restore BichonDesktopPet.sln
 dotnet build BichonDesktopPet.sln -c Release
 dotnet test BichonDesktopPet.sln -c Release
-\`\`\`
+~~~
 
 ## Run
 
-\`\`\`powershell
+~~~powershell
 dotnet run --project src/BichonDesktopPet.App/BichonDesktopPet.App.csproj
-\`\`\`
+~~~
 
 ## Local data
 
@@ -65,11 +73,11 @@ Imported images remain on this computer. They are not copied into the Git reposi
 - [Product definition and MVP roadmap](docs/PRODUCT_DEFINITION_AND_MVP_ROADMAP_V1.md)
 - [M1 baseline and acceptance](docs/M1_BASELINE_AND_ACCEPTANCE.md)
 - [M2 local avatar management](docs/M2_AVATAR_MANAGEMENT.md)
+- [M3 behavior system](docs/M3_BEHAVIOR_SYSTEM.md)
 - [Project baseline](docs/PROJECT.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Visual specification](docs/VISUAL_SPECIFICATION.md)
-- [Runtime asset status](docs/M1_ASSET_UPLOAD.md)
 
 ## Scope discipline
 
-M2 is limited to local image roles and basic metadata. It does not include 3D import, animation retargeting, AI, voice, accounts, cloud sync, or a character marketplace. Each milestone must build on the user-accepted baseline and remain independently runnable.
+M3 remains a local, rule-based image behavior feature. It does not include AI, voice, 3D models, rigging, cloud sync, accounts or a character marketplace. Random ambient behaviors and frame-sequence animation are not part of this first increment. Each milestone must build on the user-accepted baseline and remain independently runnable.
