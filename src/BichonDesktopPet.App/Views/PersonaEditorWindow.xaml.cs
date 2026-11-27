@@ -65,7 +65,6 @@ public partial class PersonaEditorWindow : Window
                 persona);
 
             DialogResult = true;
-            Close();
         }
         catch (ArgumentException exception)
         {
@@ -89,6 +88,5 @@ public partial class PersonaEditorWindow : Window
     private void Cancel_Click(object sender, RoutedEventArgs e)
     {
         DialogResult = false;
-        Close();
     }
 }
