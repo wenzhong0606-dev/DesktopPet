@@ -2,7 +2,8 @@
 
 - 日期：2026-11-27
 - 分支：main
-- 检查的 HEAD：`4b48de096f81c39f3c29cbb3816c5b19eb9cc271`
+- 检查的原始代码 HEAD：`4b48de096f81c39f3c29cbb3816c5b19eb9cc271`
+- 文档更新：产品与验收基线已提交至 main
 - 当前工程：.NET 10 WPF
 - 本文档是代码仓库静态检查结果；不代表已在 Windows 本机重新编译或运行。
 
@@ -37,23 +38,34 @@
 | 置顶默认值 | 已存在；主窗口从设置读取 |
 | 自动化测试 | 当前有 3 个设置默认值测试 |
 
-## 3. 当前待补齐或需验证
+## 3. 资产状态
+
+已检查 GitHub 中的 PNG 二进制：
+
+- 路径：`assets/characters/bichon/base/bichon-idle.png`
+- 尺寸：420 × 540
+- 格式：8-bit RGBA
+- 大小：132,158 bytes
+- SHA-256：`326d10ace28d53e8a4289b9f103c648ecb79d6b1b32e4a8f76d715793b97d210`
+
+文件完整性已核对；Windows 运行时显示和透明效果仍待用户本机验收。
+
+## 4. 当前待补齐或需验证
 
 1. **明确隐藏入口**：当前窗口关闭事件会隐藏窗口，但托盘菜单没有独立“隐藏”命令。
 2. **设置 UI**：当前有设置模型和 JSON 服务，但没有独立设置窗口；置顶等设置缺少完整的用户操作入口。
 3. **异常诊断**：设置读写使用静默 catch；缺少可供排查的本地日志。
-4. **资产完整性**：PNG 文件已存在于 `assets/characters/bichon/base/bichon-idle.png`，Git tree 中记录大小为 132,158 bytes；早期文档预期 45,559 bytes、SHA-256 为 `049ab8ebe317a4934d60546da4646076053a59af689d3bca6313a6cf3dbf3b3c`。两者不一致，必须重新计算本地文件哈希并核对尺寸，不能沿用旧哈希。
-5. **Windows 运行验证**：本轮仅检查了远程代码，未在用户 Windows 设备上运行程序。
-6. **位置与多屏**：当前使用 `SystemParameters.WorkArea` 恢复窗口，需在实际多显示器/DPI 场景测试。
-7. **托盘图标**：当前使用通用 `SystemIcons.Application`，可在后续 UI 完成后再替换为正式图标。
+4. **Windows 运行验证**：本轮仅检查了远程代码，未在用户 Windows 设备上运行程序。
+5. **位置与多屏**：当前使用 `SystemParameters.WorkArea` 恢复窗口，需在实际多显示器/DPI 场景测试。
+6. **托盘图标**：当前使用通用 `SystemIcons.Application`，可在后续 UI 完成后再替换为正式图标。
 
-## 4. M1 任务顺序
+## 5. M1 任务顺序
 
-### M1-01：确认代码与资产基线
+### M1-01：确认代码与运行基线
 - 本机拉取 main。
-- 检查 `bichon-idle.png` 实际尺寸和 SHA-256。
 - 执行 Release Build 和现有测试。
 - 在 Windows 启动并确认显示的是 PNG，而不是矢量 fallback。
+- 检查主显示器和多屏/DPI 下的位置恢复。
 
 ### M1-02：托盘显示/隐藏
 - 托盘菜单提供明确的“显示比熊”和“隐藏比熊”操作。
@@ -81,7 +93,7 @@
 - 增加损坏设置回退测试（必要时将设置路径注入以便测试）。
 - 更新 README、资源清单、变更日志和 M1 验收记录。
 
-## 5. M1 验收标准
+## 6. M1 验收标准
 
 ### 构建
 - [ ] `dotnet restore BichonDesktopPet.sln` 成功。
@@ -108,7 +120,7 @@
 - [ ] 不引入 AI、语音、3D、用户模型导入或多角色功能。
 - [ ] 已有图片显示、雪花、灯光、礼物互动不回归。
 
-## 6. 运行命令
+## 7. 运行命令
 
 在 Windows PowerShell、仓库根目录执行：
 
@@ -119,6 +131,6 @@ dotnet test BichonDesktopPet.sln -c Release
 dotnet run --project src/BichonDesktopPet.App/BichonDesktopPet.App.csproj
 ```
 
-## 7. 退出条件
+## 8. 退出条件
 
 M1 所有构建、测试和 Windows 冒烟测试通过，且 README、资源清单和版本记录准确后，才标记为 M1 完成并进入 M2。
