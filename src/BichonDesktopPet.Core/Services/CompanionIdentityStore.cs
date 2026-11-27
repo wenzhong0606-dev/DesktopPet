@@ -291,5 +291,5 @@ public sealed class CompanionIdentityStore
         value.UtcDateTime.ToString("O", CultureInfo.InvariantCulture);
 
     private static DateTimeOffset ParseUtc(string value) =>
-        DateTimeOffset.Parse(value, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
+        DateTimeOffset.Parse(value, CultureInfo.InvariantCulture, DateTimeStyles.None);
 }
