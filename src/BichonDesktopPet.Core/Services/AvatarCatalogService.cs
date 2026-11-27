@@ -16,6 +16,7 @@ public sealed class AvatarCatalogService
 {
     public const string DefaultAvatarId = "bichon";
     public const long MaximumImageBytes = 20 * 1024 * 1024;
+    public const int CurrentSchemaVersion = 2;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -36,6 +37,7 @@ public sealed class AvatarCatalogService
     private readonly Action<string, Exception?>? _log;
     private List<AvatarProfile> _avatars = [];
     private bool _isLoaded;
+    private bool _isReadOnly;
 
     public AvatarCatalogService(
         string assetsDirectory,
@@ -84,10 +86,20 @@ public sealed class AvatarCatalogService
         }
 
         var sourceProfiles = document?.Avatars ?? [];
+        var schemaVersion = document?.SchemaVersion ?? 0;
         var hasDefault = sourceProfiles.Any(profile => profile?.Id == DefaultAvatarId);
+        _isReadOnly = schemaVersion > CurrentSchemaVersion;
+
+        if (_isReadOnly)
+        {
+            Report(
+                $"Avatar catalog schema {schemaVersion} is newer than this application supports (version {CurrentSchemaVersion}). The catalog will be opened read-only to avoid downgrading user data.",
+                null);
+        }
+
         _avatars = Normalize(sourceProfiles);
 
-        if (!hasDefault || document?.SchemaVersion != 1 || needsSave)
+        if (!_isReadOnly && (!hasDefault || schemaVersion < CurrentSchemaVersion || needsSave))
         {
             SaveCatalog();
         }
@@ -188,6 +200,8 @@ public sealed class AvatarCatalogService
                 Id = id,
                 Name = normalizedName,
                 Species = normalizedSpecies,
+                Breed = string.Empty,
+                Persona = PersonaProfileValidator.CreateDefault(),
                 ImagePath = id + "/avatar" + extension,
                 IsBuiltIn = false,
                 CreatedAtUtc = DateTime.UtcNow
@@ -218,6 +232,63 @@ public sealed class AvatarCatalogService
 
             throw;
         }
+    }
+
+    public AvatarProfile UpdateProfile(
+        string id,
+        string displayName,
+        string species,
+        string breed,
+        PersonaProfile persona)
+    {
+        EnsureLoaded();
+
+        var index = _avatars.FindIndex(item =>
+            string.Equals(item.Id, id, StringComparison.OrdinalIgnoreCase));
+
+        if (index < 0)
+        {
+            throw new KeyNotFoundException("找不到要编辑的角色。");
+        }
+
+        var normalizedName = displayName?.Trim() ?? string.Empty;
+        if (normalizedName.Length is < 1 or > 40)
+        {
+            throw new ArgumentException("角色名称长度必须为 1 到 40 个字符。", nameof(displayName));
+        }
+
+        var normalizedSpecies = string.IsNullOrWhiteSpace(species) ? "custom" : species.Trim();
+        if (normalizedSpecies.Length > 24)
+        {
+            throw new ArgumentException("角色类型不能超过 24 个字符。", nameof(species));
+        }
+
+        var normalizedBreed = breed?.Trim() ?? string.Empty;
+        if (normalizedBreed.Length > 40)
+        {
+            throw new ArgumentException("品种/子类型不能超过 40 个字符。", nameof(breed));
+        }
+
+        if (!PersonaProfileValidator.TryNormalize(persona, out var normalizedPersona, out var personaError))
+        {
+            throw new ArgumentException(personaError, nameof(persona));
+        }
+
+        var original = Clone(_avatars[index]);
+        var updated = Clone(original);
+        updated.Name = normalizedName;
+        updated.Species = normalizedSpecies;
+        updated.Breed = normalizedBreed;
+        updated.Persona = normalizedPersona;
+        _avatars[index] = updated;
+
+        if (!SaveCatalog())
+        {
+            _avatars[index] = original;
+            throw new IOException("无法保存角色资料，请检查本地目录权限和应用日志。");
+        }
+
+        return Clone(updated);
     }
 
     public bool Delete(string id)
@@ -260,7 +331,38 @@ public sealed class AvatarCatalogService
 
     private List<AvatarProfile> Normalize(List<AvatarProfile> sourceProfiles)
     {
-        var normalized = new List<AvatarProfile> { CreateDefaultBichon() };
+        var normalized = new List<AvatarProfile>();
+        var sourceDefault = sourceProfiles.FirstOrDefault(profile =>
+            string.Equals(profile?.Id, DefaultAvatarId, StringComparison.OrdinalIgnoreCase));
+        var defaultAvatar = CreateDefaultBichon();
+
+        if (sourceDefault is not null)
+        {
+            var name = sourceDefault.Name?.Trim() ?? string.Empty;
+            if (name.Length is >= 1 and <= 40)
+            {
+                defaultAvatar.Name = name;
+            }
+
+            var species = sourceDefault.Species?.Trim() ?? string.Empty;
+            if (species.Length is >= 1 and <= 24)
+            {
+                defaultAvatar.Species = species;
+            }
+
+            var breed = sourceDefault.Breed?.Trim() ?? string.Empty;
+            if (breed.Length <= 40)
+            {
+                defaultAvatar.Breed = breed;
+            }
+
+            defaultAvatar.Persona = PersonaProfileValidator.NormalizeOrDefault(sourceDefault.Persona);
+            defaultAvatar.CreatedAtUtc = sourceDefault.CreatedAtUtc == default
+                ? DateTime.UnixEpoch
+                : sourceDefault.CreatedAtUtc;
+        }
+
+        normalized.Add(defaultAvatar);
 
         foreach (var profile in sourceProfiles)
         {
@@ -290,11 +392,19 @@ public sealed class AvatarCatalogService
                 continue;
             }
 
+            var breed = profile.Breed?.Trim() ?? string.Empty;
+            if (breed.Length > 40)
+            {
+                breed = string.Empty;
+            }
+
             normalized.Add(new AvatarProfile
             {
                 Id = profile.Id,
                 Name = name,
                 Species = species,
+                Breed = breed,
+                Persona = PersonaProfileValidator.NormalizeOrDefault(profile.Persona),
                 ImagePath = profile.ImagePath,
                 IsBuiltIn = false,
                 CreatedAtUtc = profile.CreatedAtUtc == default ? DateTime.UtcNow : profile.CreatedAtUtc
@@ -309,6 +419,8 @@ public sealed class AvatarCatalogService
         Id = DefaultAvatarId,
         Name = "比熊",
         Species = "dog",
+        Breed = "比熊",
+        Persona = PersonaProfileValidator.CreateDefault(),
         ImagePath = "characters/bichon/base/bichon-idle.png",
         IsBuiltIn = true,
         CreatedAtUtc = DateTime.UnixEpoch
@@ -368,9 +480,15 @@ public sealed class AvatarCatalogService
             Directory.CreateDirectory(_avatarsDirectory);
             temporaryPath = _catalogPath + ".tmp";
 
+            if (_isReadOnly)
+            {
+                Report("The avatar catalog is read-only because it was created by a newer application version.", null);
+                return false;
+            }
+
             var document = new AvatarCatalogDocument
             {
-                SchemaVersion = 1,
+                SchemaVersion = CurrentSchemaVersion,
                 Avatars = _avatars.Select(Clone).ToList()
             };
 
@@ -432,6 +550,8 @@ public sealed class AvatarCatalogService
         Id = profile.Id,
         Name = profile.Name,
         Species = profile.Species,
+        Breed = profile.Breed,
+        Persona = PersonaProfileValidator.NormalizeOrDefault(profile.Persona),
         ImagePath = profile.ImagePath,
         IsBuiltIn = profile.IsBuiltIn,
         CreatedAtUtc = profile.CreatedAtUtc
@@ -439,7 +559,7 @@ public sealed class AvatarCatalogService
 
     private sealed class AvatarCatalogDocument
     {
-        public int SchemaVersion { get; set; } = 1;
+        public int SchemaVersion { get; set; } = CurrentSchemaVersion;
 
         public List<AvatarProfile> Avatars { get; set; } = [];
     }
