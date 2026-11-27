@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using BichonDesktopPet.App.Services;
 using BichonDesktopPet.App.Views;
+using BichonDesktopPet.Core.AI;
 using WpfApplication = System.Windows.Application;
 
 namespace BichonDesktopPet.App;
@@ -10,6 +11,9 @@ namespace BichonDesktopPet.App;
 public partial class App : WpfApplication
 {
     private TrayIconService? _trayIconService;
+    private HttpClient? _aiHttpClient;
+
+    public IAiChatProvider? AiChatProvider { get; private set; }
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -35,6 +39,29 @@ public partial class App : WpfApplication
 
         try
         {
+            var userDataDirectory = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "BichonDesktopPet");
+            var qwenOptions = new QwenOptions();
+
+            try
+            {
+                qwenOptions = QwenOptionsLoader.Load(userDataDirectory);
+            }
+            catch (Exception exception)
+            {
+                AppLogger.Log("Qwen local configuration could not be read. AI remains disabled.", exception);
+            }
+
+            _aiHttpClient = new HttpClient
+            {
+                Timeout = TimeSpan.FromSeconds(45)
+            };
+            AiChatProvider = new QwenChatCompletionProvider(_aiHttpClient, qwenOptions);
+            AppLogger.Log(qwenOptions.IsConfigured
+                ? $"Qwen provider configured with model '{qwenOptions.Model}'."
+                : "Qwen API key is not configured. AI features remain disabled; local pet features are unaffected.");
+
             var petWindow = new MainWindow();
             MainWindow = petWindow;
             _trayIconService = new TrayIconService(petWindow);
@@ -55,6 +82,7 @@ public partial class App : WpfApplication
     protected override void OnExit(ExitEventArgs e)
     {
         _trayIconService?.Dispose();
+        _aiHttpClient?.Dispose();
         base.OnExit(e);
     }
 }
