@@ -20,7 +20,7 @@ M3-B remains local and deterministic. It does not add AI, free-form language und
 | Nicknames | Alternative names for this pet | 0–5 items; 1–20 chars each |
 | SelfReference | Pet's self-reference | Required, 1–20 chars |
 | UserAddress | How the pet addresses the user | Required, 1–20 chars |
-| PersonalityTraits | Free-form traits such as 活泼、黏人、好奇 | 0–3 items; 1–16 chars each |
+| PersonalityTraits | Free-form traits such as 活泼、黏人、好奇 | 0–3 items; 1–16 chars each. Current rules recognize common traits; custom labels are stored but do not yet add specialized templates. |
 | SpeechStyle | cute / gentle / cool / tsundere / playful / natural | Supported value only |
 | ResponseLength | short / medium | Supported value only |
 | EmojiLevel | low / medium / high | Supported value only |
@@ -54,9 +54,9 @@ The catalog schema is upgraded from version 1 to version 2.
 \`PetBehaviorPresentationResolver\` now accepts an \`AvatarProfile\`. It combines behavior state, species, and persona preferences to choose a message from a bounded local template set.
 
 - Self-reference and user address are inserted into templates.
-- Speech style and personality traits select different tone families.
+- Speech style selects the main tone family; personality traits add behavior-specific variations without overriding the selected speech style.
 - Nicknames can appear in greeting responses.
-- Catchphrases can appear in happy/excited responses.
+- Nicknames and catchphrases can appear across the supported speech styles.
 - Response length controls whether a short follow-up sentence is added.
 - Emoji level controls whether state-specific emoji are appended.
 - A per-avatar/per-state cursor rotates through alternatives before reusing a phrase.
@@ -73,7 +73,7 @@ This is **not AI**. It does not interpret arbitrary user input, remember prior c
 - Persona-aware tone, self-reference and user-address output.
 - Message rotation, response length, emoji level and catchphrase selection.
 
-Windows Release CI passed on code commit `5e48d94de4654ebae49017f08a2c4fddb0d93912`: Release build with 0 warnings and 0 errors; all 46 automated tests passed ([run #170](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45950396978)). Local Windows interaction and migration acceptance remains pending.
+Windows Release CI passed on code commit `30d6ae0139335c09b5bcfc6926fc6df43e55acb9`: Release build with 0 warnings and 0 errors; all 47 automated tests passed ([run #179](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45950812579)). Local Windows interaction and migration acceptance remains pending.
 
 ## Windows local acceptance checklist
 
