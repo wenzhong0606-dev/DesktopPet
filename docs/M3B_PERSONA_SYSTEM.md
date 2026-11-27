@@ -36,7 +36,7 @@ M3-B remains local and deterministic. It does not add AI, free-form language und
 4. Edit the management label, species, breed, ordered pet nicknames (first is the primary name), self-reference, user address, personality traits and expression preferences.
 5. Save. The editor validates the data and persists it to the local avatar catalog.
 
-The built-in Bichon may be renamed and personalized, but its protected image and stable ID remain unchanged. Imported avatars can be edited independently.
+The built-in Bichon's management label may be renamed and its pet nickname/persona configured independently; its protected image and stable ID remain unchanged. Imported avatars can be edited independently.
 
 ## Catalog schema v1 → v2 migration
 
@@ -83,7 +83,7 @@ Windows Release CI passed on code commit `30d6ae0139335c09b5bcfc6926fc6df43e55ac
 - [ ] Start with an existing schema v1 catalog and confirm it migrates to schema v2.
 - [ ] Confirm all imported avatars still appear and their images still load.
 - [ ] Confirm the selected avatar is unchanged after migration.
-- [ ] Edit the built-in Bichon: set its name to 豆包, self-reference to 豆包, user address to 主人, traits to 活泼/黏人/好奇, and speech style to 可爱.
+- [ ] Edit the built-in Bichon: keep a management label such as「内置比熊」, set the first pet nickname to 豆包, self-reference to 我 or 本汪, user address to 主人, traits to 活泼/黏人/好奇, and speech style to 可爱.
 - [ ] Edit a second avatar with a contrasting persona, e.g. a cool/independent cat.
 - [ ] Restart the app and confirm both profiles persist independently.
 - [ ] Click each pet repeatedly and confirm the text reflects its own persona and rotates through alternatives.
