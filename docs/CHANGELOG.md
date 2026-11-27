@@ -9,7 +9,8 @@
 - Copy imported images into LocalAppData without modifying the source file or repository assets.
 - Add role names and species/type metadata, switching, deletion of imported roles, and restoring the Bichon default.
 - Persist the selected avatar ID and restore it on application startup; fall back to Bichon if a selected custom role is missing.
-- Add Core unit tests for catalog seeding, import/reload, invalid files, protected default role, deletion and corrupt-catalog recovery.
+- Add Core unit tests for catalog seeding, import/reload, invalid files, protected default role, deletion, oversized-file rejection, legacy settings compatibility and corrupt-catalog recovery.
+- Pass Windows CI Release build with 0 warnings and 0 errors; all 17 automated tests pass on commit `87e7c5225491b46d851d403738afb48655b9f02a` ([run #97](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45944152242)).
 - M1 marked complete after the user confirmed local acceptance.
 
 
