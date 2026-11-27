@@ -45,7 +45,7 @@ public sealed class SettingsServiceTests
             WindowHeight = 360
         };
 
-        service.Save(expected);
+        Assert.IsTrue(service.Save(expected));
         var actual = service.Load();
 
         Assert.IsTrue(File.Exists(settingsPath));
@@ -94,7 +94,7 @@ public sealed class SettingsServiceTests
         var loggedMessages = new List<string>();
         var service = new SettingsService(_testDirectory, (message, _) => loggedMessages.Add(message));
 
-        service.Save(new PetSettings());
+        Assert.IsFalse(service.Save(new PetSettings()));
 
         Assert.AreEqual(1, loggedMessages.Count);
         StringAssert.Contains(loggedMessages[0], "Unable to save");
