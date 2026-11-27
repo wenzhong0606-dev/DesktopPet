@@ -8,6 +8,9 @@ public sealed class PetSettings
 {
     public double? WindowLeft { get; set; }
     public double? WindowTop { get; set; }
+
+    /// <summary>The stable ID of the selected local avatar.</summary>
+    public string ActiveAvatarId { get; set; } = "bichon";
     public bool AlwaysOnTop { get; set; } = true;
     public bool SnowEnabled { get; set; } = true;
     public bool DecorativeLightsEnabled { get; set; } = true;
