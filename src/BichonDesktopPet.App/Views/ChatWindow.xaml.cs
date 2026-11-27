@@ -72,9 +72,9 @@ public partial class ChatWindow : Window
             return;
         }
 
-        if (content.Length > 4000)
+        if (content.Length > 2000)
         {
-            ConnectionStatusText.Text = "单条消息最多输入 4000 个字符。";
+            ConnectionStatusText.Text = "单条消息最多输入 2000 个字符。";
             return;
         }
 

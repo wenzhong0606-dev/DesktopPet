@@ -522,7 +522,14 @@ public partial class MainWindow : Window
             return;
         }
 
-        var chat = new ChatWindow(provider, _activeCompanion, avatar, () => _behaviorEngine.CurrentState)
+        var companion = _activeCompanion;
+        if (companion is null)
+        {
+            MessageBox.Show("伙伴身份数据暂时不可用，请稍后重试。", "桌面伙伴", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        var chat = new ChatWindow(provider, companion, avatar, () => _behaviorEngine.CurrentState)
         {
             Owner = this
         };
