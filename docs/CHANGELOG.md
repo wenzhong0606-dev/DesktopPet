@@ -10,7 +10,8 @@
 - Validate persona field lengths and list limits (3 traits, 5 nicknames, 5 catchphrases).
 - Connect the active avatar persona to deterministic local message templates with per-avatar/state rotation.
 - Keep AI, free-form language understanding, dialogue memory, voice and network access out of M3.
-- Add migration, persistence, validation and persona-aware message tests; Windows CI and local acceptance pending.
+- Add migration, persistence, validation and persona-aware message tests.
+- Pass Windows Release CI with 0 warnings, 0 errors and 45/45 tests on code commit `59435ebe78bfe809b6874efc65bd889a9a8ce69a` ([run #160](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45949927255)); local acceptance pending.
 
 # Changelog
 
