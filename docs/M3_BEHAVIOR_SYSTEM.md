@@ -70,7 +70,7 @@ Windows CI passed on commit `5db5f4dd135f9226665f4defc187c8fe5767ff1d`: Release 
 
 - The first increment uses whole-image transforms, not frame-by-frame or skeletal animation.
 - No randomized idle behavior has been added yet; this is deferred until the deterministic state machine passes local acceptance.
-- No per-avatar custom animation manifest yet; species metadata currently selects wording, while the static-image host uses the same safe transform effects.
+- No per-avatar custom animation manifest yet; persona/species metadata selects wording, while the static-image host uses the same safe transform effects.
 - No AI, voice, 3D, rigging or network integration.
 
 After local acceptance, the next M3 increment can add configurable, low-frequency idle variations and optional frame-sequence playback once suitable assets are available.
