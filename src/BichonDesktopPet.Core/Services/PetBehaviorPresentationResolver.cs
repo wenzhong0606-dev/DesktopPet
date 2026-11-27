@@ -95,12 +95,7 @@ public sealed class PetBehaviorPresentationResolver
     {
         var address = "{user}";
         var self = "{self}";
-        var isAffectionate = HasTrait(persona, "黏人", "亲人", "爱撒娇", "affectionate", "clingy");
-        var isShy = HasTrait(persona, "害羞", "胆小", "shy", "timid");
-        var isIndependent = HasTrait(persona, "独立", "高冷", "independent", "aloof");
-        var isPlayful = HasTrait(persona, "活泼", "调皮", "好奇", "playful", "lively", "curious");
-
-        if (persona.SpeechStyle == "cool" || isIndependent)
+        if (persona.SpeechStyle == "cool")
         {
             List<string> styleTemplates = state switch
             {
@@ -136,6 +131,7 @@ public sealed class PetBehaviorPresentationResolver
                 ],
                 _ => ["我在。"]
             };
+            AddPersonalityTemplates(styleTemplates, state, persona);
             AddSharedPersonaTemplates(styleTemplates, state, persona);
             return styleTemplates;
         }
@@ -263,16 +259,7 @@ public sealed class PetBehaviorPresentationResolver
             _ => new List<string> { $"{self}在这里陪着{address}。" }
         };
 
-        if (isAffectionate && state is PetBehaviorState.Idle or PetBehaviorState.Greeting)
-        {
-            templates.Add($"其实{self}一直都想黏着{address}。");
-        }
-
-        if (isPlayful && state is PetBehaviorState.Happy or PetBehaviorState.Excited)
-        {
-            templates.Add($"嘿！{address}，我们再玩一次！");
-        }
-
+        AddPersonalityTemplates(templates, state, persona);
         AddSharedPersonaTemplates(templates, state, persona);
 
         if (persona.SpeechStyle == "playful" && state is PetBehaviorState.Happy or PetBehaviorState.Excited)
@@ -281,6 +268,39 @@ public sealed class PetBehaviorPresentationResolver
         }
 
         return templates;
+    }
+
+    private static void AddPersonalityTemplates(
+        List<string> templates,
+        PetBehaviorState state,
+        PersonaProfile persona)
+    {
+        var isAffectionate = HasTrait(persona, "黏人", "亲人", "爱撒娇", "affectionate", "clingy");
+        var isShy = HasTrait(persona, "害羞", "胆小", "shy", "timid");
+        var isIndependent = HasTrait(persona, "独立", "高冷", "independent", "aloof");
+        var isPlayful = HasTrait(persona, "活泼", "调皮", "好奇", "playful", "lively", "curious");
+        const string self = "{self}";
+        const string user = "{user}";
+
+        if (isAffectionate && state is PetBehaviorState.Idle or PetBehaviorState.Greeting)
+        {
+            templates.Add($"其实{self}一直都想黏着{user}。");
+        }
+
+        if (isShy && state is PetBehaviorState.Greeting or PetBehaviorState.Happy)
+        {
+            templates.Add($"{user}一叫{self}，{self}还是会有点害羞。");
+        }
+
+        if (isIndependent && state == PetBehaviorState.Idle)
+        {
+            templates.Add($"{self}也喜欢有自己的小空间，不过还是愿意陪着{user}。");
+        }
+
+        if (isPlayful && state is PetBehaviorState.Happy or PetBehaviorState.Excited)
+        {
+            templates.Add($"嘿！{user}，我们再玩一次！");
+        }
     }
 
     private static void AddSharedPersonaTemplates(
@@ -292,7 +312,7 @@ public sealed class PetBehaviorPresentationResolver
         {
             foreach (var nickname in persona.Nicknames)
             {
-                templates.Add($"你也可以叫我{nickname}，{{user}}！");
+                templates.Add($"对了，{{user}}，你也可以叫我{nickname}。");
             }
         }
 
