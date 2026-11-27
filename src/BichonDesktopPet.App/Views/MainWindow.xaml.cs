@@ -499,7 +499,7 @@ public partial class MainWindow : Window
         var avatar = _avatarCatalogService.GetAvatar(_settings.ActiveAvatarId);
         if (avatar is null)
         {
-            MessageBox.Show("当前角色不可用，暂时无法打开聊天窗口。", "桌面伙伴", MessageBoxButton.OK, MessageBoxImage.Information);
+            System.Windows.MessageBox.Show("当前角色不可用，暂时无法打开聊天窗口。", "桌面伙伴", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 

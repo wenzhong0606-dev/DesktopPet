@@ -8,6 +8,8 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using WpfKeyEventArgs = System.Windows.Input.KeyEventArgs;
 using System.Windows.Media;
+using WpfColor = System.Windows.Media.Color;
+using WpfHorizontalAlignment = System.Windows.HorizontalAlignment;
 using BichonDesktopPet.Core.AI;
 using BichonDesktopPet.Core.Models;
 
@@ -163,8 +165,8 @@ public partial class ChatWindow : Window
         var bubble = new Border
         {
             MaxWidth = 350,
-            HorizontalAlignment = isUser ? HorizontalAlignment.Right : HorizontalAlignment.Left,
-            Background = isUser ? new SolidColorBrush(Color.FromRgb(226, 239, 255)) : new SolidColorBrush(Color.FromRgb(247, 242, 237)),
+            HorizontalAlignment = isUser ? WpfHorizontalAlignment.Right : WpfHorizontalAlignment.Left,
+            Background = isUser ? new SolidColorBrush(WpfColor.FromRgb(226, 239, 255)) : new SolidColorBrush(Color.FromRgb(247, 242, 237)),
             CornerRadius = new CornerRadius(12),
             Padding = new Thickness(12, 9, 12, 9),
             Margin = new Thickness(0, 0, 0, 10)
