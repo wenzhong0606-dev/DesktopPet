@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
@@ -93,6 +94,12 @@ public partial class AvatarManagerWindow : Window
 
         try
         {
+            var fileSize = new FileInfo(dialog.FileName).Length;
+            if (fileSize <= 0 || fileSize > AvatarCatalogService.MaximumImageBytes)
+            {
+                throw new InvalidDataException("图片文件必须大于 0 字节且不能超过 20 MB。");
+            }
+
             ValidateImageCanBeDecoded(dialog.FileName);
             var imported = _catalog.ImportImage(dialog.FileName, name, species);
             AvatarNameTextBox.Text = imported.Name;
