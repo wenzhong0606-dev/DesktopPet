@@ -27,7 +27,9 @@ The user confirmed that the previous M1 desktop-pet and tray hide/show baseline 
 - Local application diagnostics at `%LOCALAPPDATA%\BichonDesktopPet\logs\app.log`.
 - Testable settings persistence in the Core project, with round-trip, missing-file, corrupt-file and save-failure coverage.
 
-The newly added settings window and diagnostics still require Windows build and runtime verification before M1 can be marked complete.
+**Automated verification:** Windows CI passed on commit `a6dbd3ea9bda607d2d19b224d4975e9647cec205`: Release build succeeded with 0 warnings and 0 errors; all 7 tests passed. [View Windows CI run](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45934852652).
+
+The new settings window and diagnostic log still need interactive verification on the user's Windows desktop before M1 can be marked complete.
 
 ## Build (Windows)
 
