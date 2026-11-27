@@ -88,4 +88,16 @@ public sealed class SettingsServiceTests
         Assert.AreEqual(1, loggedMessages.Count);
         StringAssert.Contains(loggedMessages[0], "Unable to read");
     }
+    [TestMethod]
+    public void Save_WhenTargetIsDirectory_ReportsFailureWithoutThrowing()
+    {
+        var loggedMessages = new List<string>();
+        var service = new SettingsService(_testDirectory, (message, _) => loggedMessages.Add(message));
+
+        service.Save(new PetSettings());
+
+        Assert.AreEqual(1, loggedMessages.Count);
+        StringAssert.Contains(loggedMessages[0], "Unable to save");
+    }
+
 }
