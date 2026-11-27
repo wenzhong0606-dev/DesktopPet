@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-11-27 — M3-B per-avatar persona system
+
+- Add a separate \`PersonaProfile\` to every avatar, including nicknames, self-reference, user address, personality traits, speech style, response length, emoji level and catchphrases.
+- Add optional breed/subtype metadata while retaining species as the broad role type.
+- Migrate the local avatar catalog from schema v1 to v2 with default personas, preserving avatar IDs, image paths, local image files and the separate selected-avatar setting.
+- Avoid downgrading catalogs written by a newer schema version.
+- Add a WPF persona editor for built-in and imported avatars.
+- Validate persona field lengths and list limits (3 traits, 5 nicknames, 5 catchphrases).
+- Connect the active avatar persona to deterministic local message templates with per-avatar/state rotation.
+- Keep AI, free-form language understanding, dialogue memory, voice and network access out of M3.
+- Add migration, persistence, validation and persona-aware message tests; Windows CI and local acceptance pending.
+
+# Changelog
+
 ## 2026-11-27 — M3 behavior system (first increment)
 
 - Add a deterministic, platform-independent behavior state engine for Idle, Greeting, Happy, Excited and Sleepy.
