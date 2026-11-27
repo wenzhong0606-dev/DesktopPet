@@ -157,7 +157,7 @@ MVP 阶段不实现完整角色包市场或复杂插件系统。先采用简单�
 
 ### M3 — 轻量行为与宠物人格系统
 
-**状态：M3-A 已通过 Windows Release CI（30/30 测试）；M3-B 已通过 Windows Release CI（45/45 测试，0 警告/错误），等待本机验收。** [M3-B run #160](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45949927255)
+**状态：M3-A 已通过 Windows Release CI（30/30 测试）；M3-B 已通过 Windows Release CI（46/46 测试，0 警告/错误），等待本机验收。** [M3-B run #170](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45950396978)
 
 **目标**：让每个角色不仅能响应用户操作，而且拥有独立身份、性格和表达方式。
 
