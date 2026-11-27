@@ -172,11 +172,12 @@ public sealed class PetBehaviorPresentationResolver
                 ],
                 _ => ["哼。"]
             };
+            AddPersonalityTemplates(styleTemplates, state, persona);
             AddSharedPersonaTemplates(styleTemplates, state, persona);
             return styleTemplates;
         }
 
-        if (persona.SpeechStyle == "gentle" || isShy)
+        if (persona.SpeechStyle == "gentle")
         {
             List<string> styleTemplates = state switch
             {
@@ -212,6 +213,7 @@ public sealed class PetBehaviorPresentationResolver
                 ],
                 _ => ["我在这里。"]
             };
+            AddPersonalityTemplates(styleTemplates, state, persona);
             AddSharedPersonaTemplates(styleTemplates, state, persona);
             return styleTemplates;
         }
