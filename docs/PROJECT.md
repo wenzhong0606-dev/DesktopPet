@@ -21,25 +21,46 @@ The user has confirmed that image-based desktop pet display is complete. The cur
 
 ## Existing interactions confirmed in main
 
+The user confirmed that the previous M1 baseline works normally on their Windows computer. The existing implementation includes:
+
 - Drag the pet window with the left mouse button.
 - Click the character to trigger a small reaction.
 - Double-click the character or choose “拆开礼物” from the context menu for the gift reaction.
 - Toggle snow and decorative lights from the context menu or system tray.
-- Restore the pet from the system tray.
-- Hide the pet from the context menu or system tray; the process remains running.
+- Restore and hide the pet from the system tray.
+- Hide the pet from the context menu; the process remains running.
 - Closing the window hides it without terminating the process; exit is available from the tray menu.
 
-## Current M1 gaps
+## Current M1 implementation
 
-- Add a lightweight settings window for existing settings (topmost, snow, decorative lights, music) and reset position.
-- Improve settings persistence diagnostics and application exception logging.
-- Run Release build, tests, and Windows visual/interaction smoke tests on the user's machine. The PNG's dimensions and SHA-256 have been inspected from the committed binary; visual display still needs Windows verification.
+The following M1 additions are now present in `main` and await local Windows verification:
+
+- Dedicated settings window opened from the pet context menu or system tray.
+- Always-on-top, snow, decorative lights and optional music controls.
+- Music control is disabled with an explanatory message when the audio file is absent.
+- Reset pet position to the default lower-right work-area location.
+- Changes apply immediately and persist to the existing local JSON settings file.
+- Settings persistence moved into a Core service with an injectable path and diagnostic callback, enabling isolated tests.
+- Local application log at `%LOCALAPPDATA%\BichonDesktopPet\logs\app.log`.
+- Logging for settings read/write failures, UI dispatcher exceptions, application-domain exceptions, unobserved task exceptions, startup failure and image-load failure.
+- Automated tests for settings round-trip, missing-file defaults, corrupt-file fallback and save-failure diagnostics.
+
+The user has already confirmed the previous M1 baseline and tray hide/show behavior. This does not count as local validation of the newly added settings window, logging or tests.
+
+## Remaining M1 verification
+
+- Run Release restore/build/test on Windows.
+- Open Settings from both the pet context menu and tray menu.
+- Toggle each setting and verify immediate behavior and persistence after restart.
+- Confirm the music control is unavailable with a clear explanation when no audio file exists.
+- Reset position and verify it is persisted.
+- Confirm diagnostic log creation and inspect a controlled settings failure.
 - Test window position restoration on multiple displays and DPI settings.
 
 ## Milestones
 
 - M0: image-based desktop pet display — user-confirmed baseline.
-- M1: reliable daily-use image desktop pet — in progress.
+- M1: reliable daily-use image desktop pet — implementation in progress; local verification pending for the latest settings/logging changes.
 - M2: multiple image avatars and local avatar management.
 - M3: lightweight rule-based behavior system.
 - M4: AI text interaction and constrained action mapping.
