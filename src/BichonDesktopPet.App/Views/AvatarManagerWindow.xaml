@@ -63,6 +63,10 @@
                              FontSize="11"
                              Foreground="#FF8B7770"
                              Margin="0,3,0,0" />
+                  <TextBlock Text="{Binding Breed}"
+                             FontSize="10"
+                             Foreground="#FFAA958B"
+                             Margin="0,2,0,0" />
                 </StackPanel>
                 <TextBlock Grid.Column="1"
                            VerticalAlignment="Center"
@@ -132,6 +136,14 @@
               BorderBrush="#FFE8CFC1"
               Foreground="#FF805C4F"
               Click="Import_Click" />
+      <Button x:Name="EditPersonaButton"
+              Content="编辑资料与个性"
+              Padding="12,7"
+              Margin="0,0,8,8"
+              Background="#FFFFF1E8"
+              BorderBrush="#FFE8CFC1"
+              Foreground="#FF805C4F"
+              Click="EditPersona_Click" />
       <Button x:Name="SetActiveButton"
               Content="设为当前角色"
               Padding="12,7"
