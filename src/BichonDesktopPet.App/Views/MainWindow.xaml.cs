@@ -202,6 +202,12 @@ public partial class MainWindow : Window
         Activate();
     }
 
+    public void HideToTray()
+    {
+        SaveSettings();
+        Hide();
+    }
+
     public void ToggleSnow()
     {
         _settings.SnowEnabled = !_settings.SnowEnabled;
@@ -254,6 +260,7 @@ public partial class MainWindow : Window
     private void ToggleSnow_Click(object sender, RoutedEventArgs e) => ToggleSnow();
     private void ToggleLights_Click(object sender, RoutedEventArgs e) => ToggleLights();
     private void ToggleMusic_Click(object sender, RoutedEventArgs e) => ToggleMusic();
+    private void Hide_Click(object sender, RoutedEventArgs e) => HideToTray();
     private void Exit_Click(object sender, RoutedEventArgs e) => ExitApplication();
 
     private void Window_Closing(object? sender, CancelEventArgs e)
