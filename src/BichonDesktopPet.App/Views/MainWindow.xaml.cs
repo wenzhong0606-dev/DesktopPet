@@ -235,7 +235,10 @@ public partial class MainWindow : Window
             _petImageLoaded = true;
             PetImage.Visibility = Visibility.Visible;
             FallbackPetCanvas.Visibility = Visibility.Collapsed;
-            StatusText.Text = $"{avatar.Name}，你好呀";
+            var petNickname = ChatWelcomeMessageBuilder.GetPrimaryNickname(avatar);
+            StatusText.Text = string.IsNullOrWhiteSpace(petNickname)
+                ? "你好呀"
+                : $"{petNickname}，你好呀";
         }
         catch (Exception exception)
         {
