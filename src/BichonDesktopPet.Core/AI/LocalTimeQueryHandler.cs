@@ -26,7 +26,7 @@ public static class LocalTimeQueryHandler
 
         var normalized = message.Trim().Replace("？", "?").Replace("！", "!");
         var asksTime = ContainsAny(normalized,
-            "几点", "当前时间", "现在时间", "本地时间", "此刻时间", "时间是多少", "现在是什么时候", "现在是什么时间");
+            "现在几点", "当前几点", "几点了", "几点钟", "当前时间", "现在时间", "本地时间", "此刻时间", "时间是多少", "现在是什么时候", "现在是什么时间");
         var asksDate = ContainsAny(normalized,
             "今天几号", "今天是几号", "今天日期", "当前日期", "现在日期", "现在几号", "日期是多少");
         var asksWeekday = ContainsAny(normalized,
