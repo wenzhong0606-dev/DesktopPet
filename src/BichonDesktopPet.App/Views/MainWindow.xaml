@@ -54,7 +54,7 @@
         <RotateTransform x:Name="PetRotate" Angle="0" />
       </Canvas.RenderTransform>
 
-      <!-- Temporary fallback remains available until the optimized PNG is uploaded to the repository. -->
+      <!-- Keep the lightweight vector fallback only for missing or invalid runtime PNG assets. -->
       <Canvas x:Name="FallbackPetCanvas" Width="280" Height="360" IsHitTestVisible="False">
         <Ellipse Canvas.Left="54" Canvas.Top="319" Width="172" Height="22" Fill="#260F0B08" />
 
@@ -118,7 +118,7 @@
         <Path Data="M 138,246 L 138,250" Stroke="#79501D" StrokeThickness="1.5" />
       </Canvas>
 
-      <!-- The exact user-provided Bichon render is loaded from the runtime asset folder. -->
+      <!-- The user-approved character render is loaded from the runtime asset folder. -->
       <Image x:Name="PetImage"
              Canvas.Left="10"
              Canvas.Top="0"
