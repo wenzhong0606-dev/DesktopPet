@@ -1,5 +1,5 @@
 {
-  "assetStatus": "prepared-awaiting-repository-upload",
+  "assetStatus": "repository-uploaded-awaiting-integrity-and-visual-verification",
   "source": {
     "fileName": "圣诞草莓裙比熊萌宠.png",
     "storage": "user-library",
@@ -14,15 +14,18 @@
   "runtime": {
     "repositoryPath": "assets/characters/bichon/base/bichon-idle.png",
     "applicationOutputPath": "Assets/characters/bichon/base/bichon-idle.png",
-    "width": 420,
-    "height": 540,
     "format": "PNG",
-    "mode": "indexed",
-    "paletteColors": 128,
-    "hasTransparency": true,
-    "sizeBytes": 45559,
-    "sha256": "049ab8ebe317a4934d60546da4646076053a59af689d3bca6313a6cf3dbf3b3c",
-    "resampling": "Lanczos",
-    "optimization": "128-color indexed PNG with transparency"
+    "repositorySizeBytes": 132158,
+    "gitBlobSha": "11bc5493f21febd72706948f1dbfc848fcd9f9ae",
+    "preparedDerivativeRecord": {
+      "expectedWidth": 420,
+      "expectedHeight": 540,
+      "expectedSizeBytes": 45559,
+      "expectedSha256": "049ab8ebe317a4934d60546da4646076053a59af689d3bca6313a6cf3dbf3b3c",
+      "resampling": "Lanczos",
+      "optimization": "128-color indexed PNG with transparency"
+    },
+    "integrityVerification": "pending-local-sha256-and-dimension-check",
+    "visualVerification": "pending-windows-runtime-check"
   }
 }
