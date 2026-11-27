@@ -9,7 +9,7 @@ AI Desktop Companion is a Windows desktop companion platform developed in small,
 - **M0 — Image display:** complete.
 - **M1 — Daily-use desktop pet:** user acceptance passed.
 - **M2 — Multiple image avatars:** user acceptance passed.
-- **M3 — Lightweight behavior system:** M3-A passed Windows Release CI (30/30 tests); M3-B passed Windows Release CI (46/46 tests, 0 warnings/errors); local acceptance is pending. [M3-B CI run #170](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45950396978)
+- **M3 — Lightweight behavior system:** M3-A passed Windows Release CI (30/30 tests); M3-B passed Windows Release CI (47/47 tests, 0 warnings/errors); local acceptance is pending. [M3-B CI run #179](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45950812579)
 
 ## Technology
 
