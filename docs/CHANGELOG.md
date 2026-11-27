@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-11-27 — M3-C companion identity and Qwen provider foundation
+
+- Separate persistent \`CompanionIdentity\` IDs from the avatar currently used to display each companion.
+- Add a local SQLite identity store and event journal under LocalAppData.
+- Record only local pet-click, gift and tray-wake metadata; do not store raw conversation text.
+- Archive removed avatar identities while retaining their interaction history.
+- Add provider-neutral \`IAiChatProvider\` and Qwen Chat Completions adapter using the exact \`qwen-plus\` model and the user's configured DashScope endpoint.
+- Load API keys from \`Qwen__ApiKey\` or a local ignored settings file; environment variables take precedence.
+- Do not send AI requests during startup; no chat UI or memory extraction is included yet.
+- Add automated tests for SQLite persistence, event journaling, Qwen config precedence, request construction, response parsing and missing-key behavior.
+- Use Microsoft.Data.Sqlite 10.0.15 to avoid the vulnerable older SQLite native dependency chain.
+
 ## 2026-11-27 — M3-B per-avatar persona system
 
 - Add a separate \`PersonaProfile\` to every avatar, including nicknames, self-reference, user address, personality traits, speech style, response length, emoji level and catchphrases.
