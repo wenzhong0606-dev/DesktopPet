@@ -107,7 +107,7 @@ public partial class ChatWindow : Window
 
             _conversation.Add(new AiChatMessage("assistant", result.Content));
             AddMessage("assistant", result.Content);
-            ConnectionStatusText.Text = $"{_provider.ProviderName} · {result.Model} · 本次对话仅保存在当前窗口内。";
+            ConnectionStatusText.Text = $"{_provider.ProviderName} · {result.Model} · 本次消息已发送至云端；聊天记录仅保留在当前窗口内存中。";
         }
         catch (OperationCanceledException)
         {

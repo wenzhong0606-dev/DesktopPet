@@ -111,7 +111,7 @@ The WPF application is Windows-targeted. EnableWindowsTargeting is set so SDK-ba
 - The explicit chat window is opened by the user from the pet context menu or tray menu. App startup never sends an AI request.
 - `ChatWindow` calls the existing provider-neutral `IAiChatProvider`; the first configured provider remains Qwen `qwen-plus`.
 - `ChatContextBuilder` builds a system message from the active avatar persona, display name and current behavior state. It appends only the latest 12 user/assistant messages and bounds each message to 2,000 characters.
-- Conversation messages live only in the open chat window's memory. Closing the window discards the session; M4-A does not write user text to the interaction journal or SQLite.
+- Before sending, the UI discloses that user text, active persona settings, current behavior state and recent turns are sent to Qwen cloud for processing, and warns against entering sensitive information. Conversation messages live only in the open chat window's memory. Closing the window discards the session; M4-A does not write user text to the interaction journal or SQLite.
 - When Qwen is not configured, the chat UI explains the local configuration requirement and disables sending. Existing desktop-pet features remain offline and available.
 - Requests are asynchronous, single-flight and bounded by a 50-second cancellation timeout. The UI handles cancellation, provider failures and network failures without logging conversation content.
 - M4-A first slice does not implement streaming, durable chat history, retrieval, memory extraction, personality growth, voice, tool calls or arbitrary system actions.
