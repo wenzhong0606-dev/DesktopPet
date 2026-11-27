@@ -93,6 +93,26 @@ public sealed class PetBehaviorPresentationResolverTests
     }
 
     [TestMethod]
+    public void IndependentTrait_DoesNotOverrideSelectedCuteSpeechStyle()
+    {
+        var avatar = new AvatarProfile
+        {
+            Id = "independent-dog",
+            Name = "豆包",
+            Species = "dog",
+            Persona = new PersonaProfile
+            {
+                PersonalityTraits = ["独立"],
+                SpeechStyle = "cute"
+            }
+        };
+
+        var presentation = _resolver.Resolve(PetBehaviorState.Greeting, avatar);
+
+        StringAssert.Contains(presentation.Message, "汪！");
+    }
+
+    [TestMethod]
     public void RepeatedSameState_UsesDifferentTemplatesBeforeRepeating()
     {
         var avatar = new AvatarProfile
