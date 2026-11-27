@@ -7,6 +7,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using BichonDesktopPet.App.Services;
+using BichonDesktopPet.Core.AI;
 using BichonDesktopPet.Core.Models;
 using BichonDesktopPet.Core.Services;
 using WpfMouseEventArgs = System.Windows.Input.MouseEventArgs;
@@ -29,6 +30,7 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer _clickGestureTimer;
     private SettingsWindow? _settingsWindow;
     private AvatarManagerWindow? _avatarManagerWindow;
+    private ChatWindow? _chatWindow;
     private PetSettings _settings = new();
     private CompanionIdentity? _activeCompanion;
     private bool _allowExit;
@@ -405,6 +407,7 @@ public partial class MainWindow : Window
         FlushPendingPetClick();
         _settingsWindow?.Close();
         _avatarManagerWindow?.Close();
+        _chatWindow?.Close();
         SaveSettings();
         RecordInteraction("hidden_to_tray", "{\"source\":\"user_action\"}");
         Hide();
@@ -480,6 +483,61 @@ public partial class MainWindow : Window
         manager.Activate();
     }
 
+    public void OpenChatWindow()
+    {
+        if (_chatWindow is { IsVisible: true })
+        {
+            _chatWindow.Activate();
+            return;
+        }
+
+        if (!IsVisible)
+        {
+            ShowFromTray();
+        }
+
+        var avatar = _avatarCatalogService.GetAvatar(_settings.ActiveAvatarId);
+        if (avatar is null)
+        {
+            MessageBox.Show("当前角色不可用，暂时无法打开聊天窗口。", "桌面伙伴", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var app = System.Windows.Application.Current as App;
+        var provider = app?.AiChatProvider;
+        if (provider is null)
+        {
+            MessageBox.Show("AI 服务初始化失败。桌宠仍可离线使用，请检查本地日志。", "桌面伙伴", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        try
+        {
+            _activeCompanion ??= _companionIdentityStore.EnsureCompanion(avatar);
+        }
+        catch (Exception exception)
+        {
+            AppLogger.Log("Unable to load the companion identity for chat.", exception);
+            MessageBox.Show("伙伴身份数据暂时不可用，请检查本地日志。", "桌面伙伴", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        var chat = new ChatWindow(provider, _activeCompanion, avatar, () => _behaviorEngine.CurrentState)
+        {
+            Owner = this
+        };
+        _chatWindow = chat;
+        chat.Closed += (_, _) =>
+        {
+            if (ReferenceEquals(_chatWindow, chat))
+            {
+                _chatWindow = null;
+            }
+        };
+        chat.Show();
+        chat.Activate();
+    }
+
     private (bool Success, bool Saved) SetActiveAvatar(string avatarId)
     {
         var avatar = _avatarCatalogService.GetAvatar(avatarId);
@@ -490,6 +548,7 @@ public partial class MainWindow : Window
         }
 
         FlushPendingPetClick();
+        _chatWindow?.Close();
         _settings.ActiveAvatarId = avatar.Id;
         SetActiveCompanion(avatar);
         LoadPetImage();
@@ -505,6 +564,11 @@ public partial class MainWindow : Window
             _settings.ActiveAvatarId,
             avatarId,
             StringComparison.OrdinalIgnoreCase);
+
+        if (wasActive)
+        {
+            _chatWindow?.Close();
+        }
 
         if (!_avatarCatalogService.Delete(avatarId))
         {
@@ -649,6 +713,7 @@ public partial class MainWindow : Window
     }
 
     private void Settings_Click(object sender, RoutedEventArgs e) => OpenSettingsWindow();
+    private void Chat_Click(object sender, RoutedEventArgs e) => OpenChatWindow();
     private void Avatars_Click(object sender, RoutedEventArgs e) => OpenAvatarManagerWindow();
     private void ToggleSnow_Click(object sender, RoutedEventArgs e) => ToggleSnow();
     private void ToggleLights_Click(object sender, RoutedEventArgs e) => ToggleLights();
@@ -680,6 +745,7 @@ public partial class MainWindow : Window
         RecordInteraction("application_exited", "{\"source\":\"explicit_exit\"}");
         _settingsWindow?.Close();
         _avatarManagerWindow?.Close();
+        _chatWindow?.Close();
         SaveSettings();
         _behaviorTimer.Stop();
         _behaviorTimer.Tick -= BehaviorTimer_Tick;

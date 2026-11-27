@@ -24,6 +24,9 @@ public sealed class TrayIconService : IDisposable
         var avatarsItem = new Forms.ToolStripMenuItem("角色管理...");
         avatarsItem.Click += (_, _) => window.Dispatcher.BeginInvoke(new Action(window.OpenAvatarManagerWindow));
 
+        var chatItem = new Forms.ToolStripMenuItem("和伙伴聊天...");
+        chatItem.Click += (_, _) => window.Dispatcher.BeginInvoke(new Action(window.OpenChatWindow));
+
         var snowItem = new Forms.ToolStripMenuItem("切换雪花");
         snowItem.Click += (_, _) => window.Dispatcher.BeginInvoke(new Action(window.ToggleSnow));
 
@@ -42,6 +45,7 @@ public sealed class TrayIconService : IDisposable
             new Forms.ToolStripSeparator(),
             settingsItem,
             avatarsItem,
+            chatItem,
             new Forms.ToolStripSeparator(),
             snowItem,
             lightsItem,

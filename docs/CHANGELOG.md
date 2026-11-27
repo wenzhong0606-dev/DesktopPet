@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-11-27 — M4-A first chat vertical slice
+
+- Add an explicit WPF chat window reachable from the desktop-pet context menu and system tray.
+- Reuse the provider-neutral Qwen `IAiChatProvider`; no request is sent at application startup.
+- Build bounded system context from the active avatar persona and current behavior state, plus up to 12 recent in-window user/assistant messages.
+- Keep conversation content in window memory only; do not persist chat text to the interaction journal or SQLite.
+- Disable sending and show local setup guidance when the Qwen API key is not configured; offline pet functions remain available.
+- Handle asynchronous requests, cancellation/timeout and provider/network failures without logging conversation text.
+- Add unit tests for persona context, history filtering and message-size bounds. Windows CI and local UI acceptance are pending.
+
+
 ## 2026-11-27 — Correct delayed single/double-click recognition
 
 - Delay writing \`pet_clicked\` until the Windows double-click interval expires.
