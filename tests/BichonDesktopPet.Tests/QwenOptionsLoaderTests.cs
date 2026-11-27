@@ -98,7 +98,7 @@ public sealed class QwenOptionsLoaderTests
             Path.Combine(_testDirectory, QwenOptionsLoader.LocalFileName),
             "{ invalid");
 
-        Assert.ThrowsException<JsonException>(() =>
+        Assert.ThrowsException<JsonReaderException>(() =>
             QwenOptionsLoader.Load(_testDirectory, _ => null));
     }
 }
