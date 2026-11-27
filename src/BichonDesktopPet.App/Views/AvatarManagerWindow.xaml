@@ -1,0 +1,185 @@
+<Window x:Class="BichonDesktopPet.App.Views.AvatarManagerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="角色管理"
+        Width="520"
+        Height="620"
+        MinWidth="440"
+        MinHeight="500"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize"
+        ShowInTaskbar="False"
+        Background="#FFF8F5F1">
+  <Grid Margin="22">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
+
+    <StackPanel Grid.Row="0" Margin="0,0,0,16">
+      <TextBlock Text="角色管理"
+                 FontSize="24"
+                 FontWeight="Bold"
+                 Foreground="#FF49352F" />
+      <TextBlock Text="管理本地图片角色。导入的图片只保存在这台电脑上。"
+                 Margin="0,6,0,0"
+                 FontSize="12"
+                 Foreground="#FF8B7770"
+                 TextWrapping="Wrap" />
+    </StackPanel>
+
+    <Border Grid.Row="1"
+            Background="White"
+            BorderBrush="#FFE9DDD5"
+            BorderThickness="1"
+            CornerRadius="14"
+            Padding="10">
+      <ListBox x:Name="AvatarListBox"
+               BorderThickness="0"
+               Background="Transparent"
+               SelectionChanged="AvatarListBox_SelectionChanged"
+               ScrollViewer.VerticalScrollBarVisibility="Auto">
+        <ListBox.ItemTemplate>
+          <DataTemplate>
+            <Border Padding="10"
+                    Margin="0,0,0,8"
+                    BorderBrush="#FFF0E7E1"
+                    BorderThickness="1"
+                    CornerRadius="9">
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                  <TextBlock Text="{Binding Name}"
+                             FontSize="14"
+                             FontWeight="SemiBold"
+                             Foreground="#FF49352F" />
+                  <TextBlock Text="{Binding Species}"
+                             FontSize="11"
+                             Foreground="#FF8B7770"
+                             Margin="0,3,0,0" />
+                </StackPanel>
+                <TextBlock Grid.Column="1"
+                           VerticalAlignment="Center"
+                           Text="{Binding IsBuiltIn, Converter={x:Null}}"
+                           Visibility="Collapsed" />
+                <TextBlock Grid.Column="1"
+                           VerticalAlignment="Center"
+                           FontSize="10"
+                           Foreground="#FF9A8177">
+                  <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                      <Setter Property="Text" Value="本地角色" />
+                      <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsBuiltIn}" Value="True">
+                          <Setter Property="Text" Value="内置角色" />
+                        </DataTrigger>
+                      </Style.Triggers>
+                    </Style>
+                  </TextBlock.Style>
+                </TextBlock>
+              </Grid>
+            </Border>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+    </Border>
+
+    <Border Grid.Row="2"
+            Margin="0,14,0,0"
+            Padding="12"
+            Background="#FFFFFCFA"
+            BorderBrush="#FFE9DDD5"
+            BorderThickness="1"
+            CornerRadius="12">
+      <StackPanel>
+        <TextBlock Text="导入新角色"
+                   FontSize="13"
+                   FontWeight="SemiBold"
+                   Foreground="#FF604840"
+                   Margin="0,0,0,8" />
+        <TextBox x:Name="AvatarNameTextBox"
+                 Height="32"
+                 Padding="8,5"
+                 FontSize="12"
+                 ToolTip="角色名称；留空时使用图片文件名" />
+        <ComboBox x:Name="SpeciesComboBox"
+                  Height="32"
+                  Margin="0,8,0,0"
+                  SelectedIndex="4">
+          <ComboBoxItem Content="狗狗" Tag="dog" />
+          <ComboBoxItem Content="猫咪" Tag="cat" />
+          <ComboBoxItem Content="兔子" Tag="rabbit" />
+          <ComboBoxItem Content="爬行动物" Tag="reptile" />
+          <ComboBoxItem Content="自定义" Tag="custom" />
+        </ComboBox>
+      </StackPanel>
+    </Border>
+
+    <WrapPanel Grid.Row="3" Margin="0,14,0,0">
+      <Button Content="导入图片..."
+              Padding="12,7"
+              Margin="0,0,8,8"
+              Background="#FFFFF1E8"
+              BorderBrush="#FFE8CFC1"
+              Foreground="#FF805C4F"
+              Click="Import_Click" />
+      <Button x:Name="SetActiveButton"
+              Content="设为当前角色"
+              Padding="12,7"
+              Margin="0,0,8,8"
+              Background="#FFB95F58"
+              BorderBrush="#FFB95F58"
+              Foreground="White"
+              Click="SetActive_Click" />
+      <Button x:Name="DeleteButton"
+              Content="删除所选角色"
+              Padding="12,7"
+              Margin="0,0,8,8"
+              Background="#FFFFF1E8"
+              BorderBrush="#FFE8CFC1"
+              Foreground="#FF805C4F"
+              Click="Delete_Click" />
+      <Button Content="恢复比熊默认"
+              Padding="12,7"
+              Margin="0,0,8,8"
+              Background="#FFFFF1E8"
+              BorderBrush="#FFE8CFC1"
+              Foreground="#FF805C4F"
+              Click="RestoreDefault_Click" />
+    </WrapPanel>
+
+    <Grid Grid.Row="4" Margin="0,8,0,0">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="Auto" />
+      </Grid.ColumnDefinitions>
+      <StackPanel Grid.Column="0" VerticalAlignment="Center">
+        <TextBlock x:Name="CurrentAvatarText"
+                   FontSize="11"
+                   FontWeight="SemiBold"
+                   Foreground="#FF604840" />
+        <TextBlock x:Name="StatusText"
+                   FontSize="10"
+                   Foreground="#FF8B7770"
+                   Margin="0,4,12,0"
+                   TextWrapping="Wrap" />
+      </StackPanel>
+      <Button Grid.Column="1"
+              Content="完成"
+              Width="84"
+              Height="34"
+              Background="#FFB95F58"
+              BorderBrush="#FFB95F58"
+              Foreground="White"
+              FontWeight="SemiBold"
+              VerticalAlignment="Center"
+              Click="Close_Click" />
+    </Grid>
+  </Grid>
+</Window>
