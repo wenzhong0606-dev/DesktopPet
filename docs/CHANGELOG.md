@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-27 — M1 implementation progress
+
+- Add an explicit “hide Bichon” action to the pet context menu and system tray menu; hiding keeps the application running and the tray can restore it.
+- Correct the missing-image status text so it no longer claims a 3D asset is pending.
+- Update the M1 checklist to distinguish code implementation from Windows runtime verification.
+
 ## 2026-11-27 — Product definition and M1 baseline audit
 
 - Define AI Desktop Companion as a multi-avatar Windows desktop companion platform; Bichon remains the first sample avatar.
