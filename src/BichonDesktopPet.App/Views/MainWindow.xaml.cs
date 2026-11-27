@@ -265,6 +265,8 @@ public partial class MainWindow : Window
 
     private PetSettings ApplySettings(PetSettings requested)
     {
+        var musicChanged = requested.MusicEnabled != _settings.MusicEnabled;
+
         _settings.AlwaysOnTop = requested.AlwaysOnTop;
         _settings.SnowEnabled = requested.SnowEnabled;
         _settings.DecorativeLightsEnabled = requested.DecorativeLightsEnabled;
@@ -274,26 +276,29 @@ public partial class MainWindow : Window
         _snowAnimation.SetEnabled(_settings.SnowEnabled);
         SetLightsEnabled(_settings.DecorativeLightsEnabled);
 
-        try
+        if (musicChanged)
         {
-            if (_settings.MusicEnabled)
+            try
             {
-                if (!_audioService.SetEnabled(true))
+                if (_settings.MusicEnabled)
                 {
-                    _settings.MusicEnabled = false;
-                    StatusText.Text = "音乐素材尚未加入";
+                    if (!_audioService.SetEnabled(true))
+                    {
+                        _settings.MusicEnabled = false;
+                        StatusText.Text = "音乐素材尚未加入";
+                    }
+                }
+                else
+                {
+                    _audioService.SetEnabled(false);
                 }
             }
-            else
+            catch (Exception exception)
             {
-                _audioService.SetEnabled(false);
+                _settings.MusicEnabled = false;
+                AppLogger.Log("Unable to apply the background music setting.", exception);
+                StatusText.Text = "音乐启动失败，请检查本地日志";
             }
-        }
-        catch (Exception exception)
-        {
-            _settings.MusicEnabled = false;
-            AppLogger.Log("Unable to apply the background music setting.", exception);
-            StatusText.Text = "音乐启动失败，请检查本地日志";
         }
 
         SaveSettings();
