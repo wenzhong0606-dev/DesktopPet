@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-11-27 — M2 local avatar management (first increment)
+
+- Add a versioned local avatar catalog and a stable `AvatarProfile` model.
+- Seed the existing Bichon artwork as the protected built-in default avatar.
+- Add a role manager window reachable from the pet context menu and system tray.
+- Support local PNG/JPG/JPEG/BMP imports up to 20 MB, with extension/signature checks and WPF decode validation.
+- Copy imported images into LocalAppData without modifying the source file or repository assets.
+- Add role names and species/type metadata, switching, deletion of imported roles, and restoring the Bichon default.
+- Persist the selected avatar ID and restore it on application startup; fall back to Bichon if a selected custom role is missing.
+- Add Core unit tests for catalog seeding, import/reload, invalid files, protected default role, deletion and corrupt-catalog recovery.
+- M1 marked complete after the user confirmed local acceptance.
+
+
 ## 2026-11-27 — Settings window layout fix
 
 - Make the settings content area vertically scrollable so all options and the reset-position action remain reachable on shorter displays and at higher DPI scaling.
