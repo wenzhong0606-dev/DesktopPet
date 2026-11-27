@@ -53,6 +53,9 @@ Only the Bichon image is bundled in the repository. There is no bundled Border C
 
 ## Automated tests
 
+Windows CI passed on commit `87e7c5225491b46d851d403738afb48655b9f02a`: Release build completed with 0 warnings and 0 errors; all 17 automated tests passed ([run #97](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45944152242)). The WPF role-manager workflow still requires local Windows interaction testing.
+
+
 The Core tests cover:
 
 - First-run catalog seeding.
