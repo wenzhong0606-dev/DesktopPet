@@ -59,15 +59,11 @@
                              FontSize="14"
                              FontWeight="SemiBold"
                              Foreground="#FF49352F" />
-                  <TextBlock Text="{Binding Species}"
+                  <TextBlock Text="{Binding SpeciesDisplayName}"
                              FontSize="11"
                              Foreground="#FF8B7770"
                              Margin="0,3,0,0" />
                 </StackPanel>
-                <TextBlock Grid.Column="1"
-                           VerticalAlignment="Center"
-                           Text="{Binding IsBuiltIn, Converter={x:Null}}"
-                           Visibility="Collapsed" />
                 <TextBlock Grid.Column="1"
                            VerticalAlignment="Center"
                            FontSize="10"
@@ -116,6 +112,7 @@
           <ComboBoxItem Content="猫咪" Tag="cat" />
           <ComboBoxItem Content="兔子" Tag="rabbit" />
           <ComboBoxItem Content="爬行动物" Tag="reptile" />
+          <ComboBoxItem Content="人形角色" Tag="humanoid" />
           <ComboBoxItem Content="自定义" Tag="custom" />
         </ComboBox>
       </StackPanel>
