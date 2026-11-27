@@ -26,14 +26,15 @@ The user has confirmed that image-based desktop pet display is complete. The cur
 - Double-click the character or choose “拆开礼物” from the context menu for the gift reaction.
 - Toggle snow and decorative lights from the context menu or system tray.
 - Restore the pet from the system tray.
+- Hide the pet from the context menu or system tray; the process remains running.
 - Closing the window hides it without terminating the process; exit is available from the tray menu.
 
 ## Current M1 gaps
 
-- Add an explicit hide action to the tray menu.
 - Add a lightweight settings window for existing settings (topmost, snow, decorative lights, music) and reset position.
 - Improve settings persistence diagnostics and application exception logging.
-- Run Release build, tests, and Windows visual/interaction smoke tests on the user's machine. The PNG's dimensions and SHA-256 have now been inspected from the committed binary; visual display still needs Windows verification.
+- Run Release build, tests, and Windows visual/interaction smoke tests on the user's machine. The PNG's dimensions and SHA-256 have been inspected from the committed binary; visual display still needs Windows verification.
+- Test window position restoration on multiple displays and DPI settings.
 
 ## Milestones
 
