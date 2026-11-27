@@ -121,6 +121,7 @@ public partial class MainWindow : Window
             bitmap.BeginInit();
             bitmap.CacheOption = BitmapCacheOption.OnLoad;
             bitmap.CreateOptions = BitmapCreateOptions.PreservePixelFormat;
+            bitmap.DecodePixelWidth = 520;
             bitmap.UriSource = new Uri(imagePath, UriKind.Absolute);
             bitmap.EndInit();
             bitmap.Freeze();
