@@ -166,7 +166,7 @@ public partial class ChatWindow : Window
         {
             MaxWidth = 350,
             HorizontalAlignment = isUser ? WpfHorizontalAlignment.Right : WpfHorizontalAlignment.Left,
-            Background = isUser ? new SolidColorBrush(WpfColor.FromRgb(226, 239, 255)) : new SolidColorBrush(Color.FromRgb(247, 242, 237)),
+            Background = isUser ? new SolidColorBrush(WpfColor.FromRgb(226, 239, 255)) : new SolidColorBrush(WpfColor.FromRgb(247, 242, 237)),
             CornerRadius = new CornerRadius(12),
             Padding = new Thickness(12, 9, 12, 9),
             Margin = new Thickness(0, 0, 0, 10)
@@ -175,7 +175,7 @@ public partial class ChatWindow : Window
         {
             Text = content,
             TextWrapping = TextWrapping.Wrap,
-            Foreground = new SolidColorBrush(Color.FromRgb(65, 54, 49)),
+            Foreground = new SolidColorBrush(WpfColor.FromRgb(65, 54, 49)),
             FontSize = 14
         };
         MessagePanel.Children.Add(bubble);

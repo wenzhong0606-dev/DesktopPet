@@ -507,7 +507,7 @@ public partial class MainWindow : Window
         var provider = app?.AiChatProvider;
         if (provider is null)
         {
-            MessageBox.Show("AI 服务初始化失败。桌宠仍可离线使用，请检查本地日志。", "桌面伙伴", MessageBoxButton.OK, MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show("AI 服务初始化失败。桌宠仍可离线使用，请检查本地日志。", "桌面伙伴", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -518,14 +518,14 @@ public partial class MainWindow : Window
         catch (Exception exception)
         {
             AppLogger.Log("Unable to load the companion identity for chat.", exception);
-            MessageBox.Show("伙伴身份数据暂时不可用，请检查本地日志。", "桌面伙伴", MessageBoxButton.OK, MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show("伙伴身份数据暂时不可用，请检查本地日志。", "桌面伙伴", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
         var companion = _activeCompanion;
         if (companion is null)
         {
-            MessageBox.Show("伙伴身份数据暂时不可用，请稍后重试。", "桌面伙伴", MessageBoxButton.OK, MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show("伙伴身份数据暂时不可用，请稍后重试。", "桌面伙伴", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
