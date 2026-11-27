@@ -13,4 +13,6 @@ publish/
 Thumbs.db
 desktop.ini
 *.local.json
+*.Local.json
+appsettings.Local.json
 *.log
