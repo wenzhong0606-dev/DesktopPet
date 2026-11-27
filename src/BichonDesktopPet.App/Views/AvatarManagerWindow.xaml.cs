@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media.Imaging;
 using BichonDesktopPet.App.Services;
 using BichonDesktopPet.Core.Models;
 using BichonDesktopPet.Core.Services;
@@ -88,6 +89,7 @@ public partial class AvatarManagerWindow : Window
 
         try
         {
+            ValidateImageCanBeDecoded(dialog.FileName);
             var imported = _catalog.ImportImage(dialog.FileName, name, species);
             AvatarNameTextBox.Text = imported.Name;
             RefreshAvatars(imported.Id);
@@ -98,6 +100,18 @@ public partial class AvatarManagerWindow : Window
             AppLogger.Log("Unable to import a local avatar image.", exception);
             StatusText.Text = exception.Message;
         }
+    }
+
+    private static void ValidateImageCanBeDecoded(string imagePath)
+    {
+        var bitmap = new BitmapImage();
+        bitmap.BeginInit();
+        bitmap.CacheOption = BitmapCacheOption.OnLoad;
+        bitmap.CreateOptions = BitmapCreateOptions.PreservePixelFormat;
+        bitmap.DecodePixelWidth = 256;
+        bitmap.UriSource = new Uri(imagePath, UriKind.Absolute);
+        bitmap.EndInit();
+        bitmap.Freeze();
     }
 
     private void SetActive_Click(object sender, RoutedEventArgs e)
