@@ -66,6 +66,7 @@ public partial class AvatarManagerWindow : Window
     {
         var selected = AvatarListBox.SelectedItem as AvatarProfile;
         SetActiveButton.IsEnabled = selected is not null;
+        EditPersonaButton.IsEnabled = selected is not null;
         DeleteButton.IsEnabled = selected is { IsBuiltIn: false };
     }
 
@@ -154,6 +155,25 @@ public partial class AvatarManagerWindow : Window
             : "角色已切换，但保存失败；请检查本地日志。";
 
         RefreshAvatars(avatarId);
+    }
+
+    private void EditPersona_Click(object sender, RoutedEventArgs e)
+    {
+        if (AvatarListBox.SelectedItem is not AvatarProfile selected)
+        {
+            return;
+        }
+
+        var editor = new PersonaEditorWindow(_catalog, selected)
+        {
+            Owner = this
+        };
+
+        if (editor.ShowDialog() == true)
+        {
+            RefreshAvatars(selected.Id);
+            StatusText.Text = $"「{selected.Name}」的身份与个性资料已保存。";
+        }
     }
 
     private void Delete_Click(object sender, RoutedEventArgs e)
