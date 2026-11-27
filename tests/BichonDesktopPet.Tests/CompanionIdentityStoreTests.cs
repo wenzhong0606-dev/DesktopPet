@@ -89,6 +89,40 @@ public sealed class CompanionIdentityStoreTests
     }
 
     [TestMethod]
+    public void RecordInteraction_PersistsDistinctGestureAndLifecycleEvents()
+    {
+        var companion = _store.EnsureCompanion(CreateAvatar("avatar-1", "豆包"));
+        var start = new DateTimeOffset(2026, 11, 27, 9, 0, 0, TimeSpan.Zero);
+        var expectedTypes = new[]
+        {
+            "pet_double_clicked",
+            "gift_opened",
+            "hidden_to_tray",
+            "woke_from_tray",
+            "application_exited"
+        };
+
+        for (var index = 0; index < expectedTypes.Length; index++)
+        {
+            _store.RecordInteraction(
+                companion.Id,
+                expectedTypes[index],
+                "{}",
+                start.AddSeconds(index));
+        }
+
+        var events = _store.GetRecentInteractions(companion.Id);
+
+        Assert.AreEqual(expectedTypes.Length, events.Count);
+        for (var index = 0; index < expectedTypes.Length; index++)
+        {
+            Assert.AreEqual(expectedTypes[expectedTypes.Length - index - 1], events[index].EventType);
+        }
+
+        Assert.AreEqual(start.AddSeconds(4), events[0].OccurredAtUtc);
+    }
+
+    [TestMethod]
     public void ArchiveByAvatarId_PreservesIdentityAndHistoryButHidesActiveMapping()
     {
         var companion = _store.EnsureCompanion(CreateAvatar("avatar-1", "豆包"));
