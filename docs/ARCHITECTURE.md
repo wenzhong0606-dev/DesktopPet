@@ -59,3 +59,15 @@ The WPF application is Windows-targeted. EnableWindowsTargeting is set so SDK-ba
 - \`PetSettings.ActiveAvatarId\` stores the current role. If the saved custom role no longer exists, startup restores the built-in Bichon.
 - The manager UI is a WPF view; catalog persistence and file validation remain in Core so they can be unit-tested without WPF.
 - M2 does not add 3D, animation retargeting, AI, voice, network sync or a marketplace.
+
+
+## Behavior system (M3)
+
+- \`PetBehaviorEngine\` lives in Core and is independent of WPF. It accepts caller-supplied timestamps and deterministically transitions among Idle, Greeting, Happy, Excited and Sleepy.
+- Startup and tray restore trigger Greeting; click triggers Happy; gift interaction or three rapid clicks trigger Excited; 60 seconds of inactivity triggers Sleepy.
+- Greeting, Happy and Excited have bounded durations and return to Idle unless the inactivity threshold has already elapsed.
+- \`PetBehaviorPresentationResolver\` maps the state to a short message and a \`PetVisualEffect\`. Species-specific wording is separate from state transitions.
+- \`PetBehaviorAnimationService\` is the WPF adapter. It maps effects to subtle transforms of the whole static image. It does not claim skeletal or per-limb animation.
+- MainWindow owns one low-frequency DispatcherTimer for state advancement. The timer and animation service are stopped/disposed on application exit.
+- Keep behavior rules in Core and rendering in App. Future animated frame sequences or 3D rigs can replace the presenter without rewriting the state machine.
+- M3 first increment is offline and does not call AI, network services, microphone or speech APIs.
