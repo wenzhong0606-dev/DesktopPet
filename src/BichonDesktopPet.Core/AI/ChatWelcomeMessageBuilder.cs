@@ -44,8 +44,8 @@ public static class ChatWelcomeMessageBuilder
                 ? $"你来啦！我是{name}，{selfReference}已经就位～今天想聊点什么，还是先来玩一会儿？"
                 : $"{userAddress}来啦！我是{name}，{selfReference}已经就位～今天想聊点什么，还是先来玩一会儿？",
             "natural" => directAddress
-                ? $"你好，我是{name}。今天想聊些什么？"
-                : $"你好，{userAddress}。我是{name}，今天想聊些什么？",
+                ? $"你好，我是{name}。{selfReference}在这里，今天想聊些什么？"
+                : $"你好，{userAddress}。我是{name}，{selfReference}在这里，今天想聊些什么？",
             _ => directAddress
                 ? $"嗨！我是{name}，{selfReference}已经准备好陪你聊天啦～今天想聊些什么？"
                 : $"嗨，{userAddress}！我是{name}，{selfReference}已经准备好陪你聊天啦～今天想聊些什么？"
