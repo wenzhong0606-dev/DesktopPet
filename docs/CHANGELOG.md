@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-11-27 — Correct delayed single/double-click recognition
+
+- Delay writing \`pet_clicked\` until the Windows double-click interval expires.
+- Recognize a double-click using the Windows time and pointer-distance thresholds; emit \`pet_double_clicked\` and \`gift_opened\` without emitting either constituent single-click event.
+- Keep two clicks outside the system time or position threshold as two independent single clicks.
+- Flush a pending single click before hiding, switching/deleting an avatar, or explicitly exiting so real clicks are not lost.
+- Stop and detach the click timer during application shutdown.
+- Add platform-independent regression tests for single, double, separate, spatially distinct and pending-click lifecycle cases.
+
 ## 2026-11-27 — M3-C interaction lifecycle event coverage
 
 - Record double-click gestures separately as pet_double_clicked, while retaining gift_opened for the resulting gift action.
