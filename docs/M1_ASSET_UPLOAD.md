@@ -1,32 +1,47 @@
-# M1 Runtime Asset Upload
+# M1 Runtime Asset Status
 
-## Prepared asset
+## Source asset
 
-The exact user-provided Bichon source was found in the user's Library as 圣诞草莓裙比熊萌宠.png. Its high-resolution original remains unchanged.
+The user-provided source image is `圣诞草莓裙比熊萌宠.png`. The high-resolution original remains preserved in the user's Library and must not be overwritten.
 
-A runtime derivative has been prepared:
+## Repository runtime asset
 
-- Filename to use in the repository: bichon-idle.png
-- Target folder: assets/characters/bichon/base/
+The runtime path is:
+
+`assets/characters/bichon/base/bichon-idle.png`
+
+The file is present in the `main` branch. The latest rename commit is:
+
+- Commit: `4b48de096f81c39f3c29cbb3816c5b19eb9cc271`
+- Message: `Rename bichon-420-128.png to bichon-idle.png`
+- Git tree file size: 132,158 bytes
+- Git blob SHA: `11bc5493f21febd72706948f1dbfc848fcd9f9ae`
+
+## Integrity discrepancy — verification still required
+
+The earlier prepared derivative record stated:
+
 - Dimensions: 420 × 540
-- Format: indexed PNG, 128-color palette, transparency retained
 - File size: 45,559 bytes
-- SHA-256: 049ab8ebe317a4934d60546da4646076053a59af689d3bca6313a6cf3dbf3b3c
+- SHA-256: `049ab8ebe317a4934d60546da4646076053a59af689d3bca6313a6cf3dbf3b3c`
 
-## Upload
+The committed file size is 132,158 bytes, so the earlier size/hash record must not be treated as verified for the committed binary. Recalculate the local file's dimensions and SHA-256 after pulling `main`, then update `asset-manifest.json` with the measured values.
 
-The WPF image-loading code and asset manifest are already committed. The prepared binary image has not yet been added to the Git repository.
+## Local verification
 
-1. Download the prepared image attachment named bichon-420-128.png.
-2. Open the repository folder assets/characters/bichon/base/ on GitHub.
-3. Upload the file and name it exactly bichon-idle.png.
-4. Confirm its SHA-256 matches the value above.
+From the repository root in PowerShell:
 
-The project file already copies files under assets/ into the app output folder. Once this PNG exists at the target path, the WPF app will load it automatically and hide the temporary vector fallback.
+```powershell
+Get-Item .\assets\characters\bichon\base\bichon-idle.png | Select-Object Name,Length
+Get-FileHash .\assets\characters\bichon\base\bichon-idle.png -Algorithm SHA256
+```
+
+Then run the app and confirm that the actual PNG is displayed (not the vector fallback), the alpha background is transparent, and the character fits the 260 × 333 DIP image area.
 
 ## Acceptance
 
-- GitHub Actions build and tests pass.
-- The file exists at the exact target path and its SHA-256 matches.
-- On Windows, the 3D Bichon appears with a transparent background and fits the 260 × 333 DIP display area.
-- Dragging, click reaction, double-click gift reaction, snow, decorative lights, tray controls, and local settings still work.
+- [ ] The file exists at the exact repository path.
+- [ ] Actual dimensions and SHA-256 have been recorded.
+- [ ] The image loads from the application output directory.
+- [ ] The transparent silhouette renders correctly on the Windows desktop.
+- [ ] Dragging, click reaction, double-click gift reaction, snow, decorative lights, tray controls, and local settings continue to work.
