@@ -48,12 +48,14 @@
                  Margin="0,5,0,0" FontSize="11.5" Foreground="#FF858A82" TextWrapping="Wrap" />
     </StackPanel>
     <ListBox x:Name="AvatarListBox" Grid.Row="1" BorderThickness="0" Background="Transparent"
-             SelectionChanged="AvatarListBox_SelectionChanged" ScrollViewer.VerticalScrollBarVisibility="Auto">
+             SelectionMode="Single" SelectionChanged="AvatarListBox_SelectionChanged"
+             ScrollViewer.VerticalScrollBarVisibility="Auto">
       <ListBox.ItemContainerStyle>
         <Style TargetType="{x:Type ListBoxItem}">
           <Setter Property="Padding" Value="0" /><Setter Property="Margin" Value="0" />
           <Setter Property="HorizontalContentAlignment" Value="Stretch" /><Setter Property="Background" Value="Transparent" />
-          <Setter Property="BorderThickness" Value="0" /><Setter Property="Focusable" Value="False" />
+          <Setter Property="BorderThickness" Value="0" />
+          <Setter Property="Focusable" Value="True" /><Setter Property="IsTabStop" Value="True" />
         </Style>
       </ListBox.ItemContainerStyle>
       <ListBox.ItemTemplate>
