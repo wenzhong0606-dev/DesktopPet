@@ -71,7 +71,8 @@ public sealed class ChatContextBuilderTests
             historyLimit: 3);
 
         Assert.AreEqual(4, messages.Count);
-        Assert.AreEqual("message-14", messages[1].Content);
+        Assert.AreEqual("message-13", messages[1].Content);
+        Assert.AreEqual("message-14", messages[2].Content);
         Assert.AreEqual(2000, messages[3].Content.Length);
         Assert.IsTrue(messages.All(message => message.Role != "tool"));
     }
