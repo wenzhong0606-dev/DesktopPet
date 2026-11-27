@@ -4,7 +4,7 @@
 
 AI Desktop Companion is a Windows desktop companion platform in gradual development. The Bichon Frise is the first sample character, not the only character the future platform may support. The long-term direction includes multiple animals, human-style avatars, user-imported models, character-specific behavior, and optional AI conversation.
 
-> Current product baseline: M0 image-based desktop pet display. The WPF image-loading implementation and `assets/characters/bichon/base/bichon-idle.png` are present on `main`. The committed PNG has been inspected from the repository binary: 420 × 540 pixels, RGBA, 132,158 bytes, SHA-256 `326d10ace28d53e8a4289b9f103c648ecb79d6b1b32e4a8f76d715793b97d210`. Windows runtime visual verification is still pending.
+> Current product baseline: M0 image-based desktop pet display. The WPF image-loading implementation and `assets/characters/bichon/base/bichon-idle.png` are present on `main`. The committed PNG is 420 × 540 pixels, RGBA, 132,158 bytes, SHA-256 `326d10ace28d53e8a4289b9f103c648ecb79d6b1b32e4a8f76d715793b97d210`.
 
 ## Current technology
 
@@ -12,13 +12,22 @@ AI Desktop Companion is a Windows desktop companion platform in gradual developm
 - WPF (Windows desktop)
 - Shared Core library for settings and basic models
 - Local JSON settings
-- Optional audio, disabled by default and unavailable until an authorized audio asset is supplied
+- Optional local background audio; disabled by default and unavailable until an authorized audio asset is supplied
 
 ## Current implementation
 
-The current WPF app includes a transparent 280 × 360 DIP window, PNG loading with a vector fallback, dragging, position persistence, click and gift reactions, snow, decorative lights, system tray controls, local settings persistence, and an optional audio integration point. An explicit hide-to-tray action has now been added to both the pet context menu and the system tray menu; it still needs a Windows build and runtime check.
+The current WPF app includes a transparent 280 × 360 DIP window, PNG loading with a vector fallback, dragging, position persistence, click and gift reactions, snow, decorative lights, system tray controls, local JSON settings, and an optional audio integration point.
 
-Remaining M1 work includes a dedicated settings window, diagnosable error logging, and local build/runtime acceptance. See the M1 baseline and acceptance checklist.
+The user confirmed that the previous M1 desktop-pet and tray hide/show baseline works normally on their Windows computer. The current M1 update adds:
+
+- A dedicated settings window, accessible from the pet context menu and system tray.
+- Immediate application and persistence of always-on-top, snow, decorative-light, and music preferences.
+- A default-position reset action.
+- A disabled music control with an explanation when the optional audio asset is absent.
+- Local application diagnostics at `%LOCALAPPDATA%\BichonDesktopPet\logs\app.log`.
+- Testable settings persistence in the Core project, with round-trip, missing-file, corrupt-file and save-failure coverage.
+
+The newly added settings window and diagnostics still require Windows build and runtime verification before M1 can be marked complete.
 
 ## Build (Windows)
 
@@ -33,6 +42,13 @@ dotnet test BichonDesktopPet.sln -c Release
 ```powershell
 dotnet run --project src/BichonDesktopPet.App/BichonDesktopPet.App.csproj
 ```
+
+## Local data
+
+- Settings: `%LOCALAPPDATA%\BichonDesktopPet\settings.json`
+- Diagnostic log: `%LOCALAPPDATA%\BichonDesktopPet\logs\app.log`
+
+Logs contain application diagnostics and exception details. The application does not log chat content or microphone input.
 
 ## Product and development documents
 
