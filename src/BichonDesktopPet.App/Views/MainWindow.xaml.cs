@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel;
 using System.IO;
 using System.Windows;
@@ -6,6 +7,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using BichonDesktopPet.App.Services;
 using BichonDesktopPet.Core.Models;
+using BichonDesktopPet.Core.Services;
 using WpfMouseEventArgs = System.Windows.Input.MouseEventArgs;
 using WpfPoint = System.Windows.Point;
 
@@ -13,9 +15,10 @@ namespace BichonDesktopPet.App.Views;
 
 public partial class MainWindow : Window
 {
-    private readonly SettingsService _settingsService = new();
+    private readonly SettingsService _settingsService;
     private readonly SnowAnimationService _snowAnimation;
     private readonly AudioService _audioService = new();
+    private SettingsWindow? _settingsWindow;
     private PetSettings _settings = new();
     private bool _allowExit;
     private bool _dragCandidate;
@@ -25,6 +28,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        _settingsService = new SettingsService(log: AppLogger.Log);
         _snowAnimation = new SnowAnimationService(SnowCanvas);
     }
 
@@ -42,9 +46,23 @@ public partial class MainWindow : Window
         _snowAnimation.SetEnabled(_settings.SnowEnabled);
         SetLightsEnabled(_settings.DecorativeLightsEnabled);
 
-        if (_settings.MusicEnabled && !_audioService.SetEnabled(true))
+        if (_settings.MusicEnabled)
         {
-            _settings.MusicEnabled = false;
+            try
+            {
+                if (!_audioService.SetEnabled(true))
+                {
+                    _settings.MusicEnabled = false;
+                    AppLogger.Log("Saved music preference could not be restored because the audio asset is unavailable.");
+                    SaveSettings();
+                }
+            }
+            catch (Exception exception)
+            {
+                _settings.MusicEnabled = false;
+                AppLogger.Log("Saved music preference could not be restored.", exception);
+                SaveSettings();
+            }
         }
     }
 
@@ -81,8 +99,9 @@ public partial class MainWindow : Window
             FallbackPetCanvas.Visibility = Visibility.Collapsed;
             StatusText.Text = "汪！你好呀";
         }
-        catch (Exception)
+        catch (Exception exception)
         {
+            AppLogger.Log("Unable to load the Bichon runtime image.", exception);
             PetImage.Source = null;
             PetImage.Visibility = Visibility.Collapsed;
             FallbackPetCanvas.Visibility = Visibility.Visible;
@@ -204,9 +223,102 @@ public partial class MainWindow : Window
 
     public void HideToTray()
     {
+        _settingsWindow?.Close();
         SaveSettings();
         Hide();
     }
+
+    public void OpenSettingsWindow()
+    {
+        if (_settingsWindow is { IsVisible: true })
+        {
+            _settingsWindow.Activate();
+            return;
+        }
+
+        if (!IsVisible)
+        {
+            ShowFromTray();
+        }
+
+        var settingsWindow = new SettingsWindow(
+            CopySettings(_settings),
+            _audioService.IsAvailable,
+            ApplySettings,
+            ResetWindowPosition)
+        {
+            Owner = this
+        };
+
+        _settingsWindow = settingsWindow;
+        settingsWindow.Closed += (_, _) =>
+        {
+            if (ReferenceEquals(_settingsWindow, settingsWindow))
+            {
+                _settingsWindow = null;
+            }
+        };
+
+        settingsWindow.Show();
+        settingsWindow.Activate();
+    }
+
+    private PetSettings ApplySettings(PetSettings requested)
+    {
+        _settings.AlwaysOnTop = requested.AlwaysOnTop;
+        _settings.SnowEnabled = requested.SnowEnabled;
+        _settings.DecorativeLightsEnabled = requested.DecorativeLightsEnabled;
+        _settings.MusicEnabled = requested.MusicEnabled;
+
+        Topmost = _settings.AlwaysOnTop;
+        _snowAnimation.SetEnabled(_settings.SnowEnabled);
+        SetLightsEnabled(_settings.DecorativeLightsEnabled);
+
+        try
+        {
+            if (_settings.MusicEnabled)
+            {
+                if (!_audioService.SetEnabled(true))
+                {
+                    _settings.MusicEnabled = false;
+                    StatusText.Text = "音乐素材尚未加入";
+                }
+            }
+            else
+            {
+                _audioService.SetEnabled(false);
+            }
+        }
+        catch (Exception exception)
+        {
+            _settings.MusicEnabled = false;
+            AppLogger.Log("Unable to apply the background music setting.", exception);
+            StatusText.Text = "音乐启动失败，请检查本地日志";
+        }
+
+        SaveSettings();
+        return CopySettings(_settings);
+    }
+
+    private void ResetWindowPosition()
+    {
+        var workArea = SystemParameters.WorkArea;
+        Left = Clamp(workArea.Right - Width - 24, workArea.Left, workArea.Right - Width);
+        Top = Clamp(workArea.Bottom - Height - 24, workArea.Top, workArea.Bottom - Height);
+        SaveSettings();
+    }
+
+    private static PetSettings CopySettings(PetSettings source) => new()
+    {
+        WindowLeft = source.WindowLeft,
+        WindowTop = source.WindowTop,
+        AlwaysOnTop = source.AlwaysOnTop,
+        SnowEnabled = source.SnowEnabled,
+        DecorativeLightsEnabled = source.DecorativeLightsEnabled,
+        MusicEnabled = source.MusicEnabled,
+        WindowWidth = source.WindowWidth,
+        WindowHeight = source.WindowHeight
+    };
 
     public void ToggleSnow()
     {
@@ -226,18 +338,15 @@ public partial class MainWindow : Window
 
     public void ToggleMusic()
     {
-        var enable = !_settings.MusicEnabled;
-        if (!_audioService.SetEnabled(enable))
-        {
-            _settings.MusicEnabled = false;
-            StatusText.Text = "音乐素材尚未加入";
-            SaveSettings();
-            return;
-        }
+        var proposed = CopySettings(_settings);
+        proposed.MusicEnabled = !_settings.MusicEnabled;
+        var applied = ApplySettings(proposed);
 
-        _settings.MusicEnabled = enable;
-        StatusText.Text = enable ? "音乐播放中" : "音乐已关闭";
-        SaveSettings();
+        StatusText.Text = applied.MusicEnabled
+            ? "音乐播放中"
+            : proposed.MusicEnabled
+                ? "音乐素材不可用或启动失败"
+                : "音乐已关闭";
     }
 
     private void SetLightsEnabled(bool enabled)
@@ -257,6 +366,7 @@ public partial class MainWindow : Window
         }
     }
 
+    private void Settings_Click(object sender, RoutedEventArgs e) => OpenSettingsWindow();
     private void ToggleSnow_Click(object sender, RoutedEventArgs e) => ToggleSnow();
     private void ToggleLights_Click(object sender, RoutedEventArgs e) => ToggleLights();
     private void ToggleMusic_Click(object sender, RoutedEventArgs e) => ToggleMusic();
@@ -270,6 +380,7 @@ public partial class MainWindow : Window
         if (!_allowExit)
         {
             e.Cancel = true;
+            _settingsWindow?.Close();
             Hide();
         }
     }
@@ -277,6 +388,7 @@ public partial class MainWindow : Window
     public void ExitApplication()
     {
         _allowExit = true;
+        _settingsWindow?.Close();
         SaveSettings();
         _snowAnimation.Dispose();
         _audioService.Dispose();
