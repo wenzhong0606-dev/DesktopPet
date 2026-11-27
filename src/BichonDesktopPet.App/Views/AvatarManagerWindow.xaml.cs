@@ -6,7 +6,11 @@ using System.Windows.Media.Imaging;
 using BichonDesktopPet.App.Services;
 using BichonDesktopPet.Core.Models;
 using BichonDesktopPet.Core.Services;
-using Microsoft.Win32;
+using WpfOpenFileDialog = Microsoft.Win32.OpenFileDialog;
+using WpfMessageBox = System.Windows.MessageBox;
+using WpfMessageBoxButton = System.Windows.MessageBoxButton;
+using WpfMessageBoxImage = System.Windows.MessageBoxImage;
+using WpfMessageBoxResult = System.Windows.MessageBoxResult;
 
 namespace BichonDesktopPet.App.Views;
 
@@ -66,7 +70,7 @@ public partial class AvatarManagerWindow : Window
 
     private void Import_Click(object sender, RoutedEventArgs e)
     {
-        var dialog = new OpenFileDialog
+        var dialog = new WpfOpenFileDialog
         {
             Title = "选择要导入的角色图片",
             Filter = "支持的图片 (*.png;*.jpg;*.jpeg;*.bmp)|*.png;*.jpg;*.jpeg;*.bmp|所有文件 (*.*)|*.*",
@@ -152,14 +156,14 @@ public partial class AvatarManagerWindow : Window
             return;
         }
 
-        var answer = MessageBox.Show(
+        var answer = WpfMessageBox.Show(
             this,
             $"确定删除本地角色「{selected.Name}」吗？此操作会删除该角色复制到本机的图片文件。",
             "删除角色",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Warning);
+            WpfMessageBoxButton.YesNo,
+            WpfMessageBoxImage.Warning);
 
-        if (answer != MessageBoxResult.Yes)
+        if (answer != WpfMessageBoxResult.Yes)
         {
             return;
         }
