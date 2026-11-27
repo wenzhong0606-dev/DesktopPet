@@ -54,7 +54,7 @@ public sealed class SettingsService
         }
     }
 
-    public void Save(PetSettings settings)
+    public bool Save(PetSettings settings)
     {
         ArgumentNullException.ThrowIfNull(settings);
 
@@ -74,6 +74,7 @@ public sealed class SettingsService
             var json = JsonSerializer.Serialize(settings, JsonOptions);
             File.WriteAllText(temporaryPath, json);
             File.Move(temporaryPath, _settingsPath, overwrite: true);
+            return true;
         }
         catch (Exception exception)
         {
@@ -93,6 +94,8 @@ public sealed class SettingsService
                     // Cleanup is best-effort; the original persistence error is already logged.
                 }
             }
+
+            return false;
         }
     }
 
