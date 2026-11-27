@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.IO;
 using BichonDesktopPet.Core.Models;
 using BichonDesktopPet.Core.Services;
@@ -27,9 +29,9 @@ public sealed class SettingsServiceTests
     }
 
     [TestMethod]
-    public void SaveAndLoad_RoundTripsUserPreferences()
+    public void SaveAndLoad_RoundTripsUserPreferencesAndCreatesDirectory()
     {
-        var settingsPath = Path.Combine(_testDirectory, "settings.json");
+        var settingsPath = Path.Combine(_testDirectory, "nested", "settings.json");
         var service = new SettingsService(settingsPath);
         var expected = new PetSettings
         {
@@ -46,12 +48,27 @@ public sealed class SettingsServiceTests
         service.Save(expected);
         var actual = service.Load();
 
+        Assert.IsTrue(File.Exists(settingsPath));
         Assert.AreEqual(expected.WindowLeft, actual.WindowLeft);
         Assert.AreEqual(expected.WindowTop, actual.WindowTop);
         Assert.AreEqual(expected.AlwaysOnTop, actual.AlwaysOnTop);
         Assert.AreEqual(expected.SnowEnabled, actual.SnowEnabled);
         Assert.AreEqual(expected.DecorativeLightsEnabled, actual.DecorativeLightsEnabled);
         Assert.AreEqual(expected.MusicEnabled, actual.MusicEnabled);
+    }
+
+    [TestMethod]
+    public void Load_WhenFileDoesNotExist_ReturnsDefaults()
+    {
+        var settingsPath = Path.Combine(_testDirectory, "not-created.json");
+        var service = new SettingsService(settingsPath);
+
+        var settings = service.Load();
+
+        Assert.IsTrue(settings.AlwaysOnTop);
+        Assert.IsTrue(settings.SnowEnabled);
+        Assert.IsTrue(settings.DecorativeLightsEnabled);
+        Assert.IsFalse(settings.MusicEnabled);
     }
 
     [TestMethod]
@@ -70,16 +87,5 @@ public sealed class SettingsServiceTests
         Assert.IsFalse(settings.MusicEnabled);
         Assert.AreEqual(1, loggedMessages.Count);
         StringAssert.Contains(loggedMessages[0], "Unable to read");
-    }
-
-    [TestMethod]
-    public void Save_WhenDirectoryCannotBeCreated_ReportsFailureWithoutThrowing()
-    {
-        var invalidPath = Path.Combine(_testDirectory, "missing-parent", "settings.json");
-        var service = new SettingsService(invalidPath, (message, _) => { });
-
-        service.Save(new PetSettings());
-
-        Assert.IsFalse(File.Exists(invalidPath));
     }
 }
