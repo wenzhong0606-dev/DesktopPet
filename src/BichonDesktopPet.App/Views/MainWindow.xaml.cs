@@ -310,7 +310,8 @@ public partial class MainWindow : Window
 
         if (e.ClickCount >= 2)
         {
-            GiftButton_Click(sender, e);
+            RecordInteraction("pet_double_clicked", "{\"action\":\"open_gift\"}");
+            OpenGift("pet_double_click");
             return;
         }
 
@@ -318,10 +319,13 @@ public partial class MainWindow : Window
         RecordInteraction("pet_clicked", "{\"clickCount\":1}");
     }
 
-    private void GiftButton_Click(object sender, RoutedEventArgs e)
+    private void GiftButton_Click(object sender, RoutedEventArgs e) =>
+        OpenGift("context_menu");
+
+    private void OpenGift(string source)
     {
         ApplyBehavior(_behaviorEngine.OnGiftOpened(DateTimeOffset.UtcNow));
-        RecordInteraction("gift_opened");
+        RecordInteraction("gift_opened", $"{{\"source\":\"{source}\"}}");
     }
 
     public void ShowFromTray()
@@ -340,9 +344,15 @@ public partial class MainWindow : Window
 
     public void HideToTray()
     {
+        if (!IsVisible)
+        {
+            return;
+        }
+
         _settingsWindow?.Close();
         _avatarManagerWindow?.Close();
         SaveSettings();
+        RecordInteraction("hidden_to_tray", "{\"source\":\"user_action\"}");
         Hide();
     }
 
@@ -592,20 +602,25 @@ public partial class MainWindow : Window
 
     private void Window_Closing(object? sender, CancelEventArgs e)
     {
-        SaveSettings();
-
         if (!_allowExit)
         {
             e.Cancel = true;
-            _settingsWindow?.Close();
-            _avatarManagerWindow?.Close();
-            Hide();
+            HideToTray();
+            return;
         }
+
+        SaveSettings();
     }
 
     public void ExitApplication()
     {
+        if (_allowExit)
+        {
+            return;
+        }
+
         _allowExit = true;
+        RecordInteraction("application_exited", "{\"source\":\"explicit_exit\"}");
         _settingsWindow?.Close();
         _avatarManagerWindow?.Close();
         SaveSettings();
