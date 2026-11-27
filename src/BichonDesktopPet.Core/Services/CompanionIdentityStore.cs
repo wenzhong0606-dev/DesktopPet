@@ -58,7 +58,8 @@ public sealed class CompanionIdentityStore
                 core_personality_json TEXT NOT NULL,
                 evolving_personality_json TEXT NOT NULL DEFAULT '{}',
                 created_at_utc TEXT NOT NULL,
-                updated_at_utc TEXT NOT NULL
+                updated_at_utc TEXT NOT NULL,
+                is_archived INTEGER NOT NULL DEFAULT 0
             );
 
             CREATE TABLE IF NOT EXISTS interaction_events (
@@ -140,7 +141,8 @@ public sealed class CompanionIdentityStore
                 UPDATE companions
                 SET display_name = $displayName,
                     core_personality_json = $corePersonalityJson,
-                    updated_at_utc = $updatedAtUtc
+                    updated_at_utc = $updatedAtUtc,
+                    is_archived = 0
                 WHERE companion_id = $companionId;
                 """;
             update.Parameters.AddWithValue("$displayName", avatar.Name);
@@ -163,14 +165,39 @@ public sealed class CompanionIdentityStore
         using var command = connection.CreateCommand();
         command.CommandText = """
             SELECT companion_id, avatar_id, display_name, core_personality_json,
-                   evolving_personality_json, created_at_utc, updated_at_utc
+                   evolving_personality_json, created_at_utc, updated_at_utc, is_archived
             FROM companions
-            WHERE avatar_id = $avatarId;
+            WHERE avatar_id = $avatarId AND is_archived = 0;
             """;
         command.Parameters.AddWithValue("$avatarId", avatarId);
 
         using var reader = command.ExecuteReader();
         return reader.Read() ? ReadCompanion(reader) : null;
+    }
+
+    /// <summary>
+    /// Archives a removed avatar without deleting its companion identity or interaction history.
+    /// A future avatar can be attached to this identity in a later milestone.
+    /// </summary>
+    public void ArchiveByAvatarId(string avatarId, DateTimeOffset? now = null)
+    {
+        EnsureInitialized();
+
+        if (string.IsNullOrWhiteSpace(avatarId))
+        {
+            throw new ArgumentException("An avatar ID is required.", nameof(avatarId));
+        }
+
+        using var connection = OpenConnection();
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            UPDATE companions
+            SET is_archived = 1, updated_at_utc = $updatedAtUtc
+            WHERE avatar_id = $avatarId;
+            """;
+        command.Parameters.AddWithValue("$updatedAtUtc", FormatUtc(now ?? DateTimeOffset.UtcNow));
+        command.Parameters.AddWithValue("$avatarId", avatarId);
+        command.ExecuteNonQuery();
     }
 
     public void RecordInteraction(
@@ -284,7 +311,8 @@ public sealed class CompanionIdentityStore
         CorePersonalityJson = reader.GetString(3),
         EvolvingPersonalityJson = reader.GetString(4),
         CreatedAtUtc = ParseUtc(reader.GetString(5)),
-        UpdatedAtUtc = ParseUtc(reader.GetString(6))
+        UpdatedAtUtc = ParseUtc(reader.GetString(6)),
+        IsArchived = reader.GetInt64(7) != 0
     };
 
     private static string FormatUtc(DateTimeOffset value) =>
