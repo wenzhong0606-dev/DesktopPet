@@ -33,7 +33,7 @@ The user confirmed that the previous M1 baseline works normally on their Windows
 
 ## Current M1 implementation
 
-The following M1 additions are now present in `main` and await local Windows verification:
+The following M1 additions are present in `main`:
 
 - Dedicated settings window opened from the pet context menu or system tray.
 - Always-on-top, snow, decorative lights and optional music controls.
@@ -45,11 +45,20 @@ The following M1 additions are now present in `main` and await local Windows ver
 - Logging for settings read/write failures, UI dispatcher exceptions, application-domain exceptions, unobserved task exceptions, startup failure and image-load failure.
 - Automated tests for settings round-trip, missing-file defaults, corrupt-file fallback and save-failure diagnostics.
 
-The user has already confirmed the previous M1 baseline and tray hide/show behavior. This does not count as local validation of the newly added settings window, logging or tests.
+### Automated verification
+
+Windows CI passed on commit `a6dbd3ea9bda607d2d19b224d4975e9647cec205`:
+
+- .NET 10 restore succeeded.
+- Release build succeeded with 0 warnings and 0 errors.
+- All 7 automated tests passed.
+- [Windows CI run #58](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45934852652).
+
+The user has confirmed the previous M1 baseline and tray hide/show behavior locally. The new settings window and diagnostic log still need interactive verification on the user's Windows desktop.
 
 ## Remaining M1 verification
 
-- Run Release restore/build/test on Windows.
+- Pull the latest `main` and run the Release build/test locally.
 - Open Settings from both the pet context menu and tray menu.
 - Toggle each setting and verify immediate behavior and persistence after restart.
 - Confirm the music control is unavailable with a clear explanation when no audio file exists.
@@ -60,7 +69,7 @@ The user has already confirmed the previous M1 baseline and tray hide/show behav
 ## Milestones
 
 - M0: image-based desktop pet display — user-confirmed baseline.
-- M1: reliable daily-use image desktop pet — implementation in progress; local verification pending for the latest settings/logging changes.
+- M1: reliable daily-use image desktop pet — implementation and automated CI verification complete; local verification of the new settings/logging UI pending.
 - M2: multiple image avatars and local avatar management.
 - M3: lightweight rule-based behavior system.
 - M4: AI text interaction and constrained action mapping.
