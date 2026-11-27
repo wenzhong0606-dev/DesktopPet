@@ -9,7 +9,7 @@ AI Desktop Companion is a Windows desktop companion platform developed in small,
 - **M0 — Image display:** complete.
 - **M1 — Daily-use desktop pet:** user acceptance passed.
 - **M2 — Multiple image avatars:** user acceptance passed.
-- **M3 — Lightweight behavior system:** first increment committed; Windows Release CI passed (0 warnings, 0 errors, 30/30 tests); [run #124](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45946659068); local interaction acceptance is pending.
+- **M3 — Lightweight behavior system:** M3-A passed Windows Release CI (30/30 tests); M3-B persona system is implemented and awaiting CI/local acceptance.
 
 ## Technology
 
@@ -25,11 +25,11 @@ The WPF app retains the transparent 280 × 360 DIP desktop-pet window, Bichon PN
 
 M2 provides:
 
-- A versioned local avatar catalog with stable avatar IDs.
+- A versioned local avatar catalog (schema v2) with stable avatar IDs and per-avatar persona profiles.
 - The built-in Bichon as the protected default role.
 - A role manager accessible from the pet context menu and system tray.
 - Import of PNG, JPG, JPEG and BMP images (maximum 20 MB per image).
-- Editable display name and simple species metadata.
+- Editable display name, species, optional breed, nicknames, self-reference, user address, personality traits, speech style, response length, emoji level and catchphrases.
 - Switching, deleting imported roles, restoring the Bichon default and persistence across restarts.
 - Local-only imported image storage and image validation.
 
@@ -37,7 +37,7 @@ M3 first increment provides:
 
 - A platform-independent behavior state engine: Idle, Greeting, Happy, Excited and Sleepy.
 - Rule-based transitions for startup/wake, clicks, gift interactions, rapid repeated clicks and inactivity.
-- Species-aware status messages for dog, cat and rabbit roles.
+- Persona-aware rotating behavior messages using each avatar's identity, traits and speech preferences, with species-based fallback.
 - A separate presentation resolver mapping behavior states to WPF image effects.
 - Subtle whole-image breathing, bounce, wiggle and sleepy sway effects.
 - Unit tests for state transitions and presentation mapping.
@@ -74,10 +74,11 @@ Imported images remain on this computer. They are not copied into the Git reposi
 - [M1 baseline and acceptance](docs/M1_BASELINE_AND_ACCEPTANCE.md)
 - [M2 local avatar management](docs/M2_AVATAR_MANAGEMENT.md)
 - [M3 behavior system](docs/M3_BEHAVIOR_SYSTEM.md)
+- [M3-B persona system](docs/M3B_PERSONA_SYSTEM.md)
 - [Project baseline](docs/PROJECT.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Visual specification](docs/VISUAL_SPECIFICATION.md)
 
 ## Scope discipline
 
-M3 remains a local, rule-based image behavior feature. It does not include AI, voice, 3D models, rigging, cloud sync, accounts or a character marketplace. Random ambient behaviors and frame-sequence animation are not part of this first increment. Each milestone must build on the user-accepted baseline and remain independently runnable.
+M3 remains a local, rule-based image behavior feature. Persona-aware text is generated from bounded local templates; it is not AI-generated conversation and does not retain chat memory. M3 does not include voice, 3D models, rigging, cloud sync, accounts or a character marketplace. Each milestone must build on the user-accepted baseline and remain independently runnable.
