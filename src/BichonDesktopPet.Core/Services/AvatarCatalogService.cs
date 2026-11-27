@@ -351,7 +351,7 @@ public sealed class AvatarCatalogService
             }
 
             var breed = sourceDefault.Breed?.Trim() ?? string.Empty;
-            if (breed.Length <= 40)
+            if (breed.Length is > 0 and <= 40)
             {
                 defaultAvatar.Breed = breed;
             }
