@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using System.IO;
 using System.Windows;
@@ -36,6 +37,8 @@ public partial class MainWindow : Window
     private readonly WeatherReminderPolicy _weatherReminderPolicy = new();
     private DateTimeOffset _lastWeatherRefreshAt = DateTimeOffset.MinValue;
     private bool _weatherRefreshInProgress;
+    private bool _weatherRefreshPending;
+    private CancellationTokenSource? _weatherRefreshCancellation;
     private readonly PetBehaviorPresentationResolver _behaviorPresentationResolver = new();
     private readonly PetBehaviorAnimationService _behaviorAnimation;
     private readonly DispatcherTimer _behaviorTimer;
@@ -347,18 +350,29 @@ public partial class MainWindow : Window
 
     private async Task RefreshWeatherAsync(bool forceLocationRefresh)
     {
-        if (!_settings.WeatherRemindersEnabled || _weatherRefreshInProgress)
+        if (!_settings.WeatherRemindersEnabled || _allowExit)
+        {
+            return;
+        }
+
+        if (_weatherRefreshInProgress)
         {
             return;
         }
 
         _weatherRefreshInProgress = true;
+        var refreshCancellation = new CancellationTokenSource();
+        _weatherRefreshCancellation = refreshCancellation;
+        var cancellationToken = refreshCancellation.Token;
+
         try
         {
-            var location = await ResolveCareLocationAsync(forceLocationRefresh);
-            if (location is null)
+            var location = await ResolveCareLocationAsync(forceLocationRefresh, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!_settings.WeatherRemindersEnabled || location is null)
             {
-                if (string.IsNullOrWhiteSpace(_settings.PreferredLocation) &&
+                if (_settings.WeatherRemindersEnabled &&
+                    string.IsNullOrWhiteSpace(_settings.PreferredLocation) &&
                     !_settings.AutomaticIpLocationEnabled)
                 {
                     StatusText.Text = "天气提醒已开启；请设置关注城市或允许 IP 自动定位。";
@@ -368,27 +382,34 @@ public partial class MainWindow : Window
                 return;
             }
 
-            var snapshot = await _weatherService.GetForecastAsync(location);
-            var now = DateTimeOffset.UtcNow;
-            _lastWeatherRefreshAt = now;
-            var alert = _weatherReminderPolicy.Evaluate(snapshot, now);
-            if (alert is null)
+            var snapshot = await _weatherService.GetForecastAsync(location, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!_settings.WeatherRemindersEnabled)
             {
                 return;
             }
 
-            if (!TryMarkWeatherReminder(alert.Type, now))
+            var now = DateTimeOffset.UtcNow;
+            _lastWeatherRefreshAt = now;
+            var alert = _weatherReminderPolicy.Evaluate(snapshot, now);
+            if (alert is null || !TryMarkWeatherReminder(alert.Type, now))
             {
                 return;
             }
+
             var avatar = _avatarCatalogService.GetAvatar(_settings.ActiveAvatarId);
             ShowCareReminder(
                 CareReminderMessageBuilder.BuildWeatherReminder(avatar, location, alert),
                 "桌面伙伴 · 天气提醒");
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // Disabling weather care or changing its location cancels the in-flight request.
+        }
+        catch (OperationCanceledException exception)
         {
             _lastWeatherRefreshAt = DateTimeOffset.UtcNow;
+            AppLogger.Log("Weather and location refresh timed out.", exception);
         }
         catch (Exception exception)
         {
@@ -397,7 +418,23 @@ public partial class MainWindow : Window
         }
         finally
         {
+            if (ReferenceEquals(_weatherRefreshCancellation, refreshCancellation))
+            {
+                _weatherRefreshCancellation = null;
+            }
+
+            refreshCancellation.Dispose();
             _weatherRefreshInProgress = false;
+
+            if (_weatherRefreshPending && _settings.WeatherRemindersEnabled && !_allowExit)
+            {
+                _weatherRefreshPending = false;
+                _ = RefreshWeatherAsync(forceLocationRefresh: true);
+            }
+            else
+            {
+                _weatherRefreshPending = false;
+            }
         }
     }
 
@@ -437,7 +474,7 @@ public partial class MainWindow : Window
         return true;
     }
 
-    private async Task<CareLocation?> ResolveCareLocationAsync(bool forceRefresh)
+    private async Task<CareLocation?> ResolveCareLocationAsync(bool forceRefresh, CancellationToken cancellationToken)
     {
         var now = DateTimeOffset.UtcNow;
         var manualQuery = _settings.PreferredLocation?.Trim() ?? string.Empty;
@@ -448,12 +485,14 @@ public partial class MainWindow : Window
                 cachedManual is not null &&
                 string.Equals(_settings.CachedLocationQuery, manualQuery, StringComparison.OrdinalIgnoreCase) &&
                 _settings.CachedLocationUpdatedAtUtc is { } manualUpdatedAt &&
+                now >= manualUpdatedAt &&
                 now - manualUpdatedAt < TimeSpan.FromDays(30))
             {
                 return cachedManual;
             }
 
-            var resolvedManual = await _weatherService.ResolveCityAsync(manualQuery);
+            var resolvedManual = await _weatherService.ResolveCityAsync(manualQuery, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
             if (resolvedManual is null)
             {
                 StatusText.Text = "没有找到这个城市；请补充省份或国家/地区名称。";
@@ -474,6 +513,7 @@ public partial class MainWindow : Window
         if (!forceRefresh &&
             cachedIp is not null &&
             _settings.CachedLocationUpdatedAtUtc is { } ipUpdatedAt &&
+            now >= ipUpdatedAt &&
             now - ipUpdatedAt < TimeSpan.FromHours(12))
         {
             return cachedIp;
@@ -486,7 +526,8 @@ public partial class MainWindow : Window
             return recentCachedIp;
         }
 
-        var ipResult = await _ipLocationService.ResolveCurrentAsync();
+        var ipResult = await _ipLocationService.ResolveCurrentAsync(cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
         if (!ipResult.IsTrusted || string.IsNullOrWhiteSpace(ipResult.City) ||
             string.IsNullOrWhiteSpace(ipResult.Country))
         {
@@ -496,7 +537,8 @@ public partial class MainWindow : Window
 
         // IPLogs provides a coarse city/country. Resolve city coordinates separately;
         // never infer coordinates from a VPN exit or persist the raw public IP.
-        var geocodedIpCity = await _weatherService.ResolveCityAsync($"{ipResult.City}, {ipResult.Country}");
+        var geocodedIpCity = await _weatherService.ResolveCityAsync($"{ipResult.City}, {ipResult.Country}", cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
         if (geocodedIpCity is null)
         {
             StatusText.Text = "已确认网络出口可信，但无法将其城市解析为天气坐标；请手动指定关注城市。";
@@ -519,7 +561,7 @@ public partial class MainWindow : Window
         if (string.IsNullOrWhiteSpace(location.TimeZoneId) ||
             string.Equals(location.TimeZoneId, "auto", StringComparison.OrdinalIgnoreCase))
         {
-            return true;
+            return false;
         }
 
         try
@@ -532,11 +574,11 @@ public partial class MainWindow : Window
         }
         catch (TimeZoneNotFoundException)
         {
-            return true;
+            return false;
         }
         catch (InvalidTimeZoneException)
         {
-            return true;
+            return false;
         }
     }
 
@@ -1000,9 +1042,22 @@ public partial class MainWindow : Window
         if (weatherSettingsChanged)
         {
             _lastWeatherRefreshAt = DateTimeOffset.MinValue;
+            _weatherRefreshCancellation?.Cancel();
+
             if (_settings.WeatherRemindersEnabled)
             {
-                _ = RefreshWeatherAsync(forceLocationRefresh: true);
+                if (_weatherRefreshInProgress)
+                {
+                    _weatherRefreshPending = true;
+                }
+                else
+                {
+                    _ = RefreshWeatherAsync(forceLocationRefresh: true);
+                }
+            }
+            else
+            {
+                _weatherRefreshPending = false;
             }
         }
 
@@ -1134,6 +1189,8 @@ public partial class MainWindow : Window
         _clickGestureTimer.Stop();
         _clickGestureTimer.Tick -= ClickGestureTimer_Tick;
         _activityRhythmEngine.Reset();
+        _weatherRefreshPending = false;
+        _weatherRefreshCancellation?.Cancel();
         _behaviorAnimation.Dispose();
         _snowAnimation.Dispose();
         _audioService.Dispose();

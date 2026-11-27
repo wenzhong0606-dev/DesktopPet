@@ -143,8 +143,24 @@ public sealed class OpenMeteoWeatherService
 
         return values.EnumerateArray()
             .Where(value => value.ValueKind == JsonValueKind.String)
-            .Select(value => new DateTimeOffset(DateTime.Parse(value.GetString()!, CultureInfo.InvariantCulture, DateTimeStyles.None), utcOffset))
+            .Select(value => ParseForecastTime(value.GetString()!, utcOffset))
             .ToList();
+    }
+
+    private static DateTimeOffset ParseForecastTime(string value, TimeSpan utcOffset)
+    {
+        var timeSeparator = value.IndexOf('T');
+        var hasExplicitOffset = value.EndsWith("Z", StringComparison.OrdinalIgnoreCase) ||
+            (timeSeparator >= 0 &&
+             (value.LastIndexOf('+') > timeSeparator || value.LastIndexOf('-') > timeSeparator));
+
+        if (hasExplicitOffset)
+        {
+            return DateTimeOffset.Parse(value, CultureInfo.InvariantCulture, DateTimeStyles.None);
+        }
+
+        var localWallClock = DateTime.Parse(value, CultureInfo.InvariantCulture, DateTimeStyles.None);
+        return new DateTimeOffset(DateTime.SpecifyKind(localWallClock, DateTimeKind.Unspecified), utcOffset);
     }
 
     private static List<double?> ReadDoubleArray(JsonElement element, string property)

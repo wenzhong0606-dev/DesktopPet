@@ -31,7 +31,7 @@ public sealed class NetworkPrivacyInspector
         }
         catch
         {
-            // Continue with local adapter checks; a proxy inspection failure is not proof of a direct route.
+            return "无法确认 Windows 系统代理配置；为避免误用网络出口城市，已跳过自动定位";
         }
 
         try
