@@ -11,6 +11,7 @@
 - Do not send AI requests during startup; no chat UI or memory extraction is included yet.
 - Add automated tests for SQLite persistence, event journaling, Qwen config precedence, request construction, response parsing and missing-key behavior.
 - Use Microsoft.Data.Sqlite 10.0.15 to avoid the vulnerable older SQLite native dependency chain.
+- Pass Windows Release CI with 0 warnings, 0 errors and 61/61 tests on commit `527edd58cec592d7c3a43775c587d151c26a1c44` ([run #224](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45960178698)); local Windows acceptance pending.
 
 ## 2026-11-27 — M3-B per-avatar persona system
 
