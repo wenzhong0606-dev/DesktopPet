@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace BichonDesktopPet.Core.Models;
 
 /// <summary>
@@ -13,6 +15,17 @@ public sealed class AvatarProfile
 
     /// <summary>Simple species/type metadata, such as dog, cat, or custom.</summary>
     public string Species { get; set; } = "custom";
+
+    [JsonIgnore]
+    public string SpeciesDisplayName => Species switch
+    {
+        "dog" => "狗狗",
+        "cat" => "猫咪",
+        "rabbit" => "兔子",
+        "reptile" => "爬行动物",
+        "humanoid" => "人形角色",
+        _ => "自定义"
+    };
 
     public string ImagePath { get; set; } = string.Empty;
 
