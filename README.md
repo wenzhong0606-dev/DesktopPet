@@ -1,66 +1,75 @@
 # AI Desktop Companion
 
-**Current repository / engineering project name:** `BichonDesktopPet`
+**Current repository / engineering project name:** \`BichonDesktopPet\`
 
-AI Desktop Companion is a Windows desktop companion platform in gradual development. The Bichon Frise is the first sample character, not the only character the future platform may support. The long-term direction includes multiple animals, human-style avatars, user-imported models, character-specific behavior, and optional AI conversation.
+AI Desktop Companion is a Windows desktop companion platform developed in small, runnable milestones. The Bichon Frise is the first built-in character, not the only character the platform supports. Users can add their own locally owned image assets and select different desktop companions.
 
-> Current product baseline: M0 image-based desktop pet display. The WPF image-loading implementation and `assets/characters/bichon/base/bichon-idle.png` are present on `main`. The committed PNG is 420 × 540 pixels, RGBA, 132,158 bytes, SHA-256 `326d10ace28d53e8a4289b9f103c648ecb79d6b1b32e4a8f76d715793b97d210`.
+## Current milestone
 
-## Current technology
+- **M0 — Image display:** complete.
+- **M1 — Daily-use desktop pet:** user acceptance passed.
+- **M2 — Multiple image avatars:** first implementation committed; Windows CI and local avatar-manager acceptance are in progress.
+
+## Technology
 
 - C# / .NET 10
 - WPF (Windows desktop)
-- Shared Core library for settings and basic models
-- Local JSON settings
-- Optional local background audio; disabled by default and unavailable until an authorized audio asset is supplied
+- Platform-independent Core library
+- Local JSON settings and avatar catalog
+- Local image import; no account, network upload, or cloud sync required
 
 ## Current implementation
 
-The current WPF app includes a transparent 280 × 360 DIP window, PNG loading with a vector fallback, dragging, position persistence, click and gift reactions, snow, decorative lights, system tray controls, local JSON settings, and an optional audio integration point.
+The WPF app retains the transparent 280 × 360 DIP desktop-pet window, Bichon PNG display, vector fallback, dragging, position persistence, click and gift reactions, snow, decorative lights, system tray, settings window, diagnostics, and optional local audio integration.
 
-The user confirmed that the previous M1 desktop-pet and tray hide/show baseline works normally on their Windows computer. The current M1 update adds:
+M2 adds:
 
-- A dedicated settings window, accessible from the pet context menu and system tray.
-- Immediate application and persistence of always-on-top, snow, decorative-light, and music preferences.
-- A default-position reset action.
-- A disabled music control with an explanation when the optional audio asset is absent.
-- Local application diagnostics at `%LOCALAPPDATA%\BichonDesktopPet\logs\app.log`.
-- Testable settings persistence in the Core project, with round-trip, missing-file, corrupt-file and save-failure coverage.
+- A versioned local avatar catalog with stable avatar IDs.
+- The built-in Bichon as the protected default role.
+- A role manager accessible from the pet context menu and system tray.
+- Import of PNG, JPG, JPEG and BMP images (maximum 20 MB per image).
+- Editable display name and simple species metadata.
+- Switching between roles, deleting imported roles, and restoring the Bichon default.
+- Persistence of the selected avatar ID across application restarts.
+- Copying imported images into LocalAppData; source files are not modified.
+- Image signature checks and WPF decode validation before import.
 
-**Automated verification:** Windows CI passed on commit `a6dbd3ea9bda607d2d19b224d4975e9647cec205`: Release build succeeded with 0 warnings and 0 errors; all 7 tests passed. [View Windows CI run](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45934852652).
+Only the Bichon artwork is bundled at this point. No Border Collie or cat artwork is being presented as a built-in asset; users can import images they have permission to use.
 
-The new settings window and diagnostic log still need interactive verification on the user's Windows desktop before M1 can be marked complete.
+## Build and test (Windows)
 
-## Build (Windows)
-
-```powershell
+\`\`\`powershell
+git pull origin main
 dotnet restore BichonDesktopPet.sln
 dotnet build BichonDesktopPet.sln -c Release
 dotnet test BichonDesktopPet.sln -c Release
-```
+\`\`\`
 
 ## Run
 
-```powershell
+\`\`\`powershell
 dotnet run --project src/BichonDesktopPet.App/BichonDesktopPet.App.csproj
-```
+\`\`\`
 
 ## Local data
 
-- Settings: `%LOCALAPPDATA%\BichonDesktopPet\settings.json`
-- Diagnostic log: `%LOCALAPPDATA%\BichonDesktopPet\logs\app.log`
+- Settings: \`%LOCALAPPDATA%\\BichonDesktopPet\\settings.json\`
+- Diagnostic log: \`%LOCALAPPDATA%\\BichonDesktopPet\\logs\\app.log\`
+- Avatar catalog: \`%LOCALAPPDATA%\\BichonDesktopPet\\avatars\\catalog.json\`
+- Imported images: \`%LOCALAPPDATA%\\BichonDesktopPet\\avatars\\{avatar-id}\\avatar.{png|jpg|jpeg|bmp}\`
 
-Logs contain application diagnostics and exception details. The log file is created when the first diagnostic event is recorded, so it may not exist during a normal error-free session. The application does not log chat content or microphone input.
+Imported images remain on this computer. They are not copied into the Git repository or uploaded to a service. Only import artwork that you own or have permission to use.
 
-## Product and development documents
+## Development documents
 
 - [Product definition and MVP roadmap](docs/PRODUCT_DEFINITION_AND_MVP_ROADMAP_V1.md)
-- [M1 baseline and acceptance checklist](docs/M1_BASELINE_AND_ACCEPTANCE.md)
+- [M1 baseline and acceptance](docs/M1_BASELINE_AND_ACCEPTANCE.md)
+- [M2 local avatar management](docs/M2_AVATAR_MANAGEMENT.md)
 - [Project baseline](docs/PROJECT.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Visual specification](docs/VISUAL_SPECIFICATION.md)
 - [Runtime asset status](docs/M1_ASSET_UPLOAD.md)
 
-## Development rule
+## Scope discipline
 
-Every milestone must produce a buildable, runnable, testable increment. Do not begin the next milestone until the current one passes its acceptance gate. The current task is M1 only; AI, voice, 3D runtime, arbitrary model import, and a character marketplace are not part of M1.
+M2 is limited to local image roles and basic metadata. It does not include 3D import, animation retargeting, AI, voice, accounts, cloud sync, or a character marketplace. Each milestone must build on the user-accepted baseline and remain independently runnable.
