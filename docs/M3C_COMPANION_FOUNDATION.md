@@ -29,8 +29,8 @@ M3-C creates two tables:
 - \`interaction_events\`: bounded local event records linked to a companion.
 
 The WPF shell records:
-- \`pet_clicked\`: each single click is a separate event row.
-- \`pet_double_clicked\`: the double-click gesture; it also opens the gift.
+- \`pet_clicked\`: a single click is recorded only after the Windows double-click interval expires without a second click.
+- \`pet_double_clicked\`: a double-click gesture; it also opens the gift. The two clicks that form this gesture do not create any \`pet_clicked\` rows.
 - \`gift_opened\`: the resulting gift action, with a source field identifying double-click or context-menu activation.
 - \`hidden_to_tray\`: explicit hide-to-tray action or a window-close gesture that is converted into hiding.
 - \`woke_from_tray\`: restoring a hidden pet from the tray.
@@ -92,6 +92,7 @@ Windows Release CI passed on commit `527edd58cec592d7c3a43775c587d151c26a1c44`: 
 - Identity ID and creation time remain stable when the avatar profile is refreshed.
 - Core-personality snapshot updates without replacing the identity.
 - Interaction event persistence and validation.
+- Delayed click-gesture recognition: one single-click event after the double-click window, one double-click event with no single-click rows, separate clicks, and click preservation when hiding or exiting.
 - Removed avatars are archived while event history is retained.
 - Qwen defaults, local-file loading and environment-variable precedence.
 - Missing API key prevents network requests.
