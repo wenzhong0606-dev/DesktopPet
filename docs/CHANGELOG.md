@@ -11,9 +11,8 @@
 - Connect the active avatar persona to deterministic local message templates with per-avatar/state rotation.
 - Keep AI, free-form language understanding, dialogue memory, voice and network access out of M3.
 - Add migration, persistence, validation and persona-aware message tests.
-- Pass Windows Release CI with 0 warnings, 0 errors and 45/45 tests on code commit `59435ebe78bfe809b6874efc65bd889a9a8ce69a` ([run #160](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45949927255)); local acceptance pending.
+- Pass Windows Release CI with 0 warnings, 0 errors and 46/46 tests on code commit `5e48d94de4654ebae49017f08a2c4fddb0d93912` ([run #170](https://github.com/wenzhong0606-dev/DesktopPet/actions/runs/45950396978)); local acceptance pending.
 
-# Changelog
 
 ## 2026-11-27 — M3 behavior system (first increment)
 
