@@ -292,6 +292,7 @@ public sealed class CompanionMemoryStore
             SELECT m.content,m.created_at_utc,
                 (SELECT p.content FROM chat_messages p WHERE p.session_id=m.session_id
                     AND p.role='user' AND p.message_id<m.message_id
+                    AND julianday(m.created_at_utc)-julianday(p.created_at_utc) BETWEEN 0 AND 10.0/1440
                     ORDER BY p.message_id DESC LIMIT 1)
             FROM chat_messages m JOIN chat_sessions s ON s.session_id=m.session_id
             WHERE m.message_id=$message AND m.role='user' AND s.companion_id=$id
