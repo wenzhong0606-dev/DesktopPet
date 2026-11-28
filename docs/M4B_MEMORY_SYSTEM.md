@@ -68,3 +68,15 @@ M4-B5 Windows CI 183/183 通过，0 警告、0 错误。新增自然偏好语法
 - 第四增量注入 SQLite 游标更新失败，验证同一事务内已有偏好更新、新记忆插入及游标推进整体回滚，重新打开数据库后显式重试成功且重复处理无副作用。该测试不代表磁盘损坏恢复或自动重试机制。
 - 阶段关闭条件：最新 Windows CI 全部通过并记录结果；实际 Windows GUI、真实 Qwen、真实设备性能与长时间运行验收仍按用户决定延后，统一纳入 M4-D。
 - 后续建议顺序：M4-B8 时间语义与跨轮记忆连续性；M4-C 主动关怀统一上下文与频率策略；M4-D 综合本机验收；之后进入 M5 语音。保持 Chat 模式，不新增固定记忆容量限制。
+
+
+## M4-B8 — Temporal continuity and care feedback
+
+- M4-B7 final Windows CI succeeded (e2a33eac).
+- B8-1 through B8-4 latest regression CI succeeded, including the canonical reading-topic test correction.
+- Explicit historical/current preference reversals and single-topic same-session follow-ups; B8-5 limits follow-up evidence to ten minutes.
+- Short-term self-reported states (8h), ordinary near-term intentions (36h), and temporary care feedback (2h) use rolling source-time UTC expiry; these are not local calendar boundaries or reminders.
+- Explicit care frequency/style/rest feedback is stored under existing automatic memory consent. Actual proactive scheduling and immediate interruption control remain M4-C work.
+- B8-5 adds lexical relevance for these categories and a database integration regression for expiry and stale follow-ups. Final CI pending.
+- Retain current bounded lexical retrieval and optional semantic expansion for now; FTS5/embeddings require measured comparative evidence, especially Chinese segmentation and retrieval quality. No new dependency introduced.
+- Remaining: explicit plan cancellation, short-term cleanup, independent care controls, full lifecycle integration coverage, README/roadmap reconciliation and Windows/Qwen acceptance in M4-D. Do not treat this increment as full local acceptance.
