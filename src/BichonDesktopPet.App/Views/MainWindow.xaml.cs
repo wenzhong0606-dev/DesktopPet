@@ -102,6 +102,7 @@ public partial class MainWindow : Window
     private void Window_Loaded(object sender, RoutedEventArgs e)
     {
         _settings = _settingsService.Load();
+        _carePolicy.Restore(_settings.CareDeliveryHistoryUtc, DateTimeOffset.UtcNow);
         _avatarCatalogService.Load();
 
         var activeAvatar = _avatarCatalogService.GetAvatar(_settings.ActiveAvatarId);
@@ -334,9 +335,10 @@ public partial class MainWindow : Window
                 var idleDuration = _activityMonitor.GetIdleDuration();
                 if (idleDuration is { } idle)
                 {
-                    var reminder = _activityRhythmEngine.Observe(localNow, idle);
+                    var reminder = _activityRhythmEngine.Observe(localNow, idle, acknowledge: false);
                     if (reminder?.Type == CareReminderType.TakeBreak && TryDeliverCare(reminder.Type, localNow, out var context))
                     {
+                        _activityRhythmEngine.MarkDelivered(localNow);
                         var avatar = _avatarCatalogService.GetAvatar(_settings.ActiveAvatarId);
                         ShowCareReminder(context.Concise ? "起来活动一下，休息眼睛吧。" : CareReminderMessageBuilder.BuildBreakReminder(avatar, ReadActiveGrowth()), "桌面伙伴 · 休息提醒");
                     }
@@ -380,8 +382,15 @@ public partial class MainWindow : Window
         }
         context = new CareContext(now, _chatWindow is { IsVisible: true }, active, quiet, busy, reduce, reduceBreaks, concise);
         if (_allowExit || !_carePolicy.CanDeliver(type, context)) return false;
-        if (mark) _carePolicy.MarkDelivered(now);
+        if (mark) RecordCareDelivery(now);
         return true;
+    }
+
+    private void RecordCareDelivery(DateTimeOffset now)
+    {
+        _carePolicy.MarkDelivered(now);
+        _settings.CareDeliveryHistoryUtc = _carePolicy.Snapshot();
+        SaveSettings();
     }
 
     private PersonalityGrowthProfile? ReadActiveGrowth()
@@ -449,7 +458,7 @@ public partial class MainWindow : Window
             }
 
             var avatar = _avatarCatalogService.GetAvatar(_settings.ActiveAvatarId);
-            _carePolicy.MarkDelivered(now);
+            RecordCareDelivery(now);
             ShowCareReminder(
                 CareReminderMessageBuilder.BuildWeatherReminder(avatar, location, alert, ReadActiveGrowth()),
                 "桌面伙伴 · 天气提醒");
@@ -1150,6 +1159,7 @@ public partial class MainWindow : Window
         CachedLocationUpdatedAtUtc = source.CachedLocationUpdatedAtUtc,
         LastColdWeatherReminderAtUtc = source.LastColdWeatherReminderAtUtc,
         LastRainReminderAtUtc = source.LastRainReminderAtUtc,
+        CareDeliveryHistoryUtc = source.CareDeliveryHistoryUtc,
         LastHeatReminderAtUtc = source.LastHeatReminderAtUtc
     };
 
