@@ -101,24 +101,39 @@ public partial class ChatWindow : Window
         catch (Exception) { ConnectionStatusText.Text = "本机记忆暂不可用，请检查数据库后重试。"; }
     }
 
-    private IReadOnlyList<CompanionMemory> RetrieveMemories(string query)
+    private async Task<IReadOnlyList<CompanionMemory>> RetrieveMemoriesAsync(string query, bool extraUsed, CancellationToken token)
     {
-        try { return _memoryStore?.Retrieve(_companion.Id, query,
-            _conversation.Where(message => message.Role == "user").SkipLast(1).LastOrDefault()?.Content) ?? Array.Empty<CompanionMemory>(); }
-        catch (Exception) { return Array.Empty<CompanionMemory>(); }
+        if(_memoryStore is null) return [];
+        try
+        {
+            var previous=_conversation.Where(message=>message.Role=="user").SkipLast(1).LastOrDefault()?.Content;
+            var local=_memoryStore.Retrieve(_companion.Id,query,previous);
+            // Only try expansion when local search misses; share the one-extra-request budget.
+            if(local.Count>0 || extraUsed || !SemanticMemoryQuery.CanRequest(query) ||
+                !_memoryStore.IsSemanticEnabled(_companion.Id) ||
+                !_memoryStore.TryReserveExtraRequest(_companion.Id,semantic:true)) return local;
+            var expansion=await SemanticMemoryQuery.ExpandAsync(_provider,query,token);
+            token.ThrowIfCancellationRequested();
+            return string.IsNullOrEmpty(expansion)?local:_memoryStore.Retrieve(_companion.Id,query,previous,expansion);
+        }
+        catch(Exception) when(!token.IsCancellationRequested) { return []; }
     }
 
-    private async Task ObserveMemoryAsync(ChatHistoryMessage userMessage, CancellationToken token)
+    private async Task<bool> ObserveMemoryAsync(ChatHistoryMessage userMessage, CancellationToken token)
     {
-        if (_memoryStore is null) return;
+        if (_memoryStore is null) return false;
+        var extraUsed=false;
         try
         {
             string? evidenceJson = null;
             if (_memoryStore.IsCloudEnhancedEnabled(_companion.Id) &&
                 LocalMemoryExtractor.Extract(userMessage.Content).Count == 0 &&
                 ExperienceMemoryExtractor.ExtractUserStatement(userMessage.Content, userMessage.CreatedAtUtc).Count == 0 &&
-                CloudMemoryEvidence.CanRequest(userMessage.Content))
+                (!_memoryStore.IsOpenPreferenceEnabled(_companion.Id) || OpenPreferenceExtractor.Extract(userMessage.Content).Count==0) &&
+                CloudMemoryEvidence.CanRequest(userMessage.Content) &&
+                _memoryStore.TryReserveExtraRequest(_companion.Id,semantic:false))
             {
+                extraUsed=true;
                 var evidence = await CloudMemoryEvidence.SelectAsync(_provider, userMessage.Content, token);
                 evidenceJson = System.Text.Json.JsonSerializer.Serialize(new { evidence });
             }
@@ -126,6 +141,7 @@ public partial class ChatWindow : Window
             _memoryStore.ObserveUserMessage(_companion.Id, userMessage.Id, evidenceJson);
         }
         catch (Exception) when (!token.IsCancellationRequested) { /* Optional memory must never block chat. */ }
+        return extraUsed;
     }
 
     private PersonalityGrowthProfile? ReadGrowth()
@@ -401,13 +417,14 @@ public partial class ChatWindow : Window
         _requestCancellation = cancellation;
         try
         {
-            await ObserveMemoryAsync(userMessage, cancellation.Token);
+            var extraUsed = await ObserveMemoryAsync(userMessage, cancellation.Token);
+            var memories = await RetrieveMemoriesAsync(content, extraUsed, cancellation.Token);
             cancellation.Token.ThrowIfCancellationRequested();
             var messages = ChatContextBuilder.BuildMessages(
                 _companion,
                 _avatar,
                 _getCurrentState(),
-                _conversation, relevantMemories: RetrieveMemories(content), growth: ReadGrowth());
+                _conversation, relevantMemories: memories, growth: ReadGrowth());
 
             var result = await _provider.CompleteAsync(
                 new AiChatRequest

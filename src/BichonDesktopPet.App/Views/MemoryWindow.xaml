@@ -18,11 +18,13 @@
       <TextBlock Text="每个伙伴独立保存。开启自动记忆后，日常对话中明确表达的普通偏好可自动记录，无需手动保存。"
                  TextWrapping="Wrap" Margin="0,6,0,12" Foreground="#FF626A61"/>
     </StackPanel>
-    <StackPanel Grid.Row="1" Margin="0,0,0,12">
+    <ScrollViewer Grid.Row="1" MaxHeight="280" VerticalScrollBarVisibility="Auto" Margin="0,0,0,12"><StackPanel>
       <CheckBox x:Name="AutomaticCheckBox" Content="允许从新对话自动形成记忆（本机处理）"
                 Checked="AutomaticChanged" Unchecked="AutomaticChanged"/>
       <TextBlock Text="默认关闭；识别普通偏好、部分经历、交流习惯和已完成的对话记录。不回扫旧对话，不覆盖手动确认。"
                  TextWrapping="Wrap" Foreground="#FF626A61" Margin="0,5,0,10"/>
+      <CheckBox x:Name="OpenCheckBox" Content="允许开放词汇普通偏好（本机处理）"
+                Checked="OpenChanged" Unchecked="OpenChanged" Margin="0,0,0,6"/>
       <CheckBox x:Name="CloudCheckBox" Content="允许 Qwen 辅助识别部分复杂偏好（可选额外请求）"
                 Checked="CloudChanged" Unchecked="CloudChanged" Margin="0,0,0,4"/>
       <TextBlock Text="默认关闭，须先开启自动记忆。可能额外发送当前短消息并产生费用；最长等待约5秒，不发送记忆库或历史。只保存本机验证的原文分句。"
@@ -30,8 +32,12 @@
       <CheckBox x:Name="RetrievalCheckBox" Content="允许聊天使用相关记忆（会发送给 Qwen）"
                 Checked="RetrievalChanged" Unchecked="RetrievalChanged"/>
       <TextBlock Text="默认关闭；仅发送相关且未过期、未归档的记忆，条数随上下文预算变化。关闭不撤回已发送内容。"
+                 TextWrapping="Wrap" Foreground="#FF626A61" Margin="0,5,0,5"/>
+      <CheckBox x:Name="SemanticCheckBox" Content="允许 Qwen 查询扩展（本地检索未命中时）"
+                Checked="SemanticChanged" Unchecked="SemanticChanged"/>
+      <TextBlock Text="独立默认关闭，仅额外发送当前问题，不发送记忆库；与辅助提取共享每角色每天20次尝试、每轮最多1次。可能产生费用。开放词汇无法保证排除所有敏感词，请勿用于私人信息。"
                  TextWrapping="Wrap" Foreground="#FF626A61" Margin="0,5,0,0"/>
-    </StackPanel>
+    </StackPanel></ScrollViewer>
     <ListBox x:Name="MemoryList" Grid.Row="2" Background="#FFFBFAF7" BorderBrush="#FFE4E2DA"
              SelectionChanged="MemoryList_SelectionChanged" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
              ScrollViewer.CanContentScroll="True" VirtualizingPanel.IsVirtualizing="True"

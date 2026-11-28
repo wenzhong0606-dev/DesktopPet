@@ -515,4 +515,77 @@ public sealed class CompanionMemoryStoreTests
         Assert.AreEqual(1, _store.Retrieve(_first.Id, "还有呢？", "阅读").Count);
         Assert.AreEqual(0, _store.Retrieve(_first.Id, "天气怎么样", "阅读").Count);
     }
+
+    [TestMethod]
+    public void OpenVocabulary_RequiresIndependentConsentAndPreservesManualEntries()
+    {
+        var history=new ChatHistoryStore(_path);
+        history.Initialize();
+        var session=history.CreateSession(_first.Id);
+        long Add(string text)=>history.SaveMessage(_first.Id,session.Id,"user",text).Id;
+        _store.SetAutomaticEnabled(_first.Id,true);
+        const string statement="我最喜欢的食物是番茄炒蛋";
+        Assert.IsFalse(_store.IsOpenPreferenceEnabled(_first.Id));
+        Assert.AreEqual(0,_store.ObserveUserMessage(_first.Id,Add(statement)));
+        _store.SetOpenPreferenceEnabled(_first.Id,true);
+        Assert.AreEqual(1,_store.ObserveUserMessage(_first.Id,Add(statement)));
+        var memory=_store.GetPage(_first.Id).Single();
+        Assert.AreEqual("番茄炒蛋",memory.Topic);
+        Assert.AreEqual("open_explicit_statement",memory.Confidence);
+        Assert.IsFalse(_store.IsOpenPreferenceEnabled(_second.Id));
+        _store.Save(_first.Id,"番茄炒蛋","手动确认");
+        Assert.AreEqual(0,_store.ObserveUserMessage(_first.Id,Add("我不喜欢的食物是番茄炒蛋")));
+        Assert.AreEqual("手动确认",_store.GetPage(_first.Id).Single().Content);
+        _store.SetAutomaticEnabled(_first.Id,false);
+        _store.SetAutomaticEnabled(_first.Id,true);
+        Assert.IsFalse(_store.IsOpenPreferenceEnabled(_first.Id));
+    }
+
+    [TestMethod]
+    public void SemanticExpansion_RequiresConsentAndOnlyExtendsAutomaticOrdinaryPreferences()
+    {
+        var history=new ChatHistoryStore(_path);
+        history.Initialize();
+        var session=history.CreateSession(_first.Id);
+        _store.SetAutomaticEnabled(_first.Id,true);
+        var id=history.SaveMessage(_first.Id,session.Id,"user","我喜欢咖啡").Id;
+        Assert.AreEqual(1,_store.ObserveUserMessage(_first.Id,id));
+        _store.Save(_first.Id,"茶","手动记录");
+        _store.SetRetrievalEnabled(_first.Id,true);
+        const string query="有什么适合我的选择";
+        const string expansion="饮食 咖啡 茶";
+        Assert.AreEqual(0,_store.Retrieve(_first.Id,query,semanticExpansion:expansion).Count);
+        _store.SetSemanticEnabled(_first.Id,true);
+        Assert.AreEqual("咖啡",_store.Retrieve(_first.Id,query,semanticExpansion:expansion).Single().Topic);
+        _store.SetRetrievalEnabled(_first.Id,false);
+        _store.SetRetrievalEnabled(_first.Id,true);
+        Assert.IsFalse(_store.IsSemanticEnabled(_first.Id));
+        Assert.AreEqual(0,_store.Retrieve(_first.Id,query,semanticExpansion:expansion).Count);
+    }
+
+    [TestMethod]
+    public void ExtraRequestBudget_IsSharedPersistentScopedAndUtcDayBounded()
+    {
+        var clock=new MutableClock(new DateTimeOffset(2026,11,28,23,0,0,TimeSpan.Zero));
+        var store=new CompanionMemoryStore(_path,clock);
+        store.Initialize();
+        Assert.IsFalse(store.TryReserveExtraRequest(_first.Id,false));
+        store.SetAutomaticEnabled(_first.Id,true);
+        store.SetCloudEnhancedEnabled(_first.Id,true);
+        store.SetRetrievalEnabled(_first.Id,true);
+        store.SetSemanticEnabled(_first.Id,true);
+        for(int i=0;i<CompanionMemoryStore.DailyExtraRequestLimit;i++)
+            Assert.IsTrue(store.TryReserveExtraRequest(_first.Id,i%2==0));
+        var reopened=new CompanionMemoryStore(_path,clock);
+        reopened.Initialize();
+        Assert.IsFalse(reopened.TryReserveExtraRequest(_first.Id,true));
+        Assert.IsFalse(reopened.TryReserveExtraRequest(_first.Id,false));
+        reopened.SetAutomaticEnabled(_second.Id,true);
+        reopened.SetCloudEnhancedEnabled(_second.Id,true);
+        Assert.IsTrue(reopened.TryReserveExtraRequest(_second.Id,false));
+        clock.Now=clock.Now.AddHours(2);
+        Assert.IsTrue(reopened.TryReserveExtraRequest(_first.Id,true));
+        clock.Now=clock.Now.AddHours(-2);
+        Assert.IsFalse(reopened.TryReserveExtraRequest(_first.Id,true));
+    }
 }

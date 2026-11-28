@@ -218,3 +218,10 @@
 - Extend ordinary preference syntax, lexical relevance and shared explicit feedback recognition.
 - Add default-off, bounded Qwen JSON literal-clause selection, double consent and local validation; preserve normal chat on failure.
 - Add regression tests for opt-in, exact source evidence, unsupported text, request shape and fallback.
+
+
+## 2026-11-28 — M4-B6 second increment
+
+- Add independently authorized open-vocabulary ordinary preferences and model-assisted semantic query expansion with local-only retrieval.
+- Bound optional requests to one per turn and 20 per companion UTC day; add consent and replay-safe budget regression coverage.
+- Add fixed labeled extraction quality evaluation and reverse explicit growth feedback. No vector embeddings or unrestricted personal fact extraction.

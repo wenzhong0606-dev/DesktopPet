@@ -50,6 +50,15 @@ public sealed class CompanionMemoryStore
                 companion_id TEXT PRIMARY KEY NOT NULL REFERENCES companions(companion_id) ON DELETE CASCADE,
                 enabled INTEGER NOT NULL CHECK(enabled IN(0,1))
             );
+            CREATE TABLE IF NOT EXISTS companion_memory_advanced_preferences (
+                companion_id TEXT PRIMARY KEY NOT NULL REFERENCES companions(companion_id) ON DELETE CASCADE,
+                open_enabled INTEGER NOT NULL DEFAULT 0 CHECK(open_enabled IN(0,1)),
+                semantic_enabled INTEGER NOT NULL DEFAULT 0 CHECK(semantic_enabled IN(0,1))
+            );
+            CREATE TABLE IF NOT EXISTS companion_memory_request_budget (
+                companion_id TEXT PRIMARY KEY NOT NULL REFERENCES companions(companion_id) ON DELETE CASCADE,
+                utc_day TEXT NOT NULL, used INTEGER NOT NULL
+            );
             CREATE TABLE IF NOT EXISTS companion_memory_observation (
                 companion_id TEXT PRIMARY KEY NOT NULL,
                 last_message_id INTEGER NOT NULL,
@@ -140,14 +149,86 @@ public sealed class CompanionMemoryStore
         command.ExecuteNonQuery();
     }
 
+    public bool IsOpenPreferenceEnabled(string companionId) =>
+        IsAutomaticEnabled(companionId) && ReadFlag(companionId,
+            "SELECT open_enabled FROM companion_memory_advanced_preferences WHERE companion_id=$id;");
+    public bool IsSemanticEnabled(string companionId) =>
+        IsRetrievalEnabled(companionId) && ReadFlag(companionId,
+            "SELECT semantic_enabled FROM companion_memory_advanced_preferences WHERE companion_id=$id;");
+
+    public void SetOpenPreferenceEnabled(string companionId, bool enabled) =>
+        SetAdvanced(companionId,enabled,true);
+    public void SetSemanticEnabled(string companionId, bool enabled) =>
+        SetAdvanced(companionId,enabled,false);
+
+    private void SetAdvanced(string companionId,bool enabled,bool open)
+    {
+        var field=open?"open_enabled":"semantic_enabled";
+        var prerequisite=open?"companion_memory_automatic_preferences":"companion_memory_preferences";
+        var flag=open?"enabled":"retrieval_enabled";
+        using var connection=Open();
+        using var command=Command(connection,companionId,$"""
+            INSERT INTO companion_memory_advanced_preferences(companion_id,{field})
+            VALUES($id,CASE WHEN $enabled=1 AND EXISTS(
+                SELECT 1 FROM {prerequisite} WHERE companion_id=$id AND {flag}=1)
+                THEN 1 ELSE 0 END)
+            ON CONFLICT(companion_id) DO UPDATE SET {field}=excluded.{field};
+            """);
+        command.Parameters.AddWithValue("$enabled",enabled?1:0);
+        command.ExecuteNonQuery();
+    }
+
+    public const int DailyExtraRequestLimit=20;
+    /// <summary>Reserve an attempt before a billable request. Failed requests count too.</summary>
+    public bool TryReserveExtraRequest(string companionId, bool semantic)
+    {
+        using var connection=Open();
+        using var transaction=connection.BeginTransaction();
+        using var command=Command(connection,companionId,semantic?"""
+            INSERT INTO companion_memory_request_budget(companion_id,utc_day,used)
+            SELECT $id,$day,1 WHERE EXISTS(
+                SELECT 1 FROM companion_memory_advanced_preferences a
+                JOIN companion_memory_preferences p ON p.companion_id=a.companion_id
+                WHERE a.companion_id=$id AND a.semantic_enabled=1 AND p.retrieval_enabled=1)
+            ON CONFLICT(companion_id) DO UPDATE SET utc_day=excluded.utc_day,
+                used=CASE WHEN utc_day<excluded.utc_day THEN 1 ELSE used+1 END
+            WHERE utc_day<excluded.utc_day OR (utc_day=excluded.utc_day AND used<$limit);
+            """:"""
+            INSERT INTO companion_memory_request_budget(companion_id,utc_day,used)
+            SELECT $id,$day,1 WHERE EXISTS(
+                SELECT 1 FROM companion_memory_cloud_preferences c
+                JOIN companion_memory_automatic_preferences a ON a.companion_id=c.companion_id
+                WHERE c.companion_id=$id AND c.enabled=1 AND a.enabled=1)
+            ON CONFLICT(companion_id) DO UPDATE SET utc_day=excluded.utc_day,
+                used=CASE WHEN utc_day<excluded.utc_day THEN 1 ELSE used+1 END
+            WHERE utc_day<excluded.utc_day OR (utc_day=excluded.utc_day AND used<$limit);
+            """);
+        command.Transaction=transaction;
+        command.Parameters.AddWithValue("$day",_clock.GetUtcNow().ToString("yyyy-MM-dd",CultureInfo.InvariantCulture));
+        command.Parameters.AddWithValue("$limit",DailyExtraRequestLimit);
+        var reserved=command.ExecuteNonQuery()==1;
+        transaction.Commit();
+        return reserved;
+    }
+
     public bool IsRetrievalEnabled(string companionId) => ReadFlag(companionId,
         "SELECT retrieval_enabled FROM companion_memory_preferences WHERE companion_id=$id;");
     public bool IsAutomaticEnabled(string companionId) => ReadFlag(companionId,
         "SELECT enabled FROM companion_memory_automatic_preferences WHERE companion_id=$id;");
-    public void SetRetrievalEnabled(string companionId, bool enabled) => WriteFlag(companionId, enabled, """
-        INSERT INTO companion_memory_preferences(companion_id,retrieval_enabled) VALUES($id,$enabled)
-        ON CONFLICT(companion_id) DO UPDATE SET retrieval_enabled=excluded.retrieval_enabled;
-        """);
+    public void SetRetrievalEnabled(string companionId, bool enabled)
+    {
+        using var connection=Open();
+        using var transaction=connection.BeginTransaction();
+        using var command=Command(connection,companionId,"""
+            INSERT INTO companion_memory_preferences(companion_id,retrieval_enabled) VALUES($id,$enabled)
+            ON CONFLICT(companion_id) DO UPDATE SET retrieval_enabled=excluded.retrieval_enabled;
+            UPDATE companion_memory_advanced_preferences SET semantic_enabled=0 WHERE companion_id=$id AND $enabled=0;
+            """);
+        command.Transaction=transaction;
+        command.Parameters.AddWithValue("$enabled",enabled?1:0);
+        command.ExecuteNonQuery();
+        transaction.Commit();
+    }
     public void SetAutomaticEnabled(string companionId, bool enabled)
     {
         using var connection = Open();
@@ -156,6 +237,7 @@ public sealed class CompanionMemoryStore
             INSERT INTO companion_memory_automatic_preferences(companion_id,enabled) VALUES($id,$enabled)
             ON CONFLICT(companion_id) DO UPDATE SET enabled=excluded.enabled;
             UPDATE companion_memory_cloud_preferences SET enabled=0 WHERE companion_id=$id AND $enabled=0;
+            UPDATE companion_memory_advanced_preferences SET open_enabled=0 WHERE companion_id=$id AND $enabled=0;
             """);
         command.Transaction=transaction;
         command.Parameters.AddWithValue("$enabled", enabled ? 1 : 0);
@@ -224,6 +306,18 @@ public sealed class CompanionMemoryStore
         }
         var candidates = ExperienceMemoryExtractor.ExtractUserStatement(message, recordedAt);
         if (candidates.Count == 0) candidates = LocalMemoryExtractor.Extract(message);
+        var openVocabulary = false;
+        if(candidates.Count==0)
+        {
+            using var consent=Command(connection,companionId,
+                "SELECT open_enabled FROM companion_memory_advanced_preferences WHERE companion_id=$id;");
+            consent.Transaction=transaction;
+            if(consent.ExecuteScalar() is long enabled && enabled==1)
+            {
+                candidates=OpenPreferenceExtractor.Extract(message);
+                openVocabulary=candidates.Count>0;
+            }
+        }
         var cloudAssisted = false;
         if (candidates.Count == 0 && cloudEvidenceJson is not null)
         {
@@ -273,7 +367,7 @@ public sealed class CompanionMemoryStore
             AddMemoryParameters(command, topic, candidate.Content);
             command.Parameters.AddWithValue("$category", candidate.Category);
             command.Parameters.AddWithValue("$message", messageId);
-            command.Parameters.AddWithValue("$confidence", cloudAssisted ? "cloud_selected_literal" : "explicit_statement");
+            command.Parameters.AddWithValue("$confidence", cloudAssisted ? "cloud_selected_literal" : openVocabulary ? "open_explicit_statement" : "explicit_statement");
             command.Parameters.AddWithValue("$expiry", candidate.Category == "用户经历"
                 ? DBNull.Value : FormatUtc(now + AutomaticPreferenceLifetime));
             var changed = command.ExecuteNonQuery();
@@ -367,17 +461,21 @@ public sealed class CompanionMemoryStore
         return ReadMemories(command);
     }
 
-    public IReadOnlyList<CompanionMemory> Retrieve(string companionId, string query, string? previousUserQuery = null)
+    public IReadOnlyList<CompanionMemory> Retrieve(string companionId, string query, string? previousUserQuery = null, string? semanticExpansion = null)
     {
         if (string.IsNullOrWhiteSpace(query) || !IsRetrievalEnabled(companionId)) return [];
         // Carry context only for narrow follow-up expressions, not unrelated new questions.
         if (MemoryVocabulary.IsFollowUp(query) && !string.IsNullOrWhiteSpace(previousUserQuery))
             query += "\n" + previousUserQuery[..Math.Min(previousUserQuery.Length, 2000)];
+        if (!IsSemanticEnabled(companionId)) semanticExpansion = null;
         var now = _clock.GetUtcNow();
         using var connection = Open();
         using var command = Command(connection, companionId, $"""
             WITH ranked AS (
-                SELECT {Fields},memory_score(topic,category,$query) AS relevance,
+                SELECT {Fields},MAX(memory_score(topic,category,$query),
+                    CASE WHEN source='automatic' AND category IN ('饮食','音乐','兴趣','色彩')
+                        AND confidence IN ('explicit_statement','cloud_selected_literal','open_explicit_statement')
+                        THEN memory_score(topic,category,$expansion)* 0.65 ELSE 0 END) AS relevance,
                     ROW_NUMBER() OVER(PARTITION BY memory_key(topic)
                         ORDER BY CASE WHEN source='manual' THEN 0 ELSE 1 END,
                         source_message_id DESC,updated_at_utc DESC,topic) AS representative
@@ -390,6 +488,7 @@ public sealed class CompanionMemoryStore
                 updated_at_utc DESC,topic LIMIT $limit;
             """);
         command.Parameters.AddWithValue("$query", query);
+        command.Parameters.AddWithValue("$expansion", semanticExpansion ?? "");
         command.Parameters.AddWithValue("$now", FormatUtc(now));
         command.Parameters.AddWithValue("$limit", CandidateLimit);
         return MemoryContextBudget.Select(ReadMemories(command), now: now);

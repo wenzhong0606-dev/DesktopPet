@@ -184,4 +184,16 @@ public sealed class PersonalityGrowthStoreTests
         public DateTimeOffset Now { get; set; }=now;
         public override DateTimeOffset GetUtcNow()=>Now;
     }
+
+    [TestMethod]
+    public void Observe_OppositeExplicitEmojiFeedbackGraduallyReturnsToBaseline()
+    {
+        _store.SetEnabled(_first.Id,true);
+        ThreeDays("我希望你少用表情符号");
+        Assert.AreEqual(1,_store.Read(_first.Id).EmojiRestraint);
+        NextDay();
+        ThreeDays("我希望你适当使用表情符号");
+        Assert.AreEqual(0,_store.Read(_first.Id).EmojiRestraint);
+        Assert.AreEqual(2,_store.RecentChanges(_first.Id).Count);
+    }
 }

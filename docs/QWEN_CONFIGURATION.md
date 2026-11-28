@@ -80,3 +80,6 @@ Growth adaptation has a separate default-off consent. When enabled, normal chat 
 
 
 Optional cloud-assisted extraction: separate default-off setting under companion memory; requires automatic memory. At most one additional JSON Object request for a narrowly gated current message (160 characters, 180 output tokens, 5-second cancellation deadline), potentially billable. No memory database/history is sent for this additional request. Local validation accepts only exact, independently recognized clauses. Provider/model incompatibility or failure falls back to local processing. Ordinary requests retain their original text format. See https://www.alibabacloud.com/help/en/model-studio/qwen-structured-output .
+
+
+Optional query expansion: separately enable under companion memory after enabling retrieval. Only a short current question is sent when local retrieval misses; no stored memory is sent to the expansion request. Uses JSON Object mode, up to100 output tokens and a4-second cancellation deadline. Query expansion and auxiliary extraction share a persistent20-attempt per-companion UTC day cap and one extra attempt per turn. Failed attempts count. Real latency, token usage and billing depend on the configured provider and must be verified with live API tests. Open vocabulary preference extraction itself is local and does not require another API call.

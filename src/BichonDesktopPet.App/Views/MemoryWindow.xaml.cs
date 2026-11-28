@@ -46,8 +46,7 @@ public partial class MemoryWindow : Window
             MemoryList.ItemsSource = memories;
             RetrievalCheckBox.IsChecked = _store.IsRetrievalEnabled(_companionId);
             AutomaticCheckBox.IsChecked = _store.IsAutomaticEnabled(_companionId);
-            CloudCheckBox.IsEnabled = AutomaticCheckBox.IsChecked == true;
-            CloudCheckBox.IsChecked = _store.IsCloudEnhancedEnabled(_companionId);
+            RefreshAdvanced();
             TopicInput.Clear();
             ContentInput.Clear();
             StatusText.Text = $"已保存 {count} 条记忆。";
@@ -80,8 +79,7 @@ public partial class MemoryWindow : Window
         {
             _store.SetAutomaticEnabled(_companionId, AutomaticCheckBox.IsChecked == true);
             _refreshing = true;
-            CloudCheckBox.IsEnabled = AutomaticCheckBox.IsChecked == true;
-            CloudCheckBox.IsChecked = _store.IsCloudEnhancedEnabled(_companionId);
+            RefreshAdvanced();
             _refreshing = false;
             StatusText.Text = AutomaticCheckBox.IsChecked == true ? "已开启本地自动记忆。" : "已停止自动形成新记忆。";
         }
@@ -91,6 +89,34 @@ public partial class MemoryWindow : Window
             AutomaticCheckBox.IsChecked = AutomaticCheckBox.IsChecked != true;
             _refreshing = false;
             StatusText.Text = "保存自动记忆设置失败。";
+        }
+    }
+
+    private void RefreshAdvanced()
+    {
+        CloudCheckBox.IsEnabled=OpenCheckBox.IsEnabled=AutomaticCheckBox.IsChecked==true;
+        CloudCheckBox.IsChecked=_store.IsCloudEnhancedEnabled(_companionId);
+        OpenCheckBox.IsChecked=_store.IsOpenPreferenceEnabled(_companionId);
+        SemanticCheckBox.IsEnabled=RetrievalCheckBox.IsChecked==true;
+        SemanticCheckBox.IsChecked=_store.IsSemanticEnabled(_companionId);
+    }
+    private void OpenChanged(object sender,RoutedEventArgs e)=>ChangeAdvanced(true);
+    private void SemanticChanged(object sender,RoutedEventArgs e)=>ChangeAdvanced(false);
+    private void ChangeAdvanced(bool open)
+    {
+        if(_refreshing)return;
+        try
+        {
+            if(open)_store.SetOpenPreferenceEnabled(_companionId,OpenCheckBox.IsChecked==true);
+            else _store.SetSemanticEnabled(_companionId,SemanticCheckBox.IsChecked==true);
+            StatusText.Text="已更新可选记忆增强设置。";
+        }
+        catch(Exception) { StatusText.Text="保存增强设置失败。"; }
+        finally
+        {
+            _refreshing=true;
+            try { RefreshAdvanced(); } catch(Exception) { }
+            _refreshing=false;
         }
     }
 
@@ -117,6 +143,9 @@ public partial class MemoryWindow : Window
         try
         {
             _store.SetRetrievalEnabled(_companionId, RetrievalCheckBox.IsChecked == true);
+            _refreshing = true;
+            RefreshAdvanced();
+            _refreshing = false;
             StatusText.Text = RetrievalCheckBox.IsChecked == true ? "已启用相关记忆检索。" : "已暂停相关记忆检索。";
         }
         catch (Exception)
