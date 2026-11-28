@@ -167,3 +167,10 @@
 - Add bounded snow particles and decorative light pulsing.
 - Add tray controls, local settings persistence, and optional audio integration point.
 - Add core settings tests and Windows CI workflow.
+
+
+## 2026-11-28 — M4-B first memory increment
+
+- Add companion-scoped local memory storage, explicit management, opt-in bounded retrieval and regression tests.
+- Keep memory management available without a Qwen key; restore offline time input on chat initialization.
+- M4-A Windows acceptance remains deferred; automatic memory formation and personality growth remain subsequent work.

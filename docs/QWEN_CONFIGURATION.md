@@ -66,3 +66,8 @@ Environment variables override the corresponding values in the local settings fi
 - Requests use HTTPS.
 - If the key is absent, ordinary AI chat is marked as not configured; current-time/date/weekday questions are still answered locally without a key or cloud request.
 - M3-C introduced the provider without invoking it. M4-A now provides an explicit chat window and sends Qwen requests only after the user submits a message. Current-time/date/weekday questions are handled locally. Application startup never sends a Qwen request. Separately, city geocoding and weather requests are sent only after the user enables weather reminders; see `LOCAL_ENVIRONMENT_AND_CARE.md` for provider/privacy details.
+
+
+### M4-B memory privacy
+
+Long-term memories are stored separately in the local companion database. If the user explicitly enables memory retrieval for a companion, a cloud chat request may include at most four entries whose topics match the current user message. This is disabled by default. Turning it off stops subsequent retrieval but cannot retract prior requests or erase ordinary chat history. Memory management itself never calls Qwen.

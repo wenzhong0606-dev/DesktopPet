@@ -26,6 +26,7 @@ public partial class ChatWindow : Window
     private readonly AvatarProfile _avatar;
     private readonly Func<PetBehaviorState> _getCurrentState;
     private readonly ChatHistoryStore _historyStore;
+    private CompanionMemoryStore? _memoryStore;
     private readonly ObservableCollection<ChatHistoryMessage> _messages = [];
     private readonly List<AiChatMessage> _conversation = [];
     private CancellationTokenSource? _requestCancellation;
@@ -49,17 +50,29 @@ public partial class ChatWindow : Window
         _getCurrentState = getCurrentState ?? throw new ArgumentNullException(nameof(getCurrentState));
         _historyStore = historyStore ?? throw new ArgumentNullException(nameof(historyStore));
 
+        try
+        {
+            var memoryStore = new CompanionMemoryStore(_historyStore.DatabasePath);
+            memoryStore.Initialize();
+            _memoryStore = memoryStore;
+        }
+        catch (Exception)
+        {
+            MemoryButton.IsEnabled = false;
+            MemoryButton.ToolTip = "本机记忆数据库暂不可用";
+        }
+
         MessageList.ItemsSource = _messages;
         var petNickname = ChatWelcomeMessageBuilder.GetPrimaryNickname(avatar);
         CompanionNameText.Text = string.IsNullOrWhiteSpace(petNickname) ? "伙伴对话" : petNickname;
         Title = string.IsNullOrWhiteSpace(petNickname) ? "和伙伴聊天" : $"与{petNickname}聊天";
 
         ConnectionStatusText.Text = provider.IsConfigured
-            ? "聊天记录保存在本机；发送消息时，消息、角色人格和近期上下文会发送至 Qwen 云端处理。请勿输入敏感信息。"
-            : "当前未配置 Qwen API Key。仍可查看和管理本地聊天记录；配置密钥后即可发送消息。";
+            ? "聊天记录保存在本机；发送消息时，消息、角色人格、近期上下文及已授权的相关记忆会发送至 Qwen 云端处理。请勿输入敏感信息。"
+            : "当前未配置 Qwen API Key。可离线查询本机时间、管理聊天记录和记忆；其他对话需配置密钥。";
 
-        MessageInput.IsEnabled = provider.IsConfigured;
-        SendButton.IsEnabled = provider.IsConfigured;
+        MessageInput.IsEnabled = true;
+        SendButton.IsEnabled = true;
 
         var sessions = RefreshSessionSelector(null, selectLatestWhenMissing: true);
         if (sessions is not null)
@@ -70,6 +83,19 @@ public partial class ChatWindow : Window
         {
             StartNewConversation();
         }
+    }
+
+    private void MemoryButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_isSending || _memoryStore is null) return;
+        try { new MemoryWindow(_memoryStore, _companion.Id) { Owner = this }.ShowDialog(); }
+        catch (Exception) { ConnectionStatusText.Text = "本机记忆暂不可用，请检查数据库后重试。"; }
+    }
+
+    private IReadOnlyList<CompanionMemory> RetrieveMemories(string query)
+    {
+        try { return _memoryStore?.Retrieve(_companion.Id, query) ?? Array.Empty<CompanionMemory>(); }
+        catch (Exception) { return Array.Empty<CompanionMemory>(); }
     }
 
     private async void SendButton_Click(object sender, RoutedEventArgs e) =>
@@ -114,7 +140,7 @@ public partial class ChatWindow : Window
 
         var confirmation = System.Windows.MessageBox.Show(
             this,
-            "确定删除当前会话及其中的全部消息吗？此操作不可撤销。",
+            "确定删除当前会话及其中的全部消息吗？独立保存的长期记忆不受影响。此操作不可撤销。",
             "删除聊天会话",
             MessageBoxButton.YesNo,
             MessageBoxImage.Warning);
@@ -157,7 +183,7 @@ public partial class ChatWindow : Window
 
         var confirmation = System.Windows.MessageBox.Show(
             this,
-            "确定清空当前角色的全部聊天会话和消息吗？其他角色的聊天记录不会受到影响。此操作不可撤销。",
+            "确定清空当前角色的全部聊天会话和消息吗？长期记忆需在记忆管理中单独删除，其他角色不受影响。此操作不可撤销。",
             "清空聊天记录",
             MessageBoxButton.YesNo,
             MessageBoxImage.Warning);
@@ -337,7 +363,7 @@ public partial class ChatWindow : Window
                 _companion,
                 _avatar,
                 _getCurrentState(),
-                _conversation);
+                _conversation, relevantMemories: RetrieveMemories(content));
 
             var result = await _provider.CompleteAsync(
                 new AiChatRequest
@@ -524,6 +550,7 @@ public partial class ChatWindow : Window
     private void SetSending(bool sending)
     {
         _isSending = sending;
+        MemoryButton.IsEnabled = !sending && _memoryStore is not null;
         SendButton.IsEnabled = !sending;
         MessageInput.IsEnabled = !sending;
         SendButton.Content = sending ? "发送中…" : "发送";

@@ -73,7 +73,8 @@
       <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="270" /></Grid.ColumnDefinitions>
       <StackPanel VerticalAlignment="Center">
         <TextBlock x:Name="CompanionNameText" FontSize="23" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" />
-        <TextBlock Text="日常对话" Margin="0,4,0,0" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+        <Button x:Name="MemoryButton" Content="伙伴记忆 · 管理" HorizontalAlignment="Left"
+                Margin="0,4,0,0" Style="{StaticResource ToolbarButtonStyle}" Padding="0,4" Click="MemoryButton_Click" />
       </StackPanel>
       <TextBlock x:Name="ConnectionStatusText" Grid.Column="1" VerticalAlignment="Center"
                  HorizontalAlignment="Right" MaxWidth="260" FontSize="10.5" LineHeight="15"
