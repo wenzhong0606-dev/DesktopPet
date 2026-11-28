@@ -140,6 +140,19 @@ public static class LocalMemoryExtractor
         return results;
     }
 
+    /// <summary>Resolve only an explicit correction of one immediately preceding user preference.</summary>
+    public static IReadOnlyList<MemoryCandidate> ExtractFollowUp(string? text, string? previousUserText)
+    {
+        if (string.IsNullOrWhiteSpace(text) || text.Length > 40) return [];
+        var correction = EllipticalCorrection.Match(text.Trim().TrimEnd('。','！','!'));
+        if (!correction.Success) return [];
+        var previous = Extract(previousUserText);
+        if (previous.Count != 1) return [];
+        var item = previous[0];
+        var attitude = NormalizeAttitude(correction.Groups["attitude"].Value);
+        return [new MemoryCandidate(item.Topic, $"用户{attitude}{item.Topic}", item.Category)];
+    }
+
     private static string NormalizeAttitude(string value) => value switch
     {
         "不再喜欢" or "不喜欢" => "不喜欢",
