@@ -182,3 +182,10 @@
 - Add opt-in local automatic extraction of explicit ordinary preferences from new persisted user messages, with source, category and evidence metadata.
 - Preserve existing databases through additive migration; do not overwrite same-topic memories automatically.
 - Add regression coverage for capacity, paging, migration, consent, role isolation, extraction and conflict preservation.
+
+
+## 2026-11-28 — M4-B2 language coverage and initial M4-B3 conflict handling
+
+- Expand conservative local preference grammar, categories and coordinated/explicit correction expressions.
+- Update older automatic same-topic memories from newer user evidence; protect manual entries and advance a persisted replay cursor even on duplicates.
+- Add regression coverage for preference changes across sessions, replay after deletion, and unsupported mixed/sensitive clauses.

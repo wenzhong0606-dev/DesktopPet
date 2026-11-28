@@ -71,3 +71,5 @@ Environment variables override the corresponding values in the local settings fi
 ### M4-B memory privacy
 
 Long-term memories are stored separately in the local companion database. If the user explicitly enables memory retrieval for a companion, a cloud chat request may include at most four entries whose topics or categories match the current user message. This is disabled by default. Turning it off stops subsequent retrieval but cannot retract prior requests or erase ordinary chat history. Memory management itself never calls Qwen. A separate opt-in enables local automatic extraction of explicit ordinary preferences from new user messages; it does not call Qwen, does not scan prior history and does not enable cloud retrieval. Existing chat-history transmission is unchanged.
+
+Automatic same-topic memories can now be updated by newer explicit user statements; user-confirmed manual entries are not overwritten. Automatic extraction still runs locally and never triggers a separate Qwen call.

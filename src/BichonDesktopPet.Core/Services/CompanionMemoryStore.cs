@@ -43,6 +43,11 @@ public sealed class CompanionMemoryStore
                 enabled INTEGER NOT NULL CHECK(enabled IN (0,1)),
                 FOREIGN KEY(companion_id) REFERENCES companions(companion_id) ON DELETE CASCADE
             );
+            CREATE TABLE IF NOT EXISTS companion_memory_observation (
+                companion_id TEXT PRIMARY KEY NOT NULL,
+                last_message_id INTEGER NOT NULL,
+                FOREIGN KEY(companion_id) REFERENCES companions(companion_id) ON DELETE CASCADE
+            );
             CREATE TABLE IF NOT EXISTS companion_memories (
                 companion_id TEXT NOT NULL,
                 topic TEXT COLLATE NOCASE NOT NULL,
@@ -72,6 +77,14 @@ public sealed class CompanionMemoryStore
             command.CommandText = $"ALTER TABLE companion_memories ADD COLUMN {name} {definition};";
             command.ExecuteNonQuery();
         }
+        // Preserve ordering when upgrading from B2's existing automatic source IDs.
+        command.CommandText = """
+            INSERT INTO companion_memory_observation(companion_id,last_message_id)
+            SELECT companion_id,MAX(source_message_id) FROM companion_memories
+            WHERE source='automatic' AND source_message_id IS NOT NULL GROUP BY companion_id
+            ON CONFLICT(companion_id) DO UPDATE SET last_message_id=MAX(last_message_id,excluded.last_message_id);
+            """;
+        command.ExecuteNonQuery();
         transaction.Commit();
     }
 
@@ -124,7 +137,7 @@ public sealed class CompanionMemoryStore
     }
 
     /// <summary>Read the persisted user message, never an assistant reply or old history scan.
-    /// A same-topic conflict is left unchanged until explicit user correction or a later policy.</summary>
+    /// Newer explicit statements may replace automatic entries, but never manual confirmations.</summary>
     public int ObserveUserMessage(string companionId, long messageId)
     {
         if (messageId <= 0 || !IsAutomaticEnabled(companionId)) return 0;
@@ -133,18 +146,26 @@ public sealed class CompanionMemoryStore
         using var lookup = Command(connection, companionId, """
             SELECT m.content FROM chat_messages m JOIN chat_sessions s ON s.session_id=m.session_id
             WHERE m.message_id=$message AND m.role='user' AND s.companion_id=$id
-                AND EXISTS(SELECT 1 FROM companion_memory_automatic_preferences WHERE companion_id=$id AND enabled=1);
+                AND EXISTS(SELECT 1 FROM companion_memory_automatic_preferences WHERE companion_id=$id AND enabled=1)
+                AND $message > COALESCE((SELECT last_message_id FROM companion_memory_observation WHERE companion_id=$id),0);
             """);
         lookup.Transaction = transaction;
         lookup.Parameters.AddWithValue("$message", messageId);
-        var candidates = LocalMemoryExtractor.Extract(lookup.ExecuteScalar() as string);
+        if (lookup.ExecuteScalar() is not string message) return 0;
+        var candidates = LocalMemoryExtractor.Extract(message);
         var saved = 0;
         foreach (var candidate in candidates)
         {
             using var command = Command(connection, companionId, """
                 INSERT INTO companion_memories(companion_id,topic,content,updated_at_utc,category,source,source_message_id,confidence)
                 VALUES($id,$topic,$content,$now,$category,'automatic',$message,'explicit_statement')
-                ON CONFLICT(companion_id,topic) DO NOTHING;
+                ON CONFLICT(companion_id,topic) DO UPDATE SET
+                    content=excluded.content,updated_at_utc=excluded.updated_at_utc,
+                    category=excluded.category,source_message_id=excluded.source_message_id,
+                    confidence=excluded.confidence
+                WHERE companion_memories.source='automatic'
+                    AND COALESCE(companion_memories.source_message_id,0)<excluded.source_message_id
+                    AND companion_memories.content<>excluded.content;
                 """);
             command.Transaction = transaction;
             AddMemoryParameters(command, candidate.Topic, candidate.Content);
@@ -152,6 +173,15 @@ public sealed class CompanionMemoryStore
             command.Parameters.AddWithValue("$message", messageId);
             saved += command.ExecuteNonQuery();
         }
+        // Advance even for an unrecognized or duplicate message, so a replay cannot
+        // revive deleted entries or roll a preference back to older evidence.
+        using var cursor = Command(connection, companionId, """
+            INSERT INTO companion_memory_observation(companion_id,last_message_id) VALUES($id,$message)
+            ON CONFLICT(companion_id) DO UPDATE SET last_message_id=MAX(last_message_id,excluded.last_message_id);
+            """);
+        cursor.Transaction = transaction;
+        cursor.Parameters.AddWithValue("$message", messageId);
+        cursor.ExecuteNonQuery();
         transaction.Commit();
         return saved;
     }

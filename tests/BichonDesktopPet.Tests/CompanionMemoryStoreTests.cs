@@ -154,7 +154,7 @@ public sealed class CompanionMemoryStoreTests
     }
 
     [TestMethod]
-    public void Observe_DoesNotOverwriteManualOrConflictingMemory()
+    public void Observe_ProtectsManualMemoryAndUpdatesNewerAutomaticPreference()
     {
         var history = new ChatHistoryStore(_path);
         history.Initialize();
@@ -167,7 +167,12 @@ public sealed class CompanionMemoryStoreTests
         var second = history.SaveMessage(_first.Id, session.Id, "user", "我喜欢看书");
         Assert.AreEqual(1, _store.ObserveUserMessage(_first.Id, second.Id));
         var third = history.SaveMessage(_first.Id, session.Id, "user", "我不喜欢看书");
-        Assert.AreEqual(0, _store.ObserveUserMessage(_first.Id, third.Id));
+        Assert.AreEqual(1, _store.ObserveUserMessage(_first.Id, third.Id));
+        var automatic = _store.GetPage(_first.Id).Single(m => m.Topic == "看书");
+        Assert.AreEqual("用户不喜欢看书", automatic.Content);
+        Assert.AreEqual(third.Id, automatic.SourceMessageId.GetValueOrDefault());
+        Assert.AreEqual(0, _store.ObserveUserMessage(_first.Id, second.Id));
+        Assert.AreEqual("用户不喜欢看书", _store.GetPage(_first.Id).Single(m => m.Topic == "看书").Content);
         _store.Save(_first.Id, "看书", "现在不喜欢看书");
         var updated = _store.GetPage(_first.Id).Single(m => m.Topic == "看书");
         Assert.AreEqual("manual", updated.Source);
@@ -200,5 +205,46 @@ public sealed class CompanionMemoryStoreTests
         Assert.AreEqual("manual", memory.Source);
         Assert.AreEqual("user_confirmed", memory.Confidence);
         Assert.IsNull(memory.SourceMessageId);
+    }
+    [TestMethod]
+    public void Observe_DuplicateAdvancesCursorAndDeletionCannotBeUndoneByReplay()
+    {
+        var history = new ChatHistoryStore(_path);
+        history.Initialize();
+        var session = history.CreateSession(_first.Id);
+        _store.SetAutomaticEnabled(_first.Id, true);
+        var first = history.SaveMessage(_first.Id, session.Id, "user", "我喜欢咖啡");
+        var duplicate = history.SaveMessage(_first.Id, session.Id, "user", "我喜欢咖啡");
+        Assert.AreEqual(1, _store.ObserveUserMessage(_first.Id, first.Id));
+        Assert.AreEqual(0, _store.ObserveUserMessage(_first.Id, duplicate.Id));
+        Assert.IsTrue(_store.Delete(_first.Id, "咖啡"));
+        var reopened = new CompanionMemoryStore(_path);
+        reopened.Initialize();
+        Assert.AreEqual(0, reopened.ObserveUserMessage(_first.Id, first.Id));
+        Assert.AreEqual(0, reopened.ObserveUserMessage(_first.Id, duplicate.Id));
+        Assert.AreEqual(0L, reopened.Count(_first.Id));
+        var later = history.SaveMessage(_first.Id, session.Id, "user", "我现在喜欢咖啡");
+        Assert.AreEqual(1, reopened.ObserveUserMessage(_first.Id, later.Id));
+    }
+
+    [TestMethod]
+    public void Observe_ExplicitChangeAcrossSessionsIsPersistedAndRetrieved()
+    {
+        var history = new ChatHistoryStore(_path);
+        history.Initialize();
+        _store.SetAutomaticEnabled(_first.Id, true);
+        _store.SetRetrievalEnabled(_first.Id, true);
+        var session = history.CreateSession(_first.Id);
+        var first = history.SaveMessage(_first.Id, session.Id, "user", "我喜欢咖啡");
+        Assert.AreEqual(1, _store.ObserveUserMessage(_first.Id, first.Id));
+        var nextSession = history.CreateSession(_first.Id);
+        var changed = history.SaveMessage(_first.Id, nextSession.Id, "user", "我以前喜欢咖啡，现在不喜欢了");
+        Assert.AreEqual(1, _store.ObserveUserMessage(_first.Id, changed.Id));
+        var reopened = new CompanionMemoryStore(_path);
+        reopened.Initialize();
+        var saved = reopened.Retrieve(_first.Id, "喝点什么").Single();
+        Assert.AreEqual("用户不喜欢咖啡", saved.Content);
+        Assert.AreEqual(changed.Id, saved.SourceMessageId.GetValueOrDefault());
+        Assert.AreEqual(1L, reopened.Count(_first.Id));
     }
 }
