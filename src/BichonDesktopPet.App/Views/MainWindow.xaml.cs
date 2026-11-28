@@ -28,6 +28,9 @@ public partial class MainWindow : Window
     private readonly SnowAnimationService _snowAnimation;
     private readonly AudioService _audioService = new();
     private readonly PetBehaviorEngine _behaviorEngine = new();
+    private readonly ProactiveCarePolicy _carePolicy = new();
+    private readonly CompanionMemoryStore _careMemoryStore;
+    private bool _careMemoryReady;
     private readonly ActivityRhythmEngine _activityRhythmEngine = new();
     private readonly WindowsActivityMonitor _activityMonitor = new();
     private DateTimeOffset _lastActivitySampleAt = DateTimeOffset.MinValue;
@@ -71,6 +74,7 @@ public partial class MainWindow : Window
         var companionDatabasePath = Path.Combine(userDataDirectory, "companions.db");
         _companionIdentityStore = new CompanionIdentityStore(companionDatabasePath);
         _chatHistoryStore = new ChatHistoryStore(companionDatabasePath);
+        _careMemoryStore = new CompanionMemoryStore(companionDatabasePath);
         _careHttpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(35) };
         _ipLocationService = new IpLocationService(_careHttpClient);
         _weatherService = new OpenMeteoWeatherService(_careHttpClient);
@@ -110,6 +114,8 @@ public partial class MainWindow : Window
         }
 
         InitializeCompanionIdentities();
+        try { _careMemoryStore.Initialize(); _careMemoryReady = true; }
+        catch (Exception exception) { AppLogger.Log("Care memory initialization failed.", exception); }
         Topmost = _settings.AlwaysOnTop;
 
         var workArea = SystemParameters.WorkArea;
@@ -329,10 +335,10 @@ public partial class MainWindow : Window
                 if (idleDuration is { } idle)
                 {
                     var reminder = _activityRhythmEngine.Observe(localNow, idle);
-                    if (reminder?.Type == CareReminderType.TakeBreak)
+                    if (reminder?.Type == CareReminderType.TakeBreak && TryDeliverCare(reminder.Type, localNow, out var context))
                     {
                         var avatar = _avatarCatalogService.GetAvatar(_settings.ActiveAvatarId);
-                        ShowCareReminder(CareReminderMessageBuilder.BuildBreakReminder(avatar, ReadActiveGrowth()), "桌面伙伴 · 休息提醒");
+                        ShowCareReminder(context.Concise ? "起来活动一下，休息眼睛吧。" : CareReminderMessageBuilder.BuildBreakReminder(avatar, ReadActiveGrowth()), "桌面伙伴 · 休息提醒");
                     }
                 }
             }
@@ -345,6 +351,37 @@ public partial class MainWindow : Window
         {
             _ = RefreshWeatherAsync(forceLocationRefresh: false);
         }
+    }
+
+    private bool TryDeliverCare(CareReminderType type, DateTimeOffset now, out CareContext context, bool mark = true)
+    {
+        var idle = _settings.ActivityAwarenessEnabled ? _activityMonitor.GetIdleDuration() : null;
+        bool? active = idle is { } duration ? duration < ActivityRhythmEngine.ActiveIdleThreshold : null;
+        bool quiet = false, busy = false, reduce = false, reduceBreaks = false, concise = false;
+        try
+        {
+            if (_careMemoryReady && _activeCompanion is { } companion &&
+                _careMemoryStore.IsAutomaticEnabled(companion.Id) && _careMemoryStore.IsRetrievalEnabled(companion.Id))
+            {
+                foreach (var memory in _careMemoryStore.Retrieve(companion.Id, "提醒 打扰 忙"))
+                {
+                    quiet |= memory.Topic == "关怀·临时免打扰" && memory.Content == "用户要求暂时不要主动打扰";
+                    busy |= memory.Topic == "状态·忙碌自述" && (memory.Content.Contains("很忙") || memory.Content.Contains("有点忙"));
+                    reduce |= memory.Topic == "关怀·提醒频率" && memory.Content == "用户希望减少主动提醒";
+                    reduceBreaks |= memory.Topic == "关怀·休息提醒" && memory.Content == "用户希望减少休息提醒";
+                    concise |= memory.Topic == "关怀·提醒方式" && memory.Content == "用户希望提醒简短";
+                }
+            }
+        }
+        catch (Exception exception)
+        {
+            AppLogger.Log("Care context retrieval failed.", exception);
+            quiet = true;
+        }
+        context = new CareContext(now, _chatWindow is { IsVisible: true }, active, quiet, busy, reduce, reduceBreaks, concise);
+        if (_allowExit || !_carePolicy.CanDeliver(type, context)) return false;
+        if (mark) _carePolicy.MarkDelivered(now);
+        return true;
     }
 
     private PersonalityGrowthProfile? ReadActiveGrowth()
@@ -406,12 +443,13 @@ public partial class MainWindow : Window
             var now = DateTimeOffset.UtcNow;
             _lastWeatherRefreshAt = now;
             var alert = _weatherReminderPolicy.Evaluate(snapshot, now);
-            if (alert is null || !TryMarkWeatherReminder(alert.Type, now))
+            if (alert is null || !TryDeliverCare(alert.Type, now, out _, mark: false) || !TryMarkWeatherReminder(alert.Type, now))
             {
                 return;
             }
 
             var avatar = _avatarCatalogService.GetAvatar(_settings.ActiveAvatarId);
+            _carePolicy.MarkDelivered(now);
             ShowCareReminder(
                 CareReminderMessageBuilder.BuildWeatherReminder(avatar, location, alert, ReadActiveGrowth()),
                 "桌面伙伴 · 天气提醒");
