@@ -18,7 +18,7 @@ public static class LocalMemoryExtractor
         ["披萨"]="饮食", ["巧克力"]="饮食", ["苹果"]="饮食", ["草莓"]="饮食",
         ["爵士乐"]="音乐", ["爵士"]="音乐", ["古典音乐"]="音乐", ["摇滚乐"]="音乐",
         ["流行音乐"]="音乐", ["轻音乐"]="音乐", ["钢琴曲"]="音乐",
-        ["阅读"]="兴趣", ["看书"]="兴趣", ["画画"]="兴趣", ["摄影"]="兴趣",
+        ["阅读"]="兴趣", ["看书"]="兴趣", ["读书"]="兴趣", ["绘画"]="兴趣", ["骑自行车"]="兴趣", ["拍照"]="兴趣", ["画画"]="兴趣", ["摄影"]="兴趣",
         ["跑步"]="兴趣", ["散步"]="兴趣", ["游泳"]="兴趣", ["骑行"]="兴趣",
         ["打羽毛球"]="兴趣", ["打篮球"]="兴趣", ["游戏"]="兴趣", ["旅行"]="兴趣",
         ["猫"]="兴趣", ["狗"]="兴趣", ["猫咪"]="兴趣", ["小狗"]="兴趣",
@@ -131,12 +131,12 @@ public static class LocalMemoryExtractor
     {
         item = input;
         if (KnownTopics.TryGetValue(item, out var direct))
-        { category = direct; return true; }
+        { category = direct; item = MemoryVocabulary.CanonicalTopic(item); return true; }
         if (item.Length >= 2 && "喝吃听看".Contains(item[0]))
         {
             item = item[1..];
             if (KnownTopics.TryGetValue(item, out var stripped))
-            { category = stripped; return true; }
+            { category = stripped; item = MemoryVocabulary.CanonicalTopic(item); return true; }
         }
         category = "";
         return false;

@@ -13,12 +13,15 @@ public sealed class CompanionMemoryStore
     public const int MaximumPageSize = 100;
     public const int MaximumTopicCharacters = 40;
     public const int MaximumContentCharacters = 200;
-    public const int MaximumRetrievedMemories = 4;
+    public static readonly TimeSpan AutomaticPreferenceLifetime = TimeSpan.FromDays(180);
+    private const int CandidateLimit = 48;
+    private readonly TimeProvider _clock;
     private readonly string _connectionString;
-    private const string Fields = "topic,content,updated_at_utc,category,source,source_message_id,confidence";
+    private const string Fields = "topic,content,updated_at_utc,category,source,source_message_id,confidence,important,archived,expires_at_utc";
 
-    public CompanionMemoryStore(string databasePath)
+    public CompanionMemoryStore(string databasePath, TimeProvider? clock = null)
     {
+        _clock = clock ?? TimeProvider.System;
         _connectionString = new SqliteConnectionStringBuilder
         {
             DataSource = Path.GetFullPath(databasePath), Mode = SqliteOpenMode.ReadWrite,
@@ -70,11 +73,33 @@ public sealed class CompanionMemoryStore
             ("category", "TEXT NOT NULL DEFAULT '未分类'"),
             ("source", "TEXT NOT NULL DEFAULT 'manual'"),
             ("source_message_id", "INTEGER"),
-            ("confidence", "TEXT NOT NULL DEFAULT 'user_confirmed'")
+            ("confidence", "TEXT NOT NULL DEFAULT 'user_confirmed'"),
+            ("important", "INTEGER NOT NULL DEFAULT 0"),
+            ("archived", "INTEGER NOT NULL DEFAULT 0"),
+            ("expires_at_utc", "TEXT"),
+            ("expiry_custom", "INTEGER NOT NULL DEFAULT 0")
         })
         {
             if (columns.Contains(name)) continue;
             command.CommandText = $"ALTER TABLE companion_memories ADD COLUMN {name} {definition};";
+            command.ExecuteNonQuery();
+        }
+        // A newly introduced archive column permits a non-destructive migration of
+        // legacy automatic synonyms. Never silently merge two manual confirmations.
+        if (!columns.Contains("archived"))
+        {
+            command.CommandText = """
+                UPDATE companion_memories AS m SET archived=1
+                WHERE m.source='automatic' AND EXISTS(
+                    SELECT 1 FROM companion_memories AS other
+                    WHERE other.companion_id=m.companion_id AND other.topic<>m.topic
+                    AND memory_key(other.topic)=memory_key(m.topic)
+                    AND (other.source='manual' OR
+                         (other.source='automatic' AND
+                          (COALESCE(other.source_message_id,0)>COALESCE(m.source_message_id,0) OR
+                           (COALESCE(other.source_message_id,0)=COALESCE(m.source_message_id,0)
+                            AND other.topic<m.topic)))));
+                """;
             command.ExecuteNonQuery();
         }
         // Preserve ordering when upgrading from B2's existing automatic source IDs.
@@ -130,7 +155,8 @@ public sealed class CompanionMemoryStore
             VALUES($id,$topic,$content,$now,'manual','user_confirmed')
             ON CONFLICT(companion_id,topic) DO UPDATE SET content=excluded.content,
                 updated_at_utc=excluded.updated_at_utc,source='manual',source_message_id=NULL,
-                confidence='user_confirmed';
+                confidence='user_confirmed',
+                expires_at_utc=CASE WHEN expiry_custom=1 THEN expires_at_utc ELSE NULL END;
             """);
         AddMemoryParameters(command, topic, content);
         command.ExecuteNonQuery();
@@ -156,22 +182,42 @@ public sealed class CompanionMemoryStore
         var saved = 0;
         foreach (var candidate in candidates)
         {
+            // A legacy alias can already exist. Preserve its displayed topic and
+            // manual choices instead of creating a new synonymous record.
+            using var match = Command(connection, companionId, $"""
+                SELECT {Fields} FROM companion_memories WHERE companion_id=$id
+                    AND memory_key(topic)=memory_key($topic)
+                ORDER BY CASE WHEN source='manual' THEN 0 ELSE 1 END,
+                    source_message_id DESC,updated_at_utc DESC,topic LIMIT 1;
+                """);
+            match.Transaction = transaction;
+            match.Parameters.AddWithValue("$topic", candidate.Topic);
+            var matches = ReadMemories(match);
+            var existing = matches.Count == 0 ? null : matches[0];
+            if (existing is { Source: "manual" } || existing is { Archived: true }) continue;
+            var topic = existing?.Topic ?? candidate.Topic;
+            var now = _clock.GetUtcNow();
             using var command = Command(connection, companionId, """
-                INSERT INTO companion_memories(companion_id,topic,content,updated_at_utc,category,source,source_message_id,confidence)
-                VALUES($id,$topic,$content,$now,$category,'automatic',$message,'explicit_statement')
+                INSERT INTO companion_memories(companion_id,topic,content,updated_at_utc,category,source,source_message_id,confidence,expires_at_utc)
+                VALUES($id,$topic,$content,$now,$category,'automatic',$message,'explicit_statement',$expiry)
                 ON CONFLICT(companion_id,topic) DO UPDATE SET
                     content=excluded.content,updated_at_utc=excluded.updated_at_utc,
                     category=excluded.category,source_message_id=excluded.source_message_id,
-                    confidence=excluded.confidence
-                WHERE companion_memories.source='automatic'
-                    AND COALESCE(companion_memories.source_message_id,0)<excluded.source_message_id
-                    AND companion_memories.content<>excluded.content;
+                    confidence=excluded.confidence,
+                    expires_at_utc=CASE WHEN companion_memories.expiry_custom=1 THEN companion_memories.expires_at_utc
+                        ELSE excluded.expires_at_utc END
+                WHERE companion_memories.source='automatic' AND companion_memories.archived=0
+                    AND COALESCE(companion_memories.source_message_id,0)<excluded.source_message_id;
                 """);
             command.Transaction = transaction;
-            AddMemoryParameters(command, candidate.Topic, candidate.Content);
+            AddMemoryParameters(command, topic, candidate.Content);
             command.Parameters.AddWithValue("$category", candidate.Category);
             command.Parameters.AddWithValue("$message", messageId);
-            saved += command.ExecuteNonQuery();
+            command.Parameters.AddWithValue("$expiry", FormatUtc(now + AutomaticPreferenceLifetime));
+            var changed = command.ExecuteNonQuery();
+            // Reaffirmations refresh evidence and expiry but are not new or changed facts.
+            if (existing is null || existing.Content != candidate.Content || !existing.IsAvailableAt(now))
+                saved += changed;
         }
         // Advance even for an unrecognized or duplicate message, so a replay cannot
         // revive deleted entries or roll a preference back to older evidence.
@@ -209,25 +255,52 @@ public sealed class CompanionMemoryStore
     public IReadOnlyList<CompanionMemory> Retrieve(string companionId, string query)
     {
         if (string.IsNullOrWhiteSpace(query) || !IsRetrievalEnabled(companionId)) return [];
-        // Small, deterministic category hints; semantic retrieval is a later increment.
-        var categoryHint = query.Contains("吃什么", StringComparison.Ordinal) ||
-            query.Contains("喝什么", StringComparison.Ordinal) ||
-            query.Contains("喝点什么", StringComparison.Ordinal) ||
-            query.Contains("吃点什么", StringComparison.Ordinal) ? "饮食" :
-            query.Contains("听什么音乐", StringComparison.Ordinal) ||
-            query.Contains("推荐音乐", StringComparison.Ordinal) ? "音乐" : "";
+        var now = _clock.GetUtcNow();
         using var connection = Open();
         using var command = Command(connection, companionId, $"""
-            SELECT {Fields} FROM companion_memories WHERE companion_id=$id AND
-                (instr(lower($query),lower(topic))>0 OR
-                 (category<>'未分类' AND (instr($query,category)>0 OR category=$hint)))
-            ORDER BY CASE WHEN instr(lower($query),lower(topic))>0 THEN 0 ELSE 1 END,
-                length(topic) DESC,updated_at_utc DESC,topic LIMIT $limit;
+            WITH ranked AS (
+                SELECT {Fields},memory_score(topic,category,$query) AS relevance,
+                    ROW_NUMBER() OVER(PARTITION BY memory_key(topic)
+                        ORDER BY CASE WHEN source='manual' THEN 0 ELSE 1 END,
+                        source_message_id DESC,updated_at_utc DESC,topic) AS representative
+                FROM companion_memories
+                WHERE companion_id=$id
+            )
+            SELECT {Fields} FROM ranked WHERE representative=1 AND relevance>0 AND archived=0
+                AND (expires_at_utc IS NULL OR expires_at_utc>$now)
+            ORDER BY relevance + CASE WHEN important=1 THEN 15 ELSE 0 END DESC,
+                updated_at_utc DESC,topic LIMIT $limit;
             """);
         command.Parameters.AddWithValue("$query", query);
-        command.Parameters.AddWithValue("$hint", categoryHint);
-        command.Parameters.AddWithValue("$limit", MaximumRetrievedMemories);
-        return ReadMemories(command);
+        command.Parameters.AddWithValue("$now", FormatUtc(now));
+        command.Parameters.AddWithValue("$limit", CandidateLimit);
+        return MemoryContextBudget.Select(ReadMemories(command), now: now);
+    }
+
+    public bool SetImportant(string companionId, string topic, bool important) =>
+        SetMetadata(companionId, topic, "UPDATE companion_memories SET important=$value WHERE companion_id=$id AND topic=$topic;",
+            important ? 1 : 0);
+
+    public bool SetArchived(string companionId, string topic, bool archived) =>
+        SetMetadata(companionId, topic, """
+            UPDATE companion_memories SET archived=$value,
+                expires_at_utc=CASE WHEN $value=0 THEN NULL ELSE expires_at_utc END,
+                expiry_custom=CASE WHEN $value=0 THEN 1 ELSE expiry_custom END
+            WHERE companion_id=$id AND topic=$topic;
+            """, archived ? 1 : 0);
+
+    public bool SetExpiry(string companionId, string topic, DateTimeOffset? expiry) =>
+        SetMetadata(companionId, topic,
+            "UPDATE companion_memories SET expires_at_utc=$value,expiry_custom=1 WHERE companion_id=$id AND topic=$topic;",
+            expiry is { } value ? FormatUtc(value) : DBNull.Value);
+
+    private bool SetMetadata(string companionId, string topic, string sql, object value)
+    {
+        using var connection = Open();
+        using var command = Command(connection, companionId, sql);
+        command.Parameters.AddWithValue("$topic", topic);
+        command.Parameters.AddWithValue("$value", value);
+        return command.ExecuteNonQuery() > 0;
     }
 
     private static IReadOnlyList<CompanionMemory> ReadMemories(SqliteCommand command)
@@ -237,7 +310,8 @@ public sealed class CompanionMemoryStore
         while (reader.Read())
             memories.Add(new CompanionMemory(reader.GetString(0), reader.GetString(1),
                 DateTimeOffset.Parse(reader.GetString(2), CultureInfo.InvariantCulture),
-                reader.GetString(3), reader.GetString(4), reader.IsDBNull(5) ? null : reader.GetInt64(5), reader.GetString(6)));
+                reader.GetString(3), reader.GetString(4), reader.IsDBNull(5) ? null : reader.GetInt64(5), reader.GetString(6), reader.GetInt64(7) != 0, reader.GetInt64(8) != 0,
+                reader.IsDBNull(9) ? null : DateTimeOffset.Parse(reader.GetString(9), CultureInfo.InvariantCulture)));
         return memories;
     }
 
@@ -258,17 +332,26 @@ public sealed class CompanionMemoryStore
         return command.ExecuteNonQuery();
     }
 
-    private static void AddMemoryParameters(SqliteCommand command, string topic, string content)
+    private void AddMemoryParameters(SqliteCommand command, string topic, string content)
     {
         command.Parameters.AddWithValue("$topic", topic);
         command.Parameters.AddWithValue("$content", content);
-        command.Parameters.AddWithValue("$now", DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture));
+        command.Parameters.AddWithValue("$now", FormatUtc(_clock.GetUtcNow()));
     }
+
+    private static string FormatUtc(DateTimeOffset timestamp) =>
+        timestamp.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture);
 
     private SqliteConnection Open()
     {
         var connection = new SqliteConnection(_connectionString);
-        try { connection.Open(); return connection; }
+        try
+        {
+            connection.Open();
+            connection.CreateFunction<string, string>("memory_key", MemoryVocabulary.CanonicalTopic, isDeterministic: true);
+            connection.CreateFunction<string, string, string, int>("memory_score", MemoryVocabulary.Relevance, isDeterministic: true);
+            return connection;
+        }
         catch { connection.Dispose(); throw; }
     }
 

@@ -189,3 +189,11 @@
 - Expand conservative local preference grammar, categories and coordinated/explicit correction expressions.
 - Update older automatic same-topic memories from newer user evidence; protect manual entries and advance a persisted replay cursor even on duplicates.
 - Add regression coverage for preference changes across sessions, replay after deletion, and unsupported mixed/sensitive clauses.
+
+
+## 2026-11-28 — M4-B3 smart memory management increment
+
+- Canonicalize finite synonym groups; migrate legacy duplicate automatic entries into reversible archives without deleting original rows or overriding manual confirmations.
+- Add expiry metadata, default 180-day lifetime for new automatic preferences, reaffirmation renewal, explicit expiry controls and archive/restore.
+- Rank relevant memories using topic/alias/category/intent scores and bounded importance bonus; dynamically select JSON payload under 2,400 UTF-8 bytes and a 12-entry ceiling instead of a fixed four.
+- Add regression tests for alias migration, expiry, archive, consent-preserving scoped retrieval, importance ranking and serialized budget.

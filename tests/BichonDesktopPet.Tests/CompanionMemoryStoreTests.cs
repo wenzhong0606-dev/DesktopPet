@@ -90,7 +90,7 @@ public sealed class CompanionMemoryStoreTests
             _store.Save(_first.Id, $"主题{index}", $"内容{index}");
         _store.SetRetrievalEnabled(_first.Id, true);
         var relevant = _store.Retrieve(_first.Id, "主题0 主题1 主题2 主题3 主题4 主题5");
-        Assert.AreEqual(4, relevant.Count);
+        Assert.AreEqual(6, relevant.Count);
         var messages = ChatContextBuilder.BuildMessages(_first, new AvatarProfile(),
             PetBehaviorState.Idle, [new AiChatMessage("user", "主题")], relevantMemories: relevant);
         StringAssert.Contains(messages[0].Content, "相关用户记忆");
@@ -246,5 +246,137 @@ public sealed class CompanionMemoryStoreTests
         Assert.AreEqual("用户不喜欢咖啡", saved.Content);
         Assert.AreEqual(changed.Id, saved.SourceMessageId.GetValueOrDefault());
         Assert.AreEqual(1L, reopened.Count(_first.Id));
+    }
+
+    [TestMethod]
+    public void Observe_SynonymsShareOneAutomaticPreferenceAndManualAliasIsProtected()
+    {
+        var history = new ChatHistoryStore(_path);
+        history.Initialize();
+        var session = history.CreateSession(_first.Id);
+        _store.SetAutomaticEnabled(_first.Id, true);
+        _store.SetRetrievalEnabled(_first.Id, true);
+        var first = history.SaveMessage(_first.Id, session.Id, "user", "我喜欢阅读");
+        var second = history.SaveMessage(_first.Id, session.Id, "user", "我现在不喜欢读书");
+        Assert.AreEqual(1, _store.ObserveUserMessage(_first.Id, first.Id));
+        Assert.AreEqual(1, _store.ObserveUserMessage(_first.Id, second.Id));
+        Assert.AreEqual(1L, _store.Count(_first.Id));
+        Assert.AreEqual("用户不喜欢看书", _store.Retrieve(_first.Id, "阅读").Single().Content);
+        _store.Save(_first.Id, "绘画", "手动确认：喜欢绘画");
+        var third = history.SaveMessage(_first.Id, session.Id, "user", "我不喜欢画画");
+        Assert.AreEqual(0, _store.ObserveUserMessage(_first.Id, third.Id));
+        Assert.AreEqual("手动确认：喜欢绘画", _store.Retrieve(_first.Id, "画画").Single().Content);
+        Assert.AreEqual(2L, _store.Count(_first.Id));
+    }
+
+    [TestMethod]
+    public void Initialize_ArchivesLegacyAutomaticAliasesWithoutDeletingManualRecords()
+    {
+        using (var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={_path};Pooling=False"))
+        {
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = """
+                DROP TABLE companion_memories;
+                CREATE TABLE companion_memories(
+                    companion_id TEXT NOT NULL,topic TEXT COLLATE NOCASE NOT NULL,content TEXT NOT NULL,
+                    updated_at_utc TEXT NOT NULL,category TEXT NOT NULL,source TEXT NOT NULL,
+                    source_message_id INTEGER,confidence TEXT NOT NULL,PRIMARY KEY(companion_id,topic));
+                INSERT INTO companion_memories VALUES
+                    ($id,'阅读','用户喜欢阅读','2026-11-28T10:00:00.0000000+00:00','兴趣','automatic',1,'explicit_statement'),
+                    ($id,'看书','用户不喜欢看书','2026-11-28T11:00:00.0000000+00:00','兴趣','automatic',2,'explicit_statement'),
+                    ($id,'绘画','手动确认','2026-11-28T10:00:00.0000000+00:00','兴趣','manual',NULL,'user_confirmed'),
+                    ($id,'画画','自动记录','2026-11-28T12:00:00.0000000+00:00','兴趣','automatic',3,'explicit_statement');
+                """;
+            command.Parameters.AddWithValue("$id", _first.Id);
+            command.ExecuteNonQuery();
+        }
+        _store.Initialize();
+        _store.Initialize();
+        var page = _store.GetPage(_first.Id);
+        Assert.AreEqual(4, page.Count);
+        Assert.IsTrue(page.Single(m => m.Topic == "阅读").Archived);
+        Assert.IsTrue(page.Single(m => m.Topic == "画画").Archived);
+        Assert.IsFalse(page.Single(m => m.Topic == "绘画").Archived);
+        _store.SetRetrievalEnabled(_first.Id, true);
+        Assert.AreEqual("用户不喜欢看书", _store.Retrieve(_first.Id, "阅读").Single().Content);
+        Assert.AreEqual("手动确认", _store.Retrieve(_first.Id, "画画").Single().Content);
+        _store.SetArchived(_first.Id, "看书", true);
+        Assert.AreEqual(0, _store.Retrieve(_first.Id, "阅读").Count);
+    }
+
+    [TestMethod]
+    public void Retrieve_ExpiryAndArchiveAreReversibleAndScoped()
+    {
+        var clock = new MutableClock(new DateTimeOffset(2026, 11, 28, 10, 0, 0, TimeSpan.Zero));
+        var store = new CompanionMemoryStore(_path, clock);
+        store.Initialize();
+        store.Save(_first.Id, "咖啡", "喜欢咖啡");
+        store.Save(_second.Id, "咖啡", "不喜欢咖啡");
+        store.SetRetrievalEnabled(_first.Id, true);
+        store.SetRetrievalEnabled(_second.Id, true);
+        store.SetExpiry(_first.Id, "咖啡", clock.Now.AddDays(1));
+        Assert.AreEqual(1, store.Retrieve(_first.Id, "咖啡").Count);
+        clock.Now = clock.Now.AddDays(1);
+        Assert.AreEqual(0, store.Retrieve(_first.Id, "咖啡").Count);
+        Assert.AreEqual(1L, store.Count(_first.Id));
+        Assert.AreEqual(1, store.Retrieve(_second.Id, "咖啡").Count);
+        Assert.IsTrue(store.SetArchived(_first.Id, "咖啡", false));
+        Assert.AreEqual(1, store.Retrieve(_first.Id, "咖啡").Count);
+        Assert.IsNull(store.GetPage(_first.Id).Single().ExpiresAtUtc);
+        Assert.IsTrue(store.SetArchived(_first.Id, "咖啡", true));
+        var reopened = new CompanionMemoryStore(_path, clock);
+        reopened.Initialize();
+        Assert.AreEqual(0, reopened.Retrieve(_first.Id, "咖啡").Count);
+        Assert.IsTrue(reopened.GetPage(_first.Id).Single().Archived);
+    }
+
+    [TestMethod]
+    public void Observe_ReaffirmationRefreshesDefaultLifetimeButNotUserDefinedExpiryOrArchive()
+    {
+        var clock = new MutableClock(new DateTimeOffset(2026, 11, 28, 10, 0, 0, TimeSpan.Zero));
+        var store = new CompanionMemoryStore(_path, clock);
+        store.Initialize();
+        var history = new ChatHistoryStore(_path);
+        history.Initialize();
+        var session = history.CreateSession(_first.Id);
+        store.SetAutomaticEnabled(_first.Id, true);
+        store.SetRetrievalEnabled(_first.Id, true);
+        long Add(string message) => history.SaveMessage(_first.Id, session.Id, "user", message).Id;
+        Assert.AreEqual(1, store.ObserveUserMessage(_first.Id, Add("我喜欢咖啡")));
+        Assert.AreEqual(clock.Now.AddDays(180), store.GetPage(_first.Id).Single().ExpiresAtUtc.GetValueOrDefault());
+        clock.Now = clock.Now.AddDays(20);
+        Assert.AreEqual(0, store.ObserveUserMessage(_first.Id, Add("我喜欢咖啡")));
+        Assert.AreEqual(clock.Now.AddDays(180), store.GetPage(_first.Id).Single().ExpiresAtUtc.GetValueOrDefault());
+        var customExpiry = clock.Now.AddDays(2);
+        store.SetExpiry(_first.Id, "咖啡", customExpiry);
+        Assert.AreEqual(1, store.ObserveUserMessage(_first.Id, Add("我不喜欢咖啡")));
+        Assert.AreEqual(customExpiry, store.GetPage(_first.Id).Single().ExpiresAtUtc.GetValueOrDefault());
+        store.SetArchived(_first.Id, "咖啡", true);
+        Assert.AreEqual(0, store.ObserveUserMessage(_first.Id, Add("我喜欢咖啡")));
+        Assert.AreEqual(0, store.Retrieve(_first.Id, "咖啡").Count);
+        Assert.AreEqual("用户不喜欢咖啡", store.GetPage(_first.Id).Single().Content);
+    }
+
+    [TestMethod]
+    public void Retrieve_ImportanceRanksRelevantItemsButNeverInjectsUnrelatedMemory()
+    {
+        _store.Save(_first.Id, "主题甲", "甲");
+        _store.Save(_first.Id, "主题乙", "乙");
+        _store.Save(_first.Id, "不相关", "不相关");
+        _store.SetImportant(_first.Id, "主题甲", true);
+        _store.SetImportant(_first.Id, "不相关", true);
+        _store.SetRetrievalEnabled(_first.Id, true);
+        var matches = _store.Retrieve(_first.Id, "主题甲 主题乙");
+        Assert.AreEqual(2, matches.Count);
+        Assert.AreEqual("主题甲", matches[0].Topic);
+        Assert.IsTrue(matches[0].Important);
+        Assert.AreEqual(0, _store.Retrieve(_first.Id, "天气怎么样").Count);
+    }
+
+    private sealed class MutableClock(DateTimeOffset now) : TimeProvider
+    {
+        public DateTimeOffset Now { get; set; } = now;
+        public override DateTimeOffset GetUtcNow() => Now;
     }
 }

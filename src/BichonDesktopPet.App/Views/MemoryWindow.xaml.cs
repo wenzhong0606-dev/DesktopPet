@@ -123,6 +123,35 @@ public partial class MemoryWindow : Window
         catch (Exception) { StatusText.Text = "保存失败，请检查本地数据库状态。"; }
     }
 
+    private void Important_Click(object sender, RoutedEventArgs e) =>
+        ChangeMetadata(memory => _store.SetImportant(_companionId, memory.Topic, !memory.Important));
+
+    private void Archive_Click(object sender, RoutedEventArgs e) =>
+        ChangeMetadata(memory => _store.SetArchived(_companionId, memory.Topic,
+            memory.IsAvailableAt(DateTimeOffset.UtcNow)));
+
+    private void Expiry_Click(object sender, RoutedEventArgs e) =>
+        ChangeMetadata(memory => _store.SetExpiry(_companionId, memory.Topic, DateTimeOffset.UtcNow.AddDays(30)));
+
+    private void Permanent_Click(object sender, RoutedEventArgs e) =>
+        ChangeMetadata(memory => _store.SetExpiry(_companionId, memory.Topic, null));
+
+    private void ChangeMetadata(Func<CompanionMemory, bool> update)
+    {
+        if (MemoryList.SelectedItem is not CompanionMemory memory)
+        {
+            StatusText.Text = "请先选择一条记忆。";
+            return;
+        }
+        try
+        {
+            var changed = update(memory);
+            Refresh();
+            StatusText.Text = changed ? "记忆设置已更新。" : "未找到该记忆。";
+        }
+        catch (Exception) { StatusText.Text = "更新记忆设置失败。"; }
+    }
+
     private void Delete_Click(object sender, RoutedEventArgs e)
     {
         if (MemoryList.SelectedItem is not CompanionMemory memory) return;
