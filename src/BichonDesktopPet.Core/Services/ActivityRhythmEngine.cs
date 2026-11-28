@@ -28,7 +28,7 @@ public sealed class ActivityRhythmEngine
     public TimeSpan CurrentActiveDuration { get; private set; }
     public bool IsCurrentlyActive { get; private set; }
 
-    public CareReminder? Observe(DateTimeOffset now, TimeSpan idleDuration)
+    public CareReminder? Observe(DateTimeOffset now, TimeSpan idleDuration, bool acknowledge = true)
     {
         if (idleDuration < TimeSpan.Zero)
         {
@@ -62,9 +62,11 @@ public sealed class ActivityRhythmEngine
             return null;
         }
 
-        _lastReminderAt = now;
+        if (acknowledge) MarkDelivered(now);
         return new CareReminder(CareReminderType.TakeBreak, now);
     }
+
+    public void MarkDelivered(DateTimeOffset now) => _lastReminderAt = now;
 
     public void Reset()
     {
