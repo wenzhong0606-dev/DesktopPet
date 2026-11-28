@@ -41,9 +41,9 @@ public static class LocalMemoryExtractor
     private static readonly Regex Enthusiasm = Pattern(
         @"^我(?:一直|现在)?对(?<item>[\p{IsCJKUnifiedIdeographs}]{1,12}?)(?<attitude>情有独钟|很着迷|特别着迷|不太感冒|不感冒)$");
     private static readonly Regex Past = Pattern(
-        @"^我以前(?:很|比较)?喜欢(?<item>[\p{IsCJKUnifiedIdeographs}]{1,13})$");
+        @"^我(?:以前|过去|曾经|从前)(?:很|比较)?(?:不太喜欢|不喜欢|喜欢)(?<item>[\p{IsCJKUnifiedIdeographs}]{1,13})$");
     private static readonly Regex EllipticalCorrection = Pattern(
-        @"^(?:但|不过)?(?:我)?(?:现在|如今)(?<attitude>不再喜欢|不太喜欢|不喜欢)了?$");
+        @"^(?:但|不过)?(?:我)?(?:现在|如今)(?:已经|还是|又|重新)?(?<attitude>不再喜欢|不太喜欢|不喜欢|喜欢)了?$");
 
     private static Regex Pattern(string pattern) =>
         new(pattern, RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(100));
