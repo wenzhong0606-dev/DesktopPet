@@ -85,3 +85,10 @@ IPLogs 远端检查：
 - IPLogs 和 Open-Meteo HTTP 适配器使用模拟响应进行自动化测试，不在 CI 中访问真实外部服务。
 - 关闭天气关怀后不再请求 IPLogs、地理编码或天气服务。
 
+
+
+## M4-C initial integrated increment (C1–C5)
+
+Activity and validated weather candidates share ProactiveCarePolicy and CareContext in MainWindow. Visible chat, known idle, explicit temporary quiet and busy feedback suppress delivery. Breaks require known active state. Weather can use unknown activity when activity consent is disabled. Existing weather source validation and six-hour per-type cooldown remain.
+Default shared process-local cooldown is 90 minutes and rolling 24-hour budget four; reduced-frequency feedback uses three hours and two. Reduced break feedback currently suppresses break notifications. Concise feedback applies to break wording. Feedback requires both automatic memory and retrieval consent for the active companion. No extra Qwen request or inferred sleep schedule.
+Policy unit tests added; Windows CI pending. Remaining hardening: persist shared budget across restart, separate candidate observation from delivery acknowledgement, independent immediate quiet controls, role-switch and UI integration tests, weather concise feedback, positive frequency feedback and local acceptance. This is an initial integrated implementation, not final C5 acceptance.
