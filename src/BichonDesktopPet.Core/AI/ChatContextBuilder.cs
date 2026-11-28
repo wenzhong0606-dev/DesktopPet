@@ -21,7 +21,8 @@ public static class ChatContextBuilder
         PetBehaviorState currentState,
         IReadOnlyList<AiChatMessage> conversationHistory,
         int historyLimit = DefaultHistoryLimit,
-        IReadOnlyList<CompanionMemory>? relevantMemories = null)
+        IReadOnlyList<CompanionMemory>? relevantMemories = null,
+        PersonalityGrowthProfile? growth = null)
     {
         ArgumentNullException.ThrowIfNull(companion);
         ArgumentNullException.ThrowIfNull(avatar);
@@ -103,6 +104,11 @@ public static class ChatContextBuilder
             只依据当前消息、提供的对话历史及用户授权的相关记忆回答。不要假装记得未出现在上下文里的往事。
             用户询问知识、分析、写作或技术问题时，直接按相应任务的专业标准完成；角色风格只能轻微影响措辞，不能降低答案质量。
             """;
+
+        var growthHint = growth?.PromptHint();
+        if (!string.IsNullOrWhiteSpace(growthHint))
+            systemPrompt += "\n\n【渐进表达倾向】" + growthHint +
+                "。仅作为轻微表达参考；用户当前要求、基础人格、事实准确性及任务完整性优先，不改变身份、价值观或事实。";
 
         if (relevantMemories is { Count: > 0 })
         {

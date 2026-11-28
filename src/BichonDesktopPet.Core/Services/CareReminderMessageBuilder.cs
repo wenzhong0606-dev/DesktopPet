@@ -4,10 +4,20 @@ namespace BichonDesktopPet.Core.Services;
 
 public static class CareReminderMessageBuilder
 {
-    public static string BuildBreakReminder(AvatarProfile? avatar)
+    public static string BuildBreakReminder(AvatarProfile? avatar, PersonalityGrowthProfile? growth = null)
     {
         var persona = avatar?.Persona;
         var address = string.IsNullOrWhiteSpace(persona?.UserAddress) ? "你" : persona.UserAddress.Trim();
+
+        if (growth?.PreferConciseCare == true)
+            return persona?.SpeechStyle switch
+            {
+                "cute" => $"{address}，连续用电脑一小时啦，起来活动一下，休息眼睛吧！",
+                "gentle" => $"{address}，已经连续用电脑一小时了，起来走走，休息眼睛吧。",
+                "tsundere" => $"{address}，都一小时了，快起来活动一下，休息眼睛。",
+                "playful" => $"{address}，电脑前一小时打卡！起来活动一下，休息眼睛吧。",
+                _ => $"{address}，连续使用电脑约一小时，建议起身活动并休息眼睛。"
+            };
 
         return persona?.SpeechStyle switch
         {
@@ -20,7 +30,8 @@ public static class CareReminderMessageBuilder
         };
     }
 
-    public static string BuildWeatherReminder(AvatarProfile? avatar, CareLocation location, WeatherCareAlert alert)
+    public static string BuildWeatherReminder(AvatarProfile? avatar, CareLocation location, WeatherCareAlert alert,
+        PersonalityGrowthProfile? growth = null)
     {
         var persona = avatar?.Persona;
         var address = string.IsNullOrWhiteSpace(persona?.UserAddress) ? "你" : persona.UserAddress.Trim();
@@ -40,6 +51,14 @@ public static class CareReminderMessageBuilder
             "gentle" => $"{address}，提醒你一下：{suggestion}",
             _ => $"{address}，{suggestion}"
         };
+
+        if (growth?.PreferConciseCare == true)
+            message = persona?.SpeechStyle switch
+            {
+                "playful" => $"{address}，天气小提醒！{suggestion}",
+                "gentle" => $"{address}，提醒一下：{suggestion}",
+                _ => $"{address}，{suggestion}"
+            };
 
         var locationSource = string.Equals(location.Source, "ip", System.StringComparison.Ordinal)
             ? "DB-IP https://db-ip.com/"

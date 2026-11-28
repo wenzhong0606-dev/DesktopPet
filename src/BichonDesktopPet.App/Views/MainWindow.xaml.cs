@@ -24,6 +24,7 @@ public partial class MainWindow : Window
     private readonly AvatarCatalogService _avatarCatalogService;
     private readonly CompanionIdentityStore _companionIdentityStore;
     private readonly ChatHistoryStore _chatHistoryStore;
+    private PersonalityGrowthStore? _growthStore;
     private readonly SnowAnimationService _snowAnimation;
     private readonly AudioService _audioService = new();
     private readonly PetBehaviorEngine _behaviorEngine = new();
@@ -174,6 +175,13 @@ public partial class MainWindow : Window
         {
             _chatHistoryStore.Initialize();
             _chatHistoryReady = true;
+            try
+            {
+                var growth = new PersonalityGrowthStore(_chatHistoryStore.DatabasePath);
+                growth.Initialize();
+                _growthStore = growth;
+            }
+            catch (Exception) { /* Optional growth must not affect core behavior. */ }
         }
         catch (Exception exception)
         {
@@ -324,7 +332,7 @@ public partial class MainWindow : Window
                     if (reminder?.Type == CareReminderType.TakeBreak)
                     {
                         var avatar = _avatarCatalogService.GetAvatar(_settings.ActiveAvatarId);
-                        ShowCareReminder(CareReminderMessageBuilder.BuildBreakReminder(avatar), "桌面伙伴 · 休息提醒");
+                        ShowCareReminder(CareReminderMessageBuilder.BuildBreakReminder(avatar, ReadActiveGrowth()), "桌面伙伴 · 休息提醒");
                     }
                 }
             }
@@ -337,6 +345,12 @@ public partial class MainWindow : Window
         {
             _ = RefreshWeatherAsync(forceLocationRefresh: false);
         }
+    }
+
+    private PersonalityGrowthProfile? ReadActiveGrowth()
+    {
+        try { return _activeCompanion is { } companion ? _growthStore?.Read(companion.Id) : null; }
+        catch (Exception) { return null; }
     }
 
     private void ShowCareReminder(string message, string title = "桌面伙伴 · 关怀提醒")
@@ -399,7 +413,7 @@ public partial class MainWindow : Window
 
             var avatar = _avatarCatalogService.GetAvatar(_settings.ActiveAvatarId);
             ShowCareReminder(
-                CareReminderMessageBuilder.BuildWeatherReminder(avatar, location, alert),
+                CareReminderMessageBuilder.BuildWeatherReminder(avatar, location, alert, ReadActiveGrowth()),
                 "桌面伙伴 · 天气提醒");
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

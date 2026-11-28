@@ -10,15 +10,25 @@ public partial class MemoryWindow : Window
 {
     private readonly CompanionMemoryStore _store;
     private readonly string _companionId;
+    private readonly PersonalityGrowthStore? _growthStore;
     private bool _refreshing = true;
     private int _offset;
 
-    public MemoryWindow(CompanionMemoryStore store, string companionId)
+    public MemoryWindow(CompanionMemoryStore store, string companionId, PersonalityGrowthStore? growthStore = null)
     {
         _store = store;
         _companionId = companionId;
+        _growthStore = growthStore;
         InitializeComponent();
+        GrowthButton.IsEnabled = _growthStore is not null;
         Refresh();
+    }
+
+    private void Growth_Click(object sender, RoutedEventArgs e)
+    {
+        if (_growthStore is null) return;
+        try { new PersonalityGrowthWindow(_growthStore, _companionId) { Owner = this }.ShowDialog(); }
+        catch (Exception) { StatusText.Text = "成长人格暂不可用，请检查本机数据库。"; }
     }
 
     private void Refresh()

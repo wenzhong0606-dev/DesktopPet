@@ -204,3 +204,10 @@
 - Add finite explicit user-reported milestones and communication preferences, and verified persisted conversation exchanges with distinct evidence labels and replay protection.
 - Extend retrieval for experience topics and narrow same-session follow-ups without introducing additional model calls.
 - Retain independent opt-ins, local storage, archive and delete controls; no base personality changes or real-world completion claims.
+
+
+## 2026-11-28 — M4-B5 initial personality growth
+
+- Add independently authorized, bounded evidence-based expression tendencies with persisted per-companion growth records, replay protection, pause, rollback and reset.
+- Integrate fixed growth hints into chat and concise care wording without mutating base persona or reminder policy.
+- Add growth management window and regression tests. No additional AI requests or engagement-based inference.

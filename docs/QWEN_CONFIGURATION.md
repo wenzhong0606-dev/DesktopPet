@@ -75,3 +75,5 @@ Long-term memories are stored separately in the local companion database. If the
 Automatic same-topic memories can now be updated by newer explicit user statements; user-confirmed manual entries are not overwritten. Automatic extraction still runs locally and never triggers a separate Qwen call.
 
 The local automatic memory scope includes finite ordinary milestones, explicit communication preferences and verified conversation topics. Conversation memories establish that a request received a persisted reply, not that a real-world task was completed. Source labels distinguish user statements from observed exchanges. Related entries may be transmitted only with existing retrieval authorization; no separate extraction request is made.
+
+Growth adaptation has a separate default-off consent. When enabled, normal chat requests may include a small fixed-language expression hint derived from repeated explicit user feedback. Raw growth evidence, source IDs, counters and growth history are not transmitted as growth context. Pausing suppresses the derived hints; resetting growth does not erase earlier requests or chat history. Memory retrieval consent is independent.

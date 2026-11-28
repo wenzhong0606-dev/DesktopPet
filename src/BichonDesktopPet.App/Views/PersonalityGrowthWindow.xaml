@@ -1,0 +1,37 @@
+<Window x:Class="BichonDesktopPet.App.Views.PersonalityGrowthWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="成长人格" Width="570" Height="590" MinWidth="470" MinHeight="480"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+        Background="#FFF7F6F2" FontFamily="Segoe UI">
+  <Grid Margin="24">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/><RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
+    <StackPanel>
+      <TextBlock Text="成长人格" FontSize="23" FontWeight="SemiBold" Foreground="#FF303630"/>
+      <TextBlock Text="基础人格保持不变；成长只影响少量表达倾向，不根据聊天时长推断亲密程度。"
+                 TextWrapping="Wrap" Margin="0,7,0,14" Foreground="#FF626A61"/>
+      <CheckBox x:Name="EnabledCheckBox" Content="允许渐进成长与应用成长表达倾向" Checked="EnabledChanged" Unchecked="EnabledChanged"/>
+      <TextBlock Text="默认关闭。开启后本机处理新消息中的明确交流反馈；成长倾向会随正常聊天发送给 Qwen，亦用于本地关怀。关闭后停止学习和应用，保留成长记录。"
+                 TextWrapping="Wrap" Margin="0,6,0,12" Foreground="#FF626A61"/>
+    </StackPanel>
+    <StackPanel Grid.Row="1" Margin="0,0,0,12">
+      <TextBlock Text="当前成长状态" FontWeight="SemiBold" Foreground="#FF303630"/>
+      <TextBlock x:Name="SummaryText" TextWrapping="Wrap" Margin="0,7,0,9"/>
+      <TextBlock Text="同一方向至少三个不同 UTC 日期的明确反馈才调整一级；每个维度最多两级。仅显示最近 50 次调整。"
+                 TextWrapping="Wrap" Foreground="#FF626A61"/>
+    </StackPanel>
+    <ListBox x:Name="ChangesList" Grid.Row="2" Background="#FFFBFAF7" BorderBrush="#FFE4E2DA"
+             DisplayMemberPath="Display" ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
+    <StackPanel Grid.Row="3" Margin="0,14,0,0">
+      <WrapPanel>
+        <Button x:Name="RollbackButton" Content="撤销最近一次成长" Click="Rollback_Click" Padding="12,7" Margin="0,0,8,5"/>
+        <Button Content="重置成长" Click="Reset_Click" Padding="12,7" Margin="0,0,8,5"/>
+        <Button Content="完成" IsCancel="True" Padding="12,7" Margin="0,0,8,5"/>
+      </WrapPanel>
+      <TextBlock x:Name="StatusText" TextWrapping="Wrap" Foreground="#FF626A61"/>
+    </StackPanel>
+  </Grid>
+</Window>

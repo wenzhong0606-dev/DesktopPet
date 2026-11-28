@@ -27,6 +27,7 @@ public partial class ChatWindow : Window
     private readonly Func<PetBehaviorState> _getCurrentState;
     private readonly ChatHistoryStore _historyStore;
     private CompanionMemoryStore? _memoryStore;
+    private PersonalityGrowthStore? _growthStore;
     private readonly ObservableCollection<ChatHistoryMessage> _messages = [];
     private readonly List<AiChatMessage> _conversation = [];
     private CancellationTokenSource? _requestCancellation;
@@ -62,13 +63,21 @@ public partial class ChatWindow : Window
             MemoryButton.ToolTip = "本机记忆数据库暂不可用";
         }
 
+        try
+        {
+            var growthStore = new PersonalityGrowthStore(_historyStore.DatabasePath);
+            growthStore.Initialize();
+            _growthStore = growthStore;
+        }
+        catch (Exception) { /* Optional growth does not block chat. */ }
+
         MessageList.ItemsSource = _messages;
         var petNickname = ChatWelcomeMessageBuilder.GetPrimaryNickname(avatar);
         CompanionNameText.Text = string.IsNullOrWhiteSpace(petNickname) ? "伙伴对话" : petNickname;
         Title = string.IsNullOrWhiteSpace(petNickname) ? "和伙伴聊天" : $"与{petNickname}聊天";
 
         ConnectionStatusText.Text = provider.IsConfigured
-            ? "聊天记录保存在本机；发送消息时，消息、角色人格、近期上下文及已授权的相关记忆会发送至 Qwen 云端处理。请勿输入敏感信息。"
+            ? "聊天记录保存在本机；发送消息时，消息、角色人格、近期上下文、已授权的相关记忆及成长表达倾向会发送至 Qwen 云端处理。请勿输入敏感信息。"
             : "当前未配置 Qwen API Key。可离线查询本机时间、管理聊天记录和记忆；其他对话需配置密钥。";
 
         MessageInput.IsEnabled = true;
@@ -88,7 +97,7 @@ public partial class ChatWindow : Window
     private void MemoryButton_Click(object sender, RoutedEventArgs e)
     {
         if (_isSending || _memoryStore is null) return;
-        try { new MemoryWindow(_memoryStore, _companion.Id) { Owner = this }.ShowDialog(); }
+        try { new MemoryWindow(_memoryStore, _companion.Id, _growthStore) { Owner = this }.ShowDialog(); }
         catch (Exception) { ConnectionStatusText.Text = "本机记忆暂不可用，请检查数据库后重试。"; }
     }
 
@@ -97,6 +106,12 @@ public partial class ChatWindow : Window
         try { return _memoryStore?.Retrieve(_companion.Id, query,
             _conversation.Where(message => message.Role == "user").SkipLast(1).LastOrDefault()?.Content) ?? Array.Empty<CompanionMemory>(); }
         catch (Exception) { return Array.Empty<CompanionMemory>(); }
+    }
+
+    private PersonalityGrowthProfile? ReadGrowth()
+    {
+        try { return _growthStore?.Read(_companion.Id); }
+        catch (Exception) { return null; }
     }
 
     private async void SendButton_Click(object sender, RoutedEventArgs e) =>
@@ -324,6 +339,8 @@ public partial class ChatWindow : Window
         {
             try { _memoryStore?.ObserveUserMessage(_companion.Id, userMessage.Id); }
             catch (Exception) { /* Optional memory must never block chat. */ }
+            try { _growthStore?.Observe(_companion.Id, userMessage.Id); }
+            catch (Exception) { /* Optional growth must never block chat. */ }
         }
         RefreshSessionSelector(_activeSessionId, selectLatestWhenMissing: false);
         ScrollToLatest();
@@ -370,7 +387,7 @@ public partial class ChatWindow : Window
                 _companion,
                 _avatar,
                 _getCurrentState(),
-                _conversation, relevantMemories: RetrieveMemories(content));
+                _conversation, relevantMemories: RetrieveMemories(content), growth: ReadGrowth());
 
             var result = await _provider.CompleteAsync(
                 new AiChatRequest

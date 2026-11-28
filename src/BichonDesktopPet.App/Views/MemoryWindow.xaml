@@ -10,7 +10,11 @@
       <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
     </Grid.RowDefinitions>
     <StackPanel>
-      <TextBlock Text="伙伴记忆" FontSize="23" FontWeight="SemiBold" Foreground="#FF303630"/>
+      <Grid>
+        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+        <TextBlock Text="伙伴记忆" FontSize="23" FontWeight="SemiBold" Foreground="#FF303630"/>
+        <Button Grid.Column="1" x:Name="GrowthButton" Content="成长人格" Click="Growth_Click" Padding="12,6"/>
+      </Grid>
       <TextBlock Text="每个伙伴独立保存。开启自动记忆后，日常对话中明确表达的普通偏好可自动记录，无需手动保存。"
                  TextWrapping="Wrap" Margin="0,6,0,12" Foreground="#FF626A61"/>
     </StackPanel>
