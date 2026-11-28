@@ -36,6 +36,10 @@ public static class LocalMemoryExtractor
         @"^我(?:现在|一直)?最?喜欢的(?:食物|饮料|音乐|颜色|运动|爱好)是(?<item>[\p{IsCJKUnifiedIdeographs}]{1,12})$");
     private static readonly Regex Interest = Pattern(
         @"^我(?:现在|一直)?对(?<item>[\p{IsCJKUnifiedIdeographs}]{1,12}?)(?<attitude>不太感兴趣|不感兴趣|很感兴趣|特别感兴趣|感兴趣)$");
+    private static readonly Regex NaturalPreference = Pattern(
+        @"^我(?:平时|一直|特别|很|比较|现在|更){0,3}(?<attitude>偏爱|钟爱|热衷于|不爱|不太爱|讨厌)(?<item>[\p{IsCJKUnifiedIdeographs}]{1,14})$");
+    private static readonly Regex Enthusiasm = Pattern(
+        @"^我(?:一直|现在)?对(?<item>[\p{IsCJKUnifiedIdeographs}]{1,12}?)(?<attitude>情有独钟|很着迷|特别着迷|不太感冒|不感冒)$");
     private static readonly Regex Past = Pattern(
         @"^我以前(?:很|比较)?喜欢(?<item>[\p{IsCJKUnifiedIdeographs}]{1,13})$");
     private static readonly Regex EllipticalCorrection = Pattern(
@@ -95,6 +99,22 @@ public static class LocalMemoryExtractor
                     _ => "感兴趣"
                 };
                 itemList = interest.Groups["item"].Value;
+            }
+            else if (pastItem is null && NaturalPreference.Match(clause) is { Success: true } natural)
+            {
+                attitude = natural.Groups["attitude"].Value switch
+                {
+                    "不爱" or "讨厌" => "不喜欢", "不太爱" => "不太喜欢", _ => "喜欢"
+                };
+                itemList = natural.Groups["item"].Value;
+            }
+            else if (pastItem is null && Enthusiasm.Match(clause) is { Success: true } enthusiasm)
+            {
+                attitude = enthusiasm.Groups["attitude"].Value switch
+                {
+                    "不感冒" => "不喜欢", "不太感冒" => "不太喜欢", _ => "喜欢"
+                };
+                itemList = enthusiasm.Groups["item"].Value;
             }
             else if (match.Success && (i > 0 || match.Groups["subject"].Success))
             {

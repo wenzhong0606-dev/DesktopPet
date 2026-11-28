@@ -13,6 +13,8 @@ public sealed class AiChatRequest
     public int MaxTokens { get; init; } = 512;
 
     public double? Temperature { get; init; }
+
+    public bool JsonObjectResponse { get; init; }
 }
 
 public sealed class AiChatResult

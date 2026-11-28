@@ -68,6 +68,7 @@ public sealed class QwenChatCompletionProviderTests
         Assert.AreEqual(2, requestJson.RootElement.GetProperty("messages").GetArrayLength());
         Assert.AreEqual(256, requestJson.RootElement.GetProperty("max_tokens").GetInt32());
         Assert.AreEqual(0.7, requestJson.RootElement.GetProperty("temperature").GetDouble());
+        Assert.IsFalse(requestJson.RootElement.TryGetProperty("response_format", out _));
     }
 
     [TestMethod]
@@ -126,6 +127,26 @@ public sealed class QwenChatCompletionProviderTests
             }));
 
         Assert.AreEqual(0, handler.RequestCount);
+    }
+
+    [TestMethod]
+    public async Task CompleteAsync_JsonObjectModeIsExplicitAndBounded()
+    {
+        var handler=new RecordingHandler(_=>new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content=new StringContent("""{"choices":[{"message":{"content":"{\"evidence\":[]}"}}]}""")
+        });
+        using var client=new HttpClient(handler);
+        var provider=new QwenChatCompletionProvider(client,new QwenOptions{ApiKey="test"});
+        var result=await provider.CompleteAsync(new AiChatRequest
+        {
+            Messages=[new("system","Return JSON"),new("user","test")],
+            MaxTokens=180,JsonObjectResponse=true
+        });
+        using var request=JsonDocument.Parse(handler.RequestBody!);
+        Assert.AreEqual("json_object",request.RootElement.GetProperty("response_format").GetProperty("type").GetString());
+        Assert.AreEqual(180,request.RootElement.GetProperty("max_tokens").GetInt32());
+        Assert.AreEqual("""{"evidence":[]}""",result.Content);
     }
 
     private sealed class RecordingHandler(

@@ -46,6 +46,10 @@ public sealed class CompanionMemoryStore
                 enabled INTEGER NOT NULL CHECK(enabled IN (0,1)),
                 FOREIGN KEY(companion_id) REFERENCES companions(companion_id) ON DELETE CASCADE
             );
+            CREATE TABLE IF NOT EXISTS companion_memory_cloud_preferences (
+                companion_id TEXT PRIMARY KEY NOT NULL REFERENCES companions(companion_id) ON DELETE CASCADE,
+                enabled INTEGER NOT NULL CHECK(enabled IN(0,1))
+            );
             CREATE TABLE IF NOT EXISTS companion_memory_observation (
                 companion_id TEXT PRIMARY KEY NOT NULL,
                 last_message_id INTEGER NOT NULL,
@@ -119,6 +123,23 @@ public sealed class CompanionMemoryStore
         transaction.Commit();
     }
 
+    public bool IsCloudEnhancedEnabled(string companionId) =>
+        IsAutomaticEnabled(companionId) && ReadFlag(companionId,
+            "SELECT enabled FROM companion_memory_cloud_preferences WHERE companion_id=$id;");
+    public void SetCloudEnhancedEnabled(string companionId, bool enabled)
+    {
+        using var connection = Open();
+        using var command = Command(connection, companionId, """
+            INSERT INTO companion_memory_cloud_preferences(companion_id,enabled)
+            VALUES($id,CASE WHEN $enabled=1 AND EXISTS(
+                SELECT 1 FROM companion_memory_automatic_preferences WHERE companion_id=$id AND enabled=1)
+                THEN 1 ELSE 0 END)
+            ON CONFLICT(companion_id) DO UPDATE SET enabled=excluded.enabled;
+            """);
+        command.Parameters.AddWithValue("$enabled", enabled ? 1 : 0);
+        command.ExecuteNonQuery();
+    }
+
     public bool IsRetrievalEnabled(string companionId) => ReadFlag(companionId,
         "SELECT retrieval_enabled FROM companion_memory_preferences WHERE companion_id=$id;");
     public bool IsAutomaticEnabled(string companionId) => ReadFlag(companionId,
@@ -127,10 +148,20 @@ public sealed class CompanionMemoryStore
         INSERT INTO companion_memory_preferences(companion_id,retrieval_enabled) VALUES($id,$enabled)
         ON CONFLICT(companion_id) DO UPDATE SET retrieval_enabled=excluded.retrieval_enabled;
         """);
-    public void SetAutomaticEnabled(string companionId, bool enabled) => WriteFlag(companionId, enabled, """
-        INSERT INTO companion_memory_automatic_preferences(companion_id,enabled) VALUES($id,$enabled)
-        ON CONFLICT(companion_id) DO UPDATE SET enabled=excluded.enabled;
-        """);
+    public void SetAutomaticEnabled(string companionId, bool enabled)
+    {
+        using var connection = Open();
+        using var transaction = connection.BeginTransaction();
+        using var command = Command(connection, companionId, """
+            INSERT INTO companion_memory_automatic_preferences(companion_id,enabled) VALUES($id,$enabled)
+            ON CONFLICT(companion_id) DO UPDATE SET enabled=excluded.enabled;
+            UPDATE companion_memory_cloud_preferences SET enabled=0 WHERE companion_id=$id AND $enabled=0;
+            """);
+        command.Transaction=transaction;
+        command.Parameters.AddWithValue("$enabled", enabled ? 1 : 0);
+        command.ExecuteNonQuery();
+        transaction.Commit();
+    }
 
     private bool ReadFlag(string id, string sql)
     {
@@ -170,7 +201,7 @@ public sealed class CompanionMemoryStore
 
     /// <summary>Read the persisted user message, never an assistant reply or old history scan.
     /// Newer explicit statements may replace automatic entries, but never manual confirmations.</summary>
-    public int ObserveUserMessage(string companionId, long messageId)
+    public int ObserveUserMessage(string companionId, long messageId, string? cloudEvidenceJson = null)
     {
         if (messageId <= 0 || !IsAutomaticEnabled(companionId)) return 0;
         using var connection = Open();
@@ -193,6 +224,21 @@ public sealed class CompanionMemoryStore
         }
         var candidates = ExperienceMemoryExtractor.ExtractUserStatement(message, recordedAt);
         if (candidates.Count == 0) candidates = LocalMemoryExtractor.Extract(message);
+        var cloudAssisted = false;
+        if (candidates.Count == 0 && cloudEvidenceJson is not null)
+        {
+            using var consent = Command(connection, companionId,
+                "SELECT enabled FROM companion_memory_cloud_preferences WHERE companion_id=$id;");
+            consent.Transaction = transaction;
+            if (consent.ExecuteScalar() is long enabled && enabled == 1)
+            {
+                var evidence = BichonDesktopPet.Core.AI.CloudMemoryEvidence.Validate(message, cloudEvidenceJson);
+                var selected = new List<MemoryCandidate>();
+                foreach (var clause in evidence) selected.AddRange(LocalMemoryExtractor.Extract(clause));
+                candidates = selected;
+                cloudAssisted = candidates.Count > 0;
+            }
+        }
         var saved = 0;
         foreach (var candidate in candidates)
         {
@@ -213,7 +259,7 @@ public sealed class CompanionMemoryStore
             var now = _clock.GetUtcNow();
             using var command = Command(connection, companionId, """
                 INSERT INTO companion_memories(companion_id,topic,content,updated_at_utc,category,source,source_message_id,confidence,expires_at_utc)
-                VALUES($id,$topic,$content,$now,$category,'automatic',$message,'explicit_statement',$expiry)
+                VALUES($id,$topic,$content,$now,$category,'automatic',$message,$confidence,$expiry)
                 ON CONFLICT(companion_id,topic) DO UPDATE SET
                     content=excluded.content,updated_at_utc=excluded.updated_at_utc,
                     category=excluded.category,source_message_id=excluded.source_message_id,
@@ -227,6 +273,7 @@ public sealed class CompanionMemoryStore
             AddMemoryParameters(command, topic, candidate.Content);
             command.Parameters.AddWithValue("$category", candidate.Category);
             command.Parameters.AddWithValue("$message", messageId);
+            command.Parameters.AddWithValue("$confidence", cloudAssisted ? "cloud_selected_literal" : "explicit_statement");
             command.Parameters.AddWithValue("$expiry", candidate.Category == "用户经历"
                 ? DBNull.Value : FormatUtc(now + AutomaticPreferenceLifetime));
             var changed = command.ExecuteNonQuery();

@@ -211,3 +211,10 @@
 - Add independently authorized, bounded evidence-based expression tendencies with persisted per-companion growth records, replay protection, pause, rollback and reset.
 - Integrate fixed growth hints into chat and concise care wording without mutating base persona or reminder policy.
 - Add growth management window and regression tests. No additional AI requests or engagement-based inference.
+
+
+## 2026-11-28 — M4-B intelligence hardening, first increment
+
+- Extend ordinary preference syntax, lexical relevance and shared explicit feedback recognition.
+- Add default-off, bounded Qwen JSON literal-clause selection, double consent and local validation; preserve normal chat on failure.
+- Add regression tests for opt-in, exact source evidence, unsupported text, request shape and fallback.

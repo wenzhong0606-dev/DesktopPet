@@ -1,7 +1,7 @@
 <Window x:Class="BichonDesktopPet.App.Views.MemoryWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="伙伴记忆" Width="590" Height="840" MinWidth="490" MinHeight="730"
+        Title="伙伴记忆" Width="590" Height="900" MinWidth="490" MinHeight="790"
         WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
         Background="#FFF7F6F2" FontFamily="Segoe UI">
   <Grid Margin="24">
@@ -23,6 +23,10 @@
                 Checked="AutomaticChanged" Unchecked="AutomaticChanged"/>
       <TextBlock Text="默认关闭；识别普通偏好、部分经历、交流习惯和已完成的对话记录。不回扫旧对话，不覆盖手动确认。"
                  TextWrapping="Wrap" Foreground="#FF626A61" Margin="0,5,0,10"/>
+      <CheckBox x:Name="CloudCheckBox" Content="允许 Qwen 辅助识别部分复杂偏好（可选额外请求）"
+                Checked="CloudChanged" Unchecked="CloudChanged" Margin="0,0,0,4"/>
+      <TextBlock Text="默认关闭，须先开启自动记忆。可能额外发送当前短消息并产生费用；最长等待约5秒，不发送记忆库或历史。只保存本机验证的原文分句。"
+                 TextWrapping="Wrap" Foreground="#FF626A61" Margin="0,0,0,10"/>
       <CheckBox x:Name="RetrievalCheckBox" Content="允许聊天使用相关记忆（会发送给 Qwen）"
                 Checked="RetrievalChanged" Unchecked="RetrievalChanged"/>
       <TextBlock Text="默认关闭；仅发送相关且未过期、未归档的记忆，条数随上下文预算变化。关闭不撤回已发送内容。"

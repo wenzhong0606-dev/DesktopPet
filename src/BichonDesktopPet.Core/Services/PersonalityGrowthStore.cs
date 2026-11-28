@@ -261,15 +261,7 @@ public sealed class PersonalityGrowthStore
     }
 
     private static (string Axis,int Direction)? Signal(string text) =>
-        text.Trim().TrimEnd('。','！','!') switch
-        {
-            "我希望你回答简洁一点" => ("length",-1),
-            "我希望你回答详细一点" => ("length",1),
-            "我希望你回答直接一点" => ("direct",1),
-            "我希望你说话自然一点" or "我希望你不要卖萌" => ("natural",1),
-            "我希望你少用表情符号" or "我希望你不要使用表情符号" or "我不喜欢你使用表情符号" => ("emoji",1),
-            _ => null
-        };
+        CommunicationFeedback.Recognize(text) is { } feedback ? (feedback.Axis, feedback.Direction) : null;
 
     private static string Day(DateTime day)=>day.ToString("yyyy-MM-dd",CultureInfo.InvariantCulture);
     private SqliteConnection Open()

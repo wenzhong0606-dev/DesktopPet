@@ -94,6 +94,9 @@ public sealed class QwenChatCompletionProvider : IAiChatProvider
             ["max_tokens"] = request.MaxTokens
         };
 
+        if (request.JsonObjectResponse)
+            payload["response_format"] = new { type = "json_object" };
+
         if (request.Temperature.HasValue)
         {
             payload["temperature"] = request.Temperature.Value;

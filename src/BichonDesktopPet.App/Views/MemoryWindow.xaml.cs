@@ -46,6 +46,8 @@ public partial class MemoryWindow : Window
             MemoryList.ItemsSource = memories;
             RetrievalCheckBox.IsChecked = _store.IsRetrievalEnabled(_companionId);
             AutomaticCheckBox.IsChecked = _store.IsAutomaticEnabled(_companionId);
+            CloudCheckBox.IsEnabled = AutomaticCheckBox.IsChecked == true;
+            CloudCheckBox.IsChecked = _store.IsCloudEnhancedEnabled(_companionId);
             TopicInput.Clear();
             ContentInput.Clear();
             StatusText.Text = $"已保存 {count} 条记忆。";
@@ -77,6 +79,10 @@ public partial class MemoryWindow : Window
         try
         {
             _store.SetAutomaticEnabled(_companionId, AutomaticCheckBox.IsChecked == true);
+            _refreshing = true;
+            CloudCheckBox.IsEnabled = AutomaticCheckBox.IsChecked == true;
+            CloudCheckBox.IsChecked = _store.IsCloudEnhancedEnabled(_companionId);
+            _refreshing = false;
             StatusText.Text = AutomaticCheckBox.IsChecked == true ? "已开启本地自动记忆。" : "已停止自动形成新记忆。";
         }
         catch (Exception)
@@ -85,6 +91,23 @@ public partial class MemoryWindow : Window
             AutomaticCheckBox.IsChecked = AutomaticCheckBox.IsChecked != true;
             _refreshing = false;
             StatusText.Text = "保存自动记忆设置失败。";
+        }
+    }
+
+    private void CloudChanged(object sender, RoutedEventArgs e)
+    {
+        if (_refreshing) return;
+        try
+        {
+            _store.SetCloudEnhancedEnabled(_companionId, CloudCheckBox.IsChecked == true && AutomaticCheckBox.IsChecked == true);
+            StatusText.Text = CloudCheckBox.IsChecked == true ? "已开启可选 Qwen 辅助提取，可能产生额外费用。" : "已关闭 Qwen 辅助提取。";
+        }
+        catch (Exception)
+        {
+            _refreshing = true;
+            CloudCheckBox.IsChecked = CloudCheckBox.IsChecked != true;
+            _refreshing = false;
+            StatusText.Text = "保存辅助提取设置失败。";
         }
     }
 

@@ -374,6 +374,40 @@ public sealed class CompanionMemoryStoreTests
         Assert.AreEqual(0, _store.Retrieve(_first.Id, "天气怎么样").Count);
     }
 
+    [TestMethod]
+    public void CloudEvidence_RequiresBothConsentsAndExactPersistedUserEvidence()
+    {
+        var history = new ChatHistoryStore(_path);
+        history.Initialize();
+        var session = history.CreateSession(_first.Id);
+        const string input = "对了，我偏爱咖啡";
+        const string evidence = """{"evidence":["我偏爱咖啡"]}""";
+        long Add() => history.SaveMessage(_first.Id,session.Id,"user",input).Id;
+        Assert.IsFalse(_store.IsCloudEnhancedEnabled(_first.Id));
+        _store.SetCloudEnhancedEnabled(_first.Id,true);
+        _store.SetAutomaticEnabled(_first.Id,true);
+        Assert.IsFalse(_store.IsCloudEnhancedEnabled(_first.Id));
+        Assert.AreEqual(0,_store.ObserveUserMessage(_first.Id,Add(),evidence));
+        _store.SetCloudEnhancedEnabled(_first.Id,true);
+        Assert.IsTrue(_store.IsCloudEnhancedEnabled(_first.Id));
+        Assert.IsFalse(_store.IsCloudEnhancedEnabled(_second.Id));
+        var id=Add();
+        Assert.AreEqual(1,_store.ObserveUserMessage(_first.Id,id,evidence));
+        var memory=_store.GetPage(_first.Id).Single();
+        Assert.AreEqual("用户喜欢咖啡",memory.Content);
+        Assert.AreEqual("cloud_selected_literal",memory.Confidence);
+        Assert.AreEqual(id,memory.SourceMessageId.GetValueOrDefault());
+        Assert.AreEqual(0,_store.ObserveUserMessage(_first.Id,id,evidence));
+        Assert.AreEqual(0,_store.ObserveUserMessage(_first.Id,Add(),"""{"evidence":["我喜欢火锅"]}"""));
+        _store.SetAutomaticEnabled(_first.Id,false);
+        _store.SetAutomaticEnabled(_first.Id,true);
+        Assert.IsFalse(_store.IsCloudEnhancedEnabled(_first.Id));
+        var reopened=new CompanionMemoryStore(_path);
+        reopened.Initialize();
+        Assert.IsFalse(reopened.IsCloudEnhancedEnabled(_first.Id));
+        Assert.AreEqual(1L,reopened.Count(_first.Id));
+    }
+
     private sealed class MutableClock(DateTimeOffset now) : TimeProvider
     {
         public DateTimeOffset Now { get; set; } = now;

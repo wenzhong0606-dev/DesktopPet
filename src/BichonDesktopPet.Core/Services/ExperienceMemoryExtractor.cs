@@ -17,17 +17,6 @@ public static class ExperienceMemoryExtractor
         ["完成了绘画作品"]="完成绘画作品", ["学会了游泳"]="学会游泳",
         ["学会了骑自行车"]="学会骑自行车"
     };
-    private static readonly Dictionary<string, (string Topic, string Content)> Interaction = new(StringComparer.Ordinal)
-    {
-        ["希望你回答简洁一点"]=("回复长度","用户希望回复简洁一些"),
-        ["希望你回答详细一点"]=("回复长度","用户希望回复详细一些"),
-        ["希望你回答直接一点"]=("回答方式","用户希望直接回答问题"),
-        ["希望你说话自然一点"]=("表达方式","用户希望表达自然"),
-        ["希望你不要卖萌"]=("表达方式","用户希望不要刻意卖萌"),
-        ["不喜欢你使用表情符号"]=("表情符号","用户希望少用或不用表情符号"),
-        ["希望你少用表情符号"]=("表情符号","用户希望少用或不用表情符号"),
-        ["希望你不要使用表情符号"]=("表情符号","用户希望不用表情符号")
-    };
     private static readonly Dictionary<string, string> ExchangeTopics = new(StringComparer.Ordinal)
     {
         ["帮我制定学习计划"]="学习计划",
@@ -48,8 +37,7 @@ public static class ExperienceMemoryExtractor
     {
         var normalized = Normalize(text);
         if (normalized.Length == 0 || normalized.Length > 80) return [];
-        if (normalized.StartsWith("我", StringComparison.Ordinal) &&
-            Interaction.TryGetValue(normalized[1..], out var interaction))
+        if (CommunicationFeedback.Recognize(normalized) is { } interaction)
             return [new MemoryCandidate("交流偏好·" + interaction.Topic, interaction.Content, "交流偏好")];
         var match = MilestonePattern.Match(normalized);
         if (!match.Success || !Milestones.TryGetValue(match.Groups["action"].Value, out var action)) return [];

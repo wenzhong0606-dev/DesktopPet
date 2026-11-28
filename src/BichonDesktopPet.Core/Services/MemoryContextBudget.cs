@@ -49,7 +49,8 @@ public static class MemoryContextBudget
         Clean(memory.Topic, CompanionMemoryStore.MaximumTopicCharacters),
         Clean(memory.Content, CompanionMemoryStore.MaximumContentCharacters),
         memory.Source != "automatic" ? "用户手动确认" :
-            memory.Confidence == "observed_exchange" ? "本机对话记录（只证实已回复）" : "用户直接陈述（自动记录）");
+            memory.Confidence == "observed_exchange" ? "本机对话记录（只证实已回复）" :
+            memory.Confidence == "cloud_selected_literal" ? "用户直接陈述（Qwen辅助选择、本机校验）" : "用户直接陈述（自动记录）");
 
     private static string Clean(string? value, int max)
     {

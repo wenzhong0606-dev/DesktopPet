@@ -108,6 +108,26 @@ public partial class ChatWindow : Window
         catch (Exception) { return Array.Empty<CompanionMemory>(); }
     }
 
+    private async Task ObserveMemoryAsync(ChatHistoryMessage userMessage, CancellationToken token)
+    {
+        if (_memoryStore is null) return;
+        try
+        {
+            string? evidenceJson = null;
+            if (_memoryStore.IsCloudEnhancedEnabled(_companion.Id) &&
+                LocalMemoryExtractor.Extract(userMessage.Content).Count == 0 &&
+                ExperienceMemoryExtractor.ExtractUserStatement(userMessage.Content, userMessage.CreatedAtUtc).Count == 0 &&
+                CloudMemoryEvidence.CanRequest(userMessage.Content))
+            {
+                var evidence = await CloudMemoryEvidence.SelectAsync(_provider, userMessage.Content, token);
+                evidenceJson = System.Text.Json.JsonSerializer.Serialize(new { evidence });
+            }
+            token.ThrowIfCancellationRequested();
+            _memoryStore.ObserveUserMessage(_companion.Id, userMessage.Id, evidenceJson);
+        }
+        catch (Exception) when (!token.IsCancellationRequested) { /* Optional memory must never block chat. */ }
+    }
+
     private PersonalityGrowthProfile? ReadGrowth()
     {
         try { return _growthStore?.Read(_companion.Id); }
@@ -334,11 +354,9 @@ public partial class ChatWindow : Window
         MessageInput.Clear();
         _messages.Add(userMessage);
         AppendContextMessage(new AiChatMessage("user", content));
-        // Only newly persisted user messages are eligible. No cloud extraction or history backfill.
+        // Only newly persisted user messages are eligible; no history backfill.
         if (!isLocalTimeQuery)
         {
-            try { _memoryStore?.ObserveUserMessage(_companion.Id, userMessage.Id); }
-            catch (Exception) { /* Optional memory must never block chat. */ }
             try { _growthStore?.Observe(_companion.Id, userMessage.Id); }
             catch (Exception) { /* Optional growth must never block chat. */ }
         }
@@ -383,6 +401,8 @@ public partial class ChatWindow : Window
         _requestCancellation = cancellation;
         try
         {
+            await ObserveMemoryAsync(userMessage, cancellation.Token);
+            cancellation.Token.ThrowIfCancellationRequested();
             var messages = ChatContextBuilder.BuildMessages(
                 _companion,
                 _avatar,
