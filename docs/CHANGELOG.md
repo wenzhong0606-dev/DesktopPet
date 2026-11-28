@@ -197,3 +197,10 @@
 - Add expiry metadata, default 180-day lifetime for new automatic preferences, reaffirmation renewal, explicit expiry controls and archive/restore.
 - Rank relevant memories using topic/alias/category/intent scores and bounded importance bonus; dynamically select JSON payload under 2,400 UTF-8 bytes and a 12-entry ceiling instead of a fixed four.
 - Add regression tests for alias migration, expiry, archive, consent-preserving scoped retrieval, importance ranking and serialized budget.
+
+
+## 2026-11-28 — M4-B4 initial experience and relationship memory
+
+- Add finite explicit user-reported milestones and communication preferences, and verified persisted conversation exchanges with distinct evidence labels and replay protection.
+- Extend retrieval for experience topics and narrow same-session follow-ups without introducing additional model calls.
+- Retain independent opt-ins, local storage, archive and delete controls; no base personality changes or real-world completion claims.

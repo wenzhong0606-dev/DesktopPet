@@ -379,4 +379,106 @@ public sealed class CompanionMemoryStoreTests
         public DateTimeOffset Now { get; set; } = now;
         public override DateTimeOffset GetUtcNow() => Now;
     }
+
+    [TestMethod]
+    public void Observe_UserMilestonesAreReportedHistoryAndRelationshipPreferencesCanChange()
+    {
+        var history = new ChatHistoryStore(_path);
+        history.Initialize();
+        var session = history.CreateSession(_first.Id);
+        var recordedAt = new DateTimeOffset(2026, 11, 28, 10, 0, 0, TimeSpan.Zero);
+        var milestone = history.SaveMessage(_first.Id, session.Id, "user", "我今天完成了学习计划", recordedAt);
+        Assert.AreEqual(0, _store.ObserveUserMessage(_first.Id, milestone.Id));
+        _store.SetAutomaticEnabled(_first.Id, true);
+        _store.SetRetrievalEnabled(_first.Id, true);
+        Assert.AreEqual(1, _store.ObserveUserMessage(_first.Id, milestone.Id));
+        var memory = _store.Retrieve(_first.Id, "我之前完成了学习计划吗").Single();
+        Assert.AreEqual("用户经历", memory.Category);
+        Assert.AreEqual("explicit_statement", memory.Confidence);
+        Assert.IsNull(memory.ExpiresAtUtc);
+        Assert.AreEqual(milestone.Id, memory.SourceMessageId.GetValueOrDefault());
+        StringAssert.Contains(memory.Content, "用户在 2026-11-28（UTC记录日期）的消息中表示");
+        var first = history.SaveMessage(_first.Id, session.Id, "user", "我希望你回答简洁一点");
+        var second = history.SaveMessage(_first.Id, session.Id, "user", "我希望你回答详细一点");
+        Assert.AreEqual(1, _store.ObserveUserMessage(_first.Id, first.Id));
+        Assert.AreEqual(1, _store.ObserveUserMessage(_first.Id, second.Id));
+        var preference = _store.Retrieve(_first.Id, "我的交流习惯").Single();
+        Assert.AreEqual("交流偏好", preference.Category);
+        Assert.AreEqual("用户希望回复详细一些", preference.Content);
+        Assert.AreEqual(second.Id, preference.SourceMessageId.GetValueOrDefault());
+        Assert.AreEqual(2L, _store.Count(_first.Id));
+    }
+
+    [TestMethod]
+    public void ObserveExchange_RequiresSameCompanionAdjacentPersistedReplyAndConsent()
+    {
+        var history = new ChatHistoryStore(_path);
+        history.Initialize();
+        var session = history.CreateSession(_first.Id);
+        var another = history.CreateSession(_second.Id);
+        var request = history.SaveMessage(_first.Id, session.Id, "user", "帮我制定学习计划");
+        var foreignReply = history.SaveMessage(_second.Id, another.Id, "assistant", "回复");
+        Assert.AreEqual(0, _store.ObserveCompletedExchange(_first.Id, request.Id, foreignReply.Id));
+        _store.SetAutomaticEnabled(_first.Id, true);
+        _store.SetAutomaticEnabled(_second.Id, true);
+        Assert.AreEqual(0, _store.ObserveCompletedExchange(_first.Id, request.Id, foreignReply.Id));
+        Assert.AreEqual(0, _store.ObserveCompletedExchange(_first.Id, request.Id, 999999));
+        Assert.AreEqual(0, _store.ObserveUserMessage(_first.Id, request.Id));
+        var reply = history.SaveMessage(_first.Id, session.Id, "assistant", "我已经替你完成了学习计划");
+        Assert.AreEqual(0, _store.ObserveCompletedExchange(_second.Id, request.Id, reply.Id));
+        Assert.AreEqual(1, _store.ObserveCompletedExchange(_first.Id, request.Id, reply.Id));
+        Assert.AreEqual(0, _store.ObserveCompletedExchange(_first.Id, request.Id, reply.Id));
+        var memory = _store.GetPage(_first.Id).Single();
+        Assert.AreEqual("共同经历", memory.Category);
+        Assert.AreEqual("observed_exchange", memory.Confidence);
+        Assert.AreEqual(request.Id, memory.SourceMessageId.GetValueOrDefault());
+        Assert.AreEqual(reply.Id, memory.SourceReplyId.GetValueOrDefault());
+        StringAssert.Contains(memory.Content, "未验证实际任务是否完成");
+        Assert.IsFalse(memory.Content.Contains("我已经替你完成"));
+        Assert.AreEqual(0, _store.Retrieve(_first.Id, "我们聊过什么").Count);
+        _store.SetRetrievalEnabled(_first.Id, true);
+        Assert.AreEqual(1, _store.Retrieve(_first.Id, "我们上次聊学习计划").Count);
+        Assert.AreEqual(0, _store.Retrieve(_first.Id, "天气怎么样").Count);
+        Assert.AreEqual(0L, _store.Count(_second.Id));
+        var json = MemoryContextBudget.BuildJson([memory]);
+        StringAssert.Contains(json, "本机对话记录");
+        Assert.IsTrue(_store.Delete(_first.Id, memory.Topic));
+        var reopened = new CompanionMemoryStore(_path);
+        reopened.Initialize();
+        Assert.AreEqual(0, reopened.ObserveCompletedExchange(_first.Id, request.Id, reply.Id));
+        Assert.AreEqual(0L, reopened.Count(_first.Id));
+    }
+
+    [TestMethod]
+    public void ObserveExchange_RejectsNonAdjacentOrUnknownRequestsAndDeduplicatesPerRecordedDay()
+    {
+        var history = new ChatHistoryStore(_path);
+        history.Initialize();
+        var session = history.CreateSession(_first.Id);
+        _store.SetAutomaticEnabled(_first.Id, true);
+        var day = new DateTimeOffset(2026, 11, 28, 10, 0, 0, TimeSpan.Zero);
+        var request = history.SaveMessage(_first.Id, session.Id, "user", "帮我制定学习计划", day);
+        var unknown = history.SaveMessage(_first.Id, session.Id, "user", "假设我们一起去了火星", day);
+        var reply = history.SaveMessage(_first.Id, session.Id, "assistant", "虚构故事", day);
+        Assert.AreEqual(0, _store.ObserveCompletedExchange(_first.Id, request.Id, reply.Id));
+        Assert.AreEqual(0, _store.ObserveCompletedExchange(_first.Id, unknown.Id, reply.Id));
+        for (var i = 0; i < 3; i++)
+        {
+            var timestamp = day.AddDays(i == 2 ? 1 : 0);
+            var user = history.SaveMessage(_first.Id, session.Id, "user", "帮我制定学习计划", timestamp);
+            var answer = history.SaveMessage(_first.Id, session.Id, "assistant", "建议", timestamp);
+            Assert.AreEqual(i == 1 ? 0 : 1, _store.ObserveCompletedExchange(_first.Id, user.Id, answer.Id));
+        }
+        Assert.AreEqual(2L, _store.Count(_first.Id));
+    }
+
+    [TestMethod]
+    public void Retrieve_CarriesPreviousTopicOnlyForRecognizedFollowUps()
+    {
+        _store.Save(_first.Id, "看书", "用户喜欢阅读");
+        _store.SetRetrievalEnabled(_first.Id, true);
+        Assert.AreEqual(0, _store.Retrieve(_first.Id, "还有呢").Count);
+        Assert.AreEqual(1, _store.Retrieve(_first.Id, "还有呢？", "阅读").Count);
+        Assert.AreEqual(0, _store.Retrieve(_first.Id, "天气怎么样", "阅读").Count);
+    }
 }

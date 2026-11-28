@@ -17,7 +17,7 @@ public sealed class CompanionMemoryStore
     private const int CandidateLimit = 48;
     private readonly TimeProvider _clock;
     private readonly string _connectionString;
-    private const string Fields = "topic,content,updated_at_utc,category,source,source_message_id,confidence,important,archived,expires_at_utc";
+    private const string Fields = "topic,content,updated_at_utc,category,source,source_message_id,confidence,important,archived,expires_at_utc,source_reply_id";
 
     public CompanionMemoryStore(string databasePath, TimeProvider? clock = null)
     {
@@ -51,6 +51,11 @@ public sealed class CompanionMemoryStore
                 last_message_id INTEGER NOT NULL,
                 FOREIGN KEY(companion_id) REFERENCES companions(companion_id) ON DELETE CASCADE
             );
+            CREATE TABLE IF NOT EXISTS companion_memory_exchange_cursor (
+                companion_id TEXT PRIMARY KEY NOT NULL,
+                last_reply_id INTEGER NOT NULL,
+                FOREIGN KEY(companion_id) REFERENCES companions(companion_id) ON DELETE CASCADE
+            );
             CREATE TABLE IF NOT EXISTS companion_memories (
                 companion_id TEXT NOT NULL,
                 topic TEXT COLLATE NOCASE NOT NULL,
@@ -77,7 +82,8 @@ public sealed class CompanionMemoryStore
             ("important", "INTEGER NOT NULL DEFAULT 0"),
             ("archived", "INTEGER NOT NULL DEFAULT 0"),
             ("expires_at_utc", "TEXT"),
-            ("expiry_custom", "INTEGER NOT NULL DEFAULT 0")
+            ("expiry_custom", "INTEGER NOT NULL DEFAULT 0"),
+            ("source_reply_id", "INTEGER")
         })
         {
             if (columns.Contains(name)) continue;
@@ -154,7 +160,7 @@ public sealed class CompanionMemoryStore
             INSERT INTO companion_memories(companion_id,topic,content,updated_at_utc,source,confidence)
             VALUES($id,$topic,$content,$now,'manual','user_confirmed')
             ON CONFLICT(companion_id,topic) DO UPDATE SET content=excluded.content,
-                updated_at_utc=excluded.updated_at_utc,source='manual',source_message_id=NULL,
+                updated_at_utc=excluded.updated_at_utc,source='manual',source_message_id=NULL,source_reply_id=NULL,
                 confidence='user_confirmed',
                 expires_at_utc=CASE WHEN expiry_custom=1 THEN expires_at_utc ELSE NULL END;
             """);
@@ -170,15 +176,23 @@ public sealed class CompanionMemoryStore
         using var connection = Open();
         using var transaction = connection.BeginTransaction();
         using var lookup = Command(connection, companionId, """
-            SELECT m.content FROM chat_messages m JOIN chat_sessions s ON s.session_id=m.session_id
+            SELECT m.content,m.created_at_utc FROM chat_messages m JOIN chat_sessions s ON s.session_id=m.session_id
             WHERE m.message_id=$message AND m.role='user' AND s.companion_id=$id
                 AND EXISTS(SELECT 1 FROM companion_memory_automatic_preferences WHERE companion_id=$id AND enabled=1)
                 AND $message > COALESCE((SELECT last_message_id FROM companion_memory_observation WHERE companion_id=$id),0);
             """);
         lookup.Transaction = transaction;
         lookup.Parameters.AddWithValue("$message", messageId);
-        if (lookup.ExecuteScalar() is not string message) return 0;
-        var candidates = LocalMemoryExtractor.Extract(message);
+        string message;
+        DateTimeOffset recordedAt;
+        using (var reader = lookup.ExecuteReader())
+        {
+            if (!reader.Read()) return 0;
+            message = reader.GetString(0);
+            recordedAt = DateTimeOffset.Parse(reader.GetString(1), CultureInfo.InvariantCulture);
+        }
+        var candidates = ExperienceMemoryExtractor.ExtractUserStatement(message, recordedAt);
+        if (candidates.Count == 0) candidates = LocalMemoryExtractor.Extract(message);
         var saved = 0;
         foreach (var candidate in candidates)
         {
@@ -213,7 +227,8 @@ public sealed class CompanionMemoryStore
             AddMemoryParameters(command, topic, candidate.Content);
             command.Parameters.AddWithValue("$category", candidate.Category);
             command.Parameters.AddWithValue("$message", messageId);
-            command.Parameters.AddWithValue("$expiry", FormatUtc(now + AutomaticPreferenceLifetime));
+            command.Parameters.AddWithValue("$expiry", candidate.Category == "用户经历"
+                ? DBNull.Value : FormatUtc(now + AutomaticPreferenceLifetime));
             var changed = command.ExecuteNonQuery();
             // Reaffirmations refresh evidence and expiry but are not new or changed facts.
             if (existing is null || existing.Content != candidate.Content || !existing.IsAvailableAt(now))
@@ -227,6 +242,59 @@ public sealed class CompanionMemoryStore
             """);
         cursor.Transaction = transaction;
         cursor.Parameters.AddWithValue("$message", messageId);
+        cursor.ExecuteNonQuery();
+        transaction.Commit();
+        return saved;
+    }
+
+    /// <summary>Record only a recognized request paired with its persisted next reply.
+    /// Never interpret assistant content as evidence of a real-world event.</summary>
+    public int ObserveCompletedExchange(string companionId, long userMessageId, long replyMessageId)
+    {
+        if (userMessageId <= 0 || replyMessageId <= userMessageId || !IsAutomaticEnabled(companionId)) return 0;
+        using var connection = Open();
+        using var transaction = connection.BeginTransaction();
+        using var lookup = Command(connection, companionId, """
+            SELECT u.content,r.created_at_utc FROM chat_messages u
+            JOIN chat_messages r ON r.session_id=u.session_id
+            JOIN chat_sessions s ON s.session_id=u.session_id
+            WHERE u.message_id=$user AND r.message_id=$reply AND u.role='user' AND r.role='assistant'
+                AND s.companion_id=$id
+                AND EXISTS(SELECT 1 FROM companion_memory_automatic_preferences WHERE companion_id=$id AND enabled=1)
+                AND $reply>COALESCE((SELECT last_reply_id FROM companion_memory_exchange_cursor WHERE companion_id=$id),0)
+                AND NOT EXISTS(SELECT 1 FROM chat_messages m WHERE m.session_id=u.session_id
+                    AND m.message_id>u.message_id AND m.message_id<r.message_id);
+            """);
+        lookup.Transaction = transaction;
+        lookup.Parameters.AddWithValue("$user", userMessageId);
+        lookup.Parameters.AddWithValue("$reply", replyMessageId);
+        MemoryCandidate? candidate;
+        using (var reader = lookup.ExecuteReader())
+        {
+            if (!reader.Read()) return 0;
+            candidate = ExperienceMemoryExtractor.ExtractExchange(reader.GetString(0),
+                DateTimeOffset.Parse(reader.GetString(1), CultureInfo.InvariantCulture));
+        }
+        var saved = 0;
+        if (candidate is not null)
+        {
+            using var command = Command(connection, companionId, """
+                INSERT INTO companion_memories(companion_id,topic,content,updated_at_utc,category,source,source_message_id,confidence,source_reply_id)
+                VALUES($id,$topic,$content,$now,'共同经历','automatic',$user,'observed_exchange',$reply)
+                ON CONFLICT(companion_id,topic) DO NOTHING;
+                """);
+            command.Transaction = transaction;
+            AddMemoryParameters(command, candidate.Topic, candidate.Content);
+            command.Parameters.AddWithValue("$user", userMessageId);
+            command.Parameters.AddWithValue("$reply", replyMessageId);
+            saved = command.ExecuteNonQuery();
+        }
+        using var cursor = Command(connection, companionId, """
+            INSERT INTO companion_memory_exchange_cursor(companion_id,last_reply_id) VALUES($id,$reply)
+            ON CONFLICT(companion_id) DO UPDATE SET last_reply_id=MAX(last_reply_id,excluded.last_reply_id);
+            """);
+        cursor.Transaction = transaction;
+        cursor.Parameters.AddWithValue("$reply", replyMessageId);
         cursor.ExecuteNonQuery();
         transaction.Commit();
         return saved;
@@ -252,9 +320,12 @@ public sealed class CompanionMemoryStore
         return ReadMemories(command);
     }
 
-    public IReadOnlyList<CompanionMemory> Retrieve(string companionId, string query)
+    public IReadOnlyList<CompanionMemory> Retrieve(string companionId, string query, string? previousUserQuery = null)
     {
         if (string.IsNullOrWhiteSpace(query) || !IsRetrievalEnabled(companionId)) return [];
+        // Carry context only for narrow follow-up expressions, not unrelated new questions.
+        if (MemoryVocabulary.IsFollowUp(query) && !string.IsNullOrWhiteSpace(previousUserQuery))
+            query += "\n" + previousUserQuery[..Math.Min(previousUserQuery.Length, 2000)];
         var now = _clock.GetUtcNow();
         using var connection = Open();
         using var command = Command(connection, companionId, $"""
@@ -311,7 +382,8 @@ public sealed class CompanionMemoryStore
             memories.Add(new CompanionMemory(reader.GetString(0), reader.GetString(1),
                 DateTimeOffset.Parse(reader.GetString(2), CultureInfo.InvariantCulture),
                 reader.GetString(3), reader.GetString(4), reader.IsDBNull(5) ? null : reader.GetInt64(5), reader.GetString(6), reader.GetInt64(7) != 0, reader.GetInt64(8) != 0,
-                reader.IsDBNull(9) ? null : DateTimeOffset.Parse(reader.GetString(9), CultureInfo.InvariantCulture)));
+                reader.IsDBNull(9) ? null : DateTimeOffset.Parse(reader.GetString(9), CultureInfo.InvariantCulture),
+                reader.IsDBNull(10) ? null : reader.GetInt64(10)));
         return memories;
     }
 

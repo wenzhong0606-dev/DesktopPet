@@ -94,7 +94,8 @@ public partial class ChatWindow : Window
 
     private IReadOnlyList<CompanionMemory> RetrieveMemories(string query)
     {
-        try { return _memoryStore?.Retrieve(_companion.Id, query) ?? Array.Empty<CompanionMemory>(); }
+        try { return _memoryStore?.Retrieve(_companion.Id, query,
+            _conversation.Where(message => message.Role == "user").SkipLast(1).LastOrDefault()?.Content) ?? Array.Empty<CompanionMemory>(); }
         catch (Exception) { return Array.Empty<CompanionMemory>(); }
     }
 
@@ -381,7 +382,8 @@ public partial class ChatWindow : Window
                 cancellation.Token);
 
             var assistantContent = ChatReplySanitizer.Sanitize(result.Content);
-            if (string.IsNullOrWhiteSpace(assistantContent))
+            var hasValidReply = !string.IsNullOrWhiteSpace(assistantContent);
+            if (!hasValidReply)
             {
                 assistantContent = "我刚才没有给出有效的文字回答，可以换个方式问我吗？";
             }
@@ -395,6 +397,12 @@ public partial class ChatWindow : Window
                     assistantContent);
                 _messages.Add(assistantMessage);
                 AppendContextMessage(new AiChatMessage("assistant", assistantContent));
+                // Only successfully persisted, non-fallback replies establish an exchange.
+                if (hasValidReply)
+                {
+                    try { _memoryStore?.ObserveCompletedExchange(_companion.Id, userMessage.Id, assistantMessage.Id); }
+                    catch (Exception) { /* Optional memory must never block chat. */ }
+                }
                 RefreshSessionSelector(sessionId, selectLatestWhenMissing: false);
                 ConnectionStatusText.Text = $"{_provider.ProviderName} · {result.Model} · 回复已保存到本机；请求内容由 Qwen 云端处理。";
             }

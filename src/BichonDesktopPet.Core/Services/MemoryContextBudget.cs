@@ -48,7 +48,8 @@ public static class MemoryContextBudget
     private static Entry ToEntry(CompanionMemory memory) => new(
         Clean(memory.Topic, CompanionMemoryStore.MaximumTopicCharacters),
         Clean(memory.Content, CompanionMemoryStore.MaximumContentCharacters),
-        memory.Source == "automatic" ? "用户直接陈述（自动记录）" : "用户手动确认");
+        memory.Source != "automatic" ? "用户手动确认" :
+            memory.Confidence == "observed_exchange" ? "本机对话记录（只证实已回复）" : "用户直接陈述（自动记录）");
 
     private static string Clean(string? value, int max)
     {

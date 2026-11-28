@@ -17,7 +17,7 @@
     <StackPanel Grid.Row="1" Margin="0,0,0,12">
       <CheckBox x:Name="AutomaticCheckBox" Content="允许从新对话自动形成记忆（本机处理）"
                 Checked="AutomaticChanged" Unchecked="AutomaticChanged"/>
-      <TextBlock Text="默认关闭；识别明确的饮食、音乐、兴趣、色彩偏好及部分偏好变化。不回扫旧对话，不覆盖手动确认。"
+      <TextBlock Text="默认关闭；识别普通偏好、部分经历、交流习惯和已完成的对话记录。不回扫旧对话，不覆盖手动确认。"
                  TextWrapping="Wrap" Foreground="#FF626A61" Margin="0,5,0,10"/>
       <CheckBox x:Name="RetrievalCheckBox" Content="允许聊天使用相关记忆（会发送给 Qwen）"
                 Checked="RetrievalChanged" Unchecked="RetrievalChanged"/>
