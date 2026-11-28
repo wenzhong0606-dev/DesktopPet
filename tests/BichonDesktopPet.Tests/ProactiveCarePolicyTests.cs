@@ -43,6 +43,29 @@ public sealed class ProactiveCarePolicyTests
     }
 
     [TestMethod]
+    public void RestartRestoresSharedBudget()
+    {
+        var first=new ProactiveCarePolicy();
+        for(var i=0;i<4;i++) first.MarkDelivered(Context.Now.AddHours(i*2));
+        var restarted=new ProactiveCarePolicy();
+        restarted.Restore(first.Snapshot(),Context.Now.AddHours(8));
+        Assert.IsFalse(restarted.CanDeliver(CareReminderType.RainExpected,Context with { Now=Context.Now.AddHours(8) }));
+        Assert.IsTrue(restarted.CanDeliver(CareReminderType.TakeBreak,Context with { Now=Context.Now.AddHours(24) }));
+    }
+
+    [TestMethod]
+    public void SuppressedActivityCandidateDoesNotConsumeCooldown()
+    {
+        var engine=new ActivityRhythmEngine();
+        engine.Observe(Context.Now,TimeSpan.Zero,false);
+        var now=Context.Now.AddHours(1);
+        Assert.IsNotNull(engine.Observe(now,TimeSpan.Zero,false));
+        Assert.IsNotNull(engine.Observe(now.AddSeconds(30),TimeSpan.Zero,false));
+        engine.MarkDelivered(now.AddSeconds(30));
+        Assert.IsNull(engine.Observe(now.AddMinutes(1),TimeSpan.Zero,false));
+    }
+
+    [TestMethod]
     public void ReducedFrequencyUsesLongerGapAndLowerBudget()
     {
         var policy=new ProactiveCarePolicy();
