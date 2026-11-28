@@ -48,6 +48,8 @@ public sealed class PetSettings
     public DateTimeOffset? LastRainReminderAtUtc { get; set; }
     public DateTimeOffset? LastHeatReminderAtUtc { get; set; }
 
+    public DateTimeOffset[] CareDeliveryHistoryUtc { get; set; } = [];
+
     public double WindowWidth { get; set; } = 280;
     public double WindowHeight { get; set; } = 360;
 }
