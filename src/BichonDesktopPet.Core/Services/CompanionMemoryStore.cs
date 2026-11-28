@@ -289,7 +289,11 @@ public sealed class CompanionMemoryStore
         using var connection = Open();
         using var transaction = connection.BeginTransaction();
         using var lookup = Command(connection, companionId, """
-            SELECT m.content,m.created_at_utc FROM chat_messages m JOIN chat_sessions s ON s.session_id=m.session_id
+            SELECT m.content,m.created_at_utc,
+                (SELECT p.content FROM chat_messages p WHERE p.session_id=m.session_id
+                    AND p.role='user' AND p.message_id<m.message_id
+                    ORDER BY p.message_id DESC LIMIT 1)
+            FROM chat_messages m JOIN chat_sessions s ON s.session_id=m.session_id
             WHERE m.message_id=$message AND m.role='user' AND s.companion_id=$id
                 AND EXISTS(SELECT 1 FROM companion_memory_automatic_preferences WHERE companion_id=$id AND enabled=1)
                 AND $message > COALESCE((SELECT last_message_id FROM companion_memory_observation WHERE companion_id=$id),0);
@@ -297,15 +301,18 @@ public sealed class CompanionMemoryStore
         lookup.Transaction = transaction;
         lookup.Parameters.AddWithValue("$message", messageId);
         string message;
+        string? previousUserText;
         DateTimeOffset recordedAt;
         using (var reader = lookup.ExecuteReader())
         {
             if (!reader.Read()) return 0;
             message = reader.GetString(0);
             recordedAt = DateTimeOffset.Parse(reader.GetString(1), CultureInfo.InvariantCulture);
+            previousUserText = reader.IsDBNull(2) ? null : reader.GetString(2);
         }
         var candidates = ExperienceMemoryExtractor.ExtractUserStatement(message, recordedAt);
         if (candidates.Count == 0) candidates = LocalMemoryExtractor.Extract(message);
+        if (candidates.Count == 0) candidates = LocalMemoryExtractor.ExtractFollowUp(message, previousUserText);
         var openVocabulary = false;
         if(candidates.Count==0)
         {
