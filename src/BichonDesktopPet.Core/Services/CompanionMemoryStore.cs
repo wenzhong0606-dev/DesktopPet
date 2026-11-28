@@ -313,6 +313,8 @@ public sealed class CompanionMemoryStore
         var candidates = ExperienceMemoryExtractor.ExtractUserStatement(message, recordedAt);
         if (candidates.Count == 0) candidates = LocalMemoryExtractor.Extract(message);
         if (candidates.Count == 0) candidates = LocalMemoryExtractor.ExtractFollowUp(message, previousUserText);
+        if (candidates.Count == 0 && ShortTermMemoryExtractor.Extract(message) is { } shortTerm)
+            candidates = [shortTerm with { Content = $"{shortTerm.Content}（记录时间：{FormatUtc(recordedAt)}）" }];
         var openVocabulary = false;
         if(candidates.Count==0)
         {
@@ -376,7 +378,7 @@ public sealed class CompanionMemoryStore
             command.Parameters.AddWithValue("$message", messageId);
             command.Parameters.AddWithValue("$confidence", cloudAssisted ? "cloud_selected_literal" : openVocabulary ? "open_explicit_statement" : "explicit_statement");
             command.Parameters.AddWithValue("$expiry", candidate.Category == "用户经历"
-                ? DBNull.Value : FormatUtc(now + AutomaticPreferenceLifetime));
+                ? DBNull.Value : FormatUtc(ShortTermMemoryExtractor.Lifetime(candidate.Category) is { } lifetime ? recordedAt + lifetime : now + AutomaticPreferenceLifetime));
             var changed = command.ExecuteNonQuery();
             // Reaffirmations refresh evidence and expiry but are not new or changed facts.
             if (existing is null || existing.Content != candidate.Content || !existing.IsAvailableAt(now))
