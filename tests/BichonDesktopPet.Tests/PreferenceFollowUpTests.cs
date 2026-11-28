@@ -10,7 +10,7 @@ public sealed class PreferenceFollowUpTests
     [DataTestMethod]
     [DataRow("我喜欢咖啡","现在不喜欢了","咖啡","用户不喜欢咖啡")]
     [DataRow("我不喜欢奶茶","但现在喜欢了","奶茶","用户喜欢奶茶")]
-    [DataRow("我喜欢看书","如今不太喜欢了","阅读","用户不太喜欢阅读")]
+    [DataRow("我喜欢看书","如今不太喜欢了","看书","用户不太喜欢看书")]
     public void ExplicitCorrection_ResolvesUniquePreviousPreference(string previous,string current,string topic,string content)
     {
         var result=LocalMemoryExtractor.ExtractFollowUp(current,previous).Single();
