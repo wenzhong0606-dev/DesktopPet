@@ -318,6 +318,12 @@ public partial class ChatWindow : Window
         MessageInput.Clear();
         _messages.Add(userMessage);
         AppendContextMessage(new AiChatMessage("user", content));
+        // Only newly persisted user messages are eligible. No cloud extraction or history backfill.
+        if (!isLocalTimeQuery)
+        {
+            try { _memoryStore?.ObserveUserMessage(_companion.Id, userMessage.Id); }
+            catch (Exception) { /* Optional memory must never block chat. */ }
+        }
         RefreshSessionSelector(_activeSessionId, selectLatestWhenMissing: false);
         ScrollToLatest();
         SetSending(true);

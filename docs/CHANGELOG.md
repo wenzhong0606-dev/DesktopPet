@@ -174,3 +174,11 @@
 - Add companion-scoped local memory storage, explicit management, opt-in bounded retrieval and regression tests.
 - Keep memory management available without a Qwen key; restore offline time input on chat initialization.
 - M4-A Windows acceptance remains deferred; automatic memory formation and personality growth remain subsequent work.
+
+
+## 2026-11-28 — M4-B1 revision and initial M4-B2
+
+- Remove fixed 200-memory cap; index and paginate memory management, query all records with bounded results.
+- Add opt-in local automatic extraction of explicit ordinary preferences from new persisted user messages, with source, category and evidence metadata.
+- Preserve existing databases through additive migration; do not overwrite same-topic memories automatically.
+- Add regression coverage for capacity, paging, migration, consent, role isolation, extraction and conflict preservation.

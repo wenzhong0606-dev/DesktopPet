@@ -11,6 +11,7 @@ public partial class MemoryWindow : Window
     private readonly CompanionMemoryStore _store;
     private readonly string _companionId;
     private bool _refreshing = true;
+    private int _offset;
 
     public MemoryWindow(CompanionMemoryStore store, string companionId)
     {
@@ -25,14 +26,56 @@ public partial class MemoryWindow : Window
         _refreshing = true;
         try
         {
-            var memories = _store.GetAll(_companionId);
+            var count = _store.Count(_companionId);
+            if (_offset >= count)
+                _offset = count == 0 ? 0 : (int)((count - 1) / CompanionMemoryStore.DefaultPageSize * CompanionMemoryStore.DefaultPageSize);
+            var memories = _store.GetPage(_companionId, _offset);
+            PreviousPageButton.IsEnabled = _offset > 0;
+            NextPageButton.IsEnabled = (long)_offset + memories.Count < count;
+            PageText.Text = count == 0 ? "暂无记忆" : $"{_offset + 1}–{_offset + memories.Count} / {count}";
             MemoryList.ItemsSource = memories;
             RetrievalCheckBox.IsChecked = _store.IsRetrievalEnabled(_companionId);
+            AutomaticCheckBox.IsChecked = _store.IsAutomaticEnabled(_companionId);
             TopicInput.Clear();
             ContentInput.Clear();
-            StatusText.Text = $"已保存 {memories.Count} / {CompanionMemoryStore.MaximumMemories} 条记忆。";
+            StatusText.Text = $"已保存 {count} 条记忆。";
         }
         finally { _refreshing = false; }
+    }
+
+    private void PreviousPage_Click(object sender, RoutedEventArgs e)
+    {
+        _offset = Math.Max(0, _offset - CompanionMemoryStore.DefaultPageSize);
+        TryRefreshPage();
+    }
+
+    private void NextPage_Click(object sender, RoutedEventArgs e)
+    {
+        _offset += CompanionMemoryStore.DefaultPageSize;
+        TryRefreshPage();
+    }
+
+    private void TryRefreshPage()
+    {
+        try { Refresh(); }
+        catch (Exception) { StatusText.Text = "加载记忆失败，请重试。"; }
+    }
+
+    private void AutomaticChanged(object sender, RoutedEventArgs e)
+    {
+        if (_refreshing) return;
+        try
+        {
+            _store.SetAutomaticEnabled(_companionId, AutomaticCheckBox.IsChecked == true);
+            StatusText.Text = AutomaticCheckBox.IsChecked == true ? "已开启本地自动记忆。" : "已停止自动形成新记忆。";
+        }
+        catch (Exception)
+        {
+            _refreshing = true;
+            AutomaticCheckBox.IsChecked = AutomaticCheckBox.IsChecked != true;
+            _refreshing = false;
+            StatusText.Text = "保存自动记忆设置失败。";
+        }
     }
 
     private void RetrievalChanged(object sender, RoutedEventArgs e)
@@ -72,11 +115,12 @@ public partial class MemoryWindow : Window
         try
         {
             _store.Save(_companionId, TopicInput.Text, ContentInput.Text);
+            _offset = 0;
             Refresh();
             StatusText.Text = "记忆已保存在本机。";
         }
         catch (ArgumentException exception) { StatusText.Text = exception.Message; }
-        catch (Exception) { StatusText.Text = "保存失败，请检查记忆数量上限或数据库状态。"; }
+        catch (Exception) { StatusText.Text = "保存失败，请检查本地数据库状态。"; }
     }
 
     private void Delete_Click(object sender, RoutedEventArgs e)
@@ -90,7 +134,7 @@ public partial class MemoryWindow : Window
 
     private void Clear_Click(object sender, RoutedEventArgs e)
     {
-        if (System.Windows.MessageBox.Show(this, "清空当前伙伴的全部长期记忆？聊天历史不受影响。",
+        if (System.Windows.MessageBox.Show(this, "清空当前伙伴的全部长期记忆？聊天历史不受影响；已发送到 Qwen 的内容无法撤回。",
             "清空记忆", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
         try { _store.Clear(_companionId); Refresh(); }
         catch (Exception) { StatusText.Text = "清空失败，请重试。"; }
