@@ -19,7 +19,7 @@ public static class SemanticMemoryQuery
         RegexOptions.CultureInvariant,TimeSpan.FromMilliseconds(100));
     private static readonly Regex Term=new(@"^[\p{IsCJKUnifiedIdeographs}]{2,12}$",
         RegexOptions.CultureInvariant,TimeSpan.FromMilliseconds(100));
-    private static readonly string[] Denied=["密码","账号","身份证","电话","住址","地址","秘密","隐私","病","药","诊断","政治","宗教","性","自杀","自残","假设","假如","扮演","忽略","指令","系统提示","代码"];
+    private static readonly string[] Denied=["密码","口令","账号","账户","银行卡","身份证","电话","手机号","邮箱","住址","地址","密钥","验证码","秘密","隐私","病","药","诊断","政治","宗教","性","自杀","自残","假设","假如","扮演","忽略","指令","系统提示","代码"];
     private static readonly string[] Signals=["推荐","建议","喜欢","偏好","适合我","我想","我该","有什么","选什么","哪种","哪款"];
     private static readonly HashSet<string> Categories=new(StringComparer.Ordinal){"饮食","音乐","兴趣","色彩"};
 
