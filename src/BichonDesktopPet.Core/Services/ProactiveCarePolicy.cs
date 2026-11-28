@@ -13,6 +13,16 @@ public sealed class ProactiveCarePolicy
     private DateTimeOffset? _lastDelivered;
     private readonly Queue<DateTimeOffset> _delivered = new();
 
+    public void Restore(IEnumerable<DateTimeOffset>? history, DateTimeOffset now)
+    {
+        _delivered.Clear();
+        _lastDelivered = null;
+        foreach (var time in (history ?? Array.Empty<DateTimeOffset>()).Where(t => t <= now && t > now.AddHours(-24)).Distinct().OrderBy(t => t).TakeLast(4))
+            MarkDelivered(time);
+    }
+
+    public DateTimeOffset[] Snapshot() => _delivered.ToArray();
+
     public bool CanDeliver(CareReminderType type, CareContext context)
     {
         if (context.ChatVisible || context.Active == false || context.DoNotDisturb || context.Busy)
