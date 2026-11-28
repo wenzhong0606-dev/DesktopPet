@@ -55,6 +55,17 @@ public static class MemoryVocabulary
                 if (parts[1] == "表达方式" && (query.Contains("说话方式") || query.Contains("表达风格"))) return 85;
             }
         }
+        if (category is "临时状态" or "近期计划" or "关怀偏好" or "临时关怀反馈")
+        {
+            var parts = topic.Split('·');
+            if (category == "近期计划" && parts.Length == 2 &&
+                (query.Contains(parts[1]) || query.Contains("计划") || query.Contains("打算"))) return 85;
+            if (category == "临时状态" && parts.Length == 2 &&
+                ((parts[1] == "疲劳自述" && (query.Contains("累") || query.Contains("疲劳"))) ||
+                 (parts[1] == "忙碌自述" && query.Contains("忙")))) return 85;
+            if (category == "关怀偏好" && query.Contains("提醒")) return 70;
+            if (category == "临时关怀反馈" && (query.Contains("打扰") || query.Contains("免打扰") || query.Contains("提醒"))) return 85;
+        }
         if (category != "未分类" && query.Contains(category, StringComparison.OrdinalIgnoreCase)) return 45;
         var hints = category switch
         {
